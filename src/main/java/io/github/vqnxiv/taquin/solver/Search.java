@@ -24,7 +24,7 @@ public abstract class Search {
         private boolean checkForQueuedEnd = false;
         private int throttle = 0;
         private String name = "";
-
+        
         
         // used when converting from a search type to another
         public Builder(Builder toCopy) {

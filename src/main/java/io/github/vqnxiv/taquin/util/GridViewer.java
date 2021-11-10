@@ -305,8 +305,6 @@ public class GridViewer {
         tf.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         tf.setTextFormatter(new TextFormatter<String>(integerFilter));
         tf.setAlignment(Pos.CENTER);
-        // so we don't have to make the user valid their input with enter
-        // bit spammy tho /shrug
         tf.textProperty().addListener(event ->
                 grid.getSelf()[GridPane.getRowIndex(tf)][GridPane.getColumnIndex(tf)] =
                         (tf.getText().equals("")) ? -1 : Integer.parseInt(tf.getText())

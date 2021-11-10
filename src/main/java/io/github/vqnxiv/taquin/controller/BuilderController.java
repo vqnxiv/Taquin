@@ -10,17 +10,13 @@ import io.github.vqnxiv.taquin.solver.search.Astar;
 import io.github.vqnxiv.taquin.util.GridViewer;
 import io.github.vqnxiv.taquin.util.Utils;
 
-import javafx.beans.InvalidationListener;
-import javafx.beans.binding.Bindings;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -99,8 +95,8 @@ public class BuilderController {
     // ------
 
     // cant run while its not locked (= built)
-    private BooleanProperty modificationLocked;
-    private BooleanProperty fullyLocked;
+    private final BooleanProperty modificationLocked;
+    private final BooleanProperty fullyLocked;
 
     private final SearchRunner runner;
     private Search search;

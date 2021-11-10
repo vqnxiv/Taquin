@@ -20,11 +20,6 @@ import java.io.IOException;
 
 public class Taquin extends Application {
     
-    // logger
-    // https://github.com/MSPaintIDE/MSPaintIDE/tree/master/src/main/java/com/uddernetworks/mspaint/logging
-    // https://github.com/FXMisc/Flowless
-
-    // https://www.baeldung.com/java-metrics
     
     public static final int PRIMARY_MIN_WIDTH = 533;
     public static final int PRIMARY_MIN_HEIGHT = 400;
@@ -41,7 +36,6 @@ public class Taquin extends Application {
     public static void main(String[] args) {
         launch();
     }
-    
     
 
     @Override
@@ -71,7 +65,6 @@ public class Taquin extends Application {
     @Override
     public void stop() throws Exception {
         mainController.shutdown();
-        //Platform.exit();
     }
 
 }
