@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ToolBar?>
+
+
+<ToolBar xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+         fx:controller="io.github.vqnxiv.taquin.controller.TopBarController">
+  
+  <items>
+      <Button fx:id="settingsButton" minWidth="60.0" mnemonicParsing="false" onAction="#onSettingsButtonActivated" text="Settings" />
+      <Button fx:id="helpButton" minWidth="60.0" mnemonicParsing="false" onAction="#onHelpButtonActivated" text="Help" />
+      <Button fx:id="aboutButton" minWidth="60.0" mnemonicParsing="false" onAction="#onAboutButtonActivated" text="About" />
+  </items>
+  
+</ToolBar>

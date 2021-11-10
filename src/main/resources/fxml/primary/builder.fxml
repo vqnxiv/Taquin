@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="io.github.vqnxiv.taquin.controller.BuilderController">
+    
+    <children>
+
+        <!-- progress -->
+        <HBox alignment="CENTER">
+            <children>
+                <Label fx:id="progressLabel" alignment="CENTER">
+                    <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                    </padding>
+                </Label>
+            </children>
+        </HBox>
+        
+        <!-- main bar, part 1 -->
+        <HBox alignment="CENTER" spacing="15.0" VBox.vgrow="NEVER">
+            <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </padding>
+
+            <children>
+                <TextField fx:id="searchNameTF" onAction="#onSearchNameActivated" prefWidth="110.0" promptText="name" />
+                <Button fx:id="startGridButton" mnemonicParsing="false" onAction="#onStartGridActivated" prefWidth="40.0" text="start" />
+                <Button fx:id="endGridButton" mnemonicParsing="false" onAction="#onEndGridActivated" prefWidth="40.0" text="end" />
+                <ChoiceBox fx:id="queuedClassCB" onAction="#onQueuedClassActivated" prefWidth="110.0" />
+                <ChoiceBox fx:id="searchAlgCB" onAction="#onSearchAlgActivated" prefWidth="110.0" />
+                <ChoiceBox fx:id="heuristicCB" onAction="#onHeuristicActivated" prefWidth="110.0" />
+            </children>
+        </HBox>
+
+        <!-- main bar, part 2 -->
+        <HBox alignment="CENTER" spacing="15.0">
+            <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </padding>
+
+            <children>
+                <Button fx:id="runSearchButton" mnemonicParsing="false" onAction="#onRunSearchActivated" prefWidth="60.0" text="Run" />
+                <Button fx:id="pauseSearchButton" mnemonicParsing="false" onAction="#onPauseSearchActivated" prefWidth="60.0" text="Pause" />
+                <Button fx:id="stopSearchButton" mnemonicParsing="false" onAction="#onStopSearchActivated" prefWidth="60.0" text="Stop" />
+                <Button fx:id="stepsSearchButton" mnemonicParsing="false" onAction="#onStepsSearchActivated" prefWidth="60.0" text="Steps" />
+                <TextField fx:id="stepsNumberTF" prefWidth="60.0" />
+                <Button fx:id="currentGridButton" mnemonicParsing="false" onAction="#onCurrentGridActivated" prefWidth="60.0" text="Current" />
+                <!--
+                <ToggleButton fx:id="currentGridToggle" mnemonicParsing="false" onAction="#onCurrentGridActivated" prefWidth="60.0" text="Current" />
+                <ToggleButton fx:id="searchGraphToggle" mnemonicParsing="false" onAction="#onSearchGraphActivated" prefWidth="60.0" text="Graph" />
+                -->
+            </children>
+        </HBox>
+
+        <!-- advanced params -->
+        <TitledPane animated="false" expanded="false" text="Parameters">
+            <content>
+
+                <TabPane tabClosingPolicy="UNAVAILABLE">
+                    <tabs>
+                        
+                        <Tab text="Collection">
+                            <content>
+                                <GridPane vgap="2.0">
+                                    <padding>
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                    </padding>
+
+                                    <columnConstraints>
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <!--
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        -->
+                                    </columnConstraints>
+
+                                    <rowConstraints>
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                    </rowConstraints>
+
+                                    <children>
+                                        <Label text="Closed collection" />
+                                        <ChoiceBox fx:id="exploredClassCB" maxWidth="120.0" onAction="#onExploredClassActivated" GridPane.rowIndex="1" />
+                                        <Label text="Increased capacity" GridPane.columnIndex="1" />
+                                        <CheckBox fx:id="increasedSizeCheck" mnemonicParsing="false" onAction="#onIncreasedSizeActivated" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                        <!-- todo: add a increasedSizeTF here -->
+                                        <!--
+                                        <Label text="Lookup type" GridPane.columnIndex="2" />
+                                        <CheckBox fx:id="improvedContainsCheck" mnemonicParsing="false" onAction="#onImprovedContainsCheck" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                                        -->
+                                    </children>
+                                </GridPane>
+                            </content>
+                        </Tab>
+                        
+                        <Tab text="Search">
+                            <content>
+                                <GridPane fx:id="searchParameters" vgap="2.0">
+                                    <padding>
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                    </padding>
+
+                                    <!-- need at least one to open in scene builder -->
+                                    <columnConstraints>
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                    </columnConstraints>
+
+                                    <rowConstraints>
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                    </rowConstraints>
+
+                                    <children>
+                                    </children>
+                                </GridPane>
+                            </content>
+                        </Tab>
+                        
+                        <Tab text="Limits">
+                            <content>
+                                <GridPane vgap="2.0">
+                                    <padding>
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                    </padding>
+
+                                    <columnConstraints>
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                    </columnConstraints>
+
+                                    <rowConstraints>
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                    </rowConstraints>
+
+                                    <children>
+                                        <Label text="Time" />
+                                        <TextField fx:id="maxTimeTF" maxWidth="85.0" promptText="ms" GridPane.rowIndex="1" />
+                                        <Label text="Memory" GridPane.columnIndex="1" />
+                                        <TextField fx:id="maxMemoryTF" maxWidth="85.0" promptText="mbyte" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                        <Label text="Depth" GridPane.columnIndex="2" />
+                                        <TextField fx:id="maxDepthTF" maxWidth="85.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                                        <Label text="Explored" GridPane.columnIndex="3" />
+                                        <TextField fx:id="maxExploredTF" maxWidth="85.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                                        <Label text="Generated" GridPane.columnIndex="4" />
+                                        <TextField fx:id="maxGeneratedTF" maxWidth="85.0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+                                        <Label text="Check goal queued" GridPane.columnIndex="5" />
+                                        <CheckBox fx:id="goalQueuedCheck" mnemonicParsing="false" onAction="#onGoalQueuedActivated" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+                                    </children>
+                                </GridPane>
+                            </content>
+                        </Tab>
+                        
+                        <!--
+                        <Tab text="Graph">
+                            <content>
+                                <GridPane vgap="2.0">
+                                    <padding>
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                    </padding>
+    
+                                    <columnConstraints>
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                    </columnConstraints>
+    
+                                    <rowConstraints>
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                    </rowConstraints>
+    
+                                    <children>
+                                        <Label text="Live graph" />
+                                        <CheckBox mnemonicParsing="false" GridPane.rowIndex="1" />
+                                        <Label text="Existing neighbors" GridPane.columnIndex="1" />
+                                        <CheckBox mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    </children>
+                                </GridPane>
+                            </content>
+                        </Tab>
+                        -->
+
+                        <!--
+                        <Tab text="Misc">
+                            <content>
+                                <GridPane vgap="2.0">
+                                    <padding>
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                    </padding>
+
+                                    <columnConstraints>
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                                    </columnConstraints>
+
+                                    <rowConstraints>
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                                    </rowConstraints>
+
+                                    <children>
+                                        <!- - todo: remove refreshrate since we're now using updateMessage - ->
+                                        <Label text="Refresh rate" />
+                                        <TextField maxWidth="85.0" GridPane.rowIndex="1" />
+                                        <Label text="Throttling" GridPane.columnIndex="1" />
+                                        <TextField maxWidth="85.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                        <Label text="Info level" GridPane.columnIndex="2" />
+                                        <TextField maxWidth="85.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                                    </children>
+                                </GridPane>
+                            </content>
+                        </Tab>
+                        -->
+                    </tabs>
+                </TabPane>
+                
+            </content>
+        </TitledPane>
+        
+        <!-- log -->
+        <TitledPane animated="false" expanded="false" text="Log">
+            <content>
+                <ScrollPane>
+                    <content>
+                    </content>
+                </ScrollPane>
+            </content>
+        </TitledPane>
+
+    </children>
+    
+</VBox>

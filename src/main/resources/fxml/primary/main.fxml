@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.VBox?>
+
+
+<VBox prefHeight="750" prefWidth="920" 
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="io.github.vqnxiv.taquin.controller.MainController">
+   
+   <children>
+      <!-- top bar -->
+      <fx:include source="topBar.fxml" VBox.vgrow="NEVER" fx:id="topBar" />
+      
+      <Separator />
+      
+      <!-- console + searches -->
+      <SplitPane dividerPositions="0.30" VBox.vgrow="ALWAYS">
+         <items>
+            <!-- console -->
+            <fx:include source="console.fxml" fx:id="console" />
+            <!-- searches -->
+            <fx:include source="searchPane.fxml" fx:id="searchPane" />
+         </items>
+      </SplitPane>
+      
+      <Separator />
+      
+      <!-- bottom bar -->
+      <fx:include source="bottomBar.fxml" VBox.vgrow="NEVER" fx:id="bottomBar" />
+   </children>
+   
+</VBox>
