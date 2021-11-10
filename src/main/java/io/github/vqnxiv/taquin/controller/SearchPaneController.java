@@ -18,7 +18,8 @@ public class SearchPaneController {
     
     FXMLLoader loader;
     
-    private SearchRunner runner;
+    private final SearchRunner runner;
+    
     
     public SearchPaneController() {
         runner = new SearchRunner();
@@ -39,6 +40,4 @@ public class SearchPaneController {
             e.printStackTrace();
         }
     }
-
-    // todo: everything LULW
 }

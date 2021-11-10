@@ -10,10 +10,17 @@ import io.github.vqnxiv.taquin.solver.search.Astar;
 import io.github.vqnxiv.taquin.util.GridViewer;
 import io.github.vqnxiv.taquin.util.Utils;
 
+import javafx.beans.InvalidationListener;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -45,7 +52,7 @@ public class BuilderController {
     @FXML private CheckBox increasedSizeCheck;
     
     @FXML private GridPane searchParameters;
-    private ChoiceBox<Grid.EqualPolicy> equalPolicyCB;
+    private final ChoiceBox<Grid.EqualPolicy> equalPolicyCB;
     
     @FXML private TextField maxTimeTF, maxMemoryTF, maxDepthTF, maxExploredTF, maxGeneratedTF;
     @FXML private CheckBox goalQueuedCheck;
@@ -92,8 +99,8 @@ public class BuilderController {
     // ------
 
     // cant run while its not locked (= built)
-    private boolean modificationLocked;
-    private boolean fullyLocked;
+    private BooleanProperty modificationLocked;
+    private BooleanProperty fullyLocked;
 
     private final SearchRunner runner;
     private Search search;
@@ -145,8 +152,9 @@ public class BuilderController {
     // todo: defaults
 
     public BuilderController(SearchRunner runner) {
-        modificationLocked = false;
-        fullyLocked = false;
+        modificationLocked = new SimpleBooleanProperty(false);
+        fullyLocked = new SimpleBooleanProperty(false);
+
         
         searchBuilder = new Astar.Builder(null);
         spaceBuilder = new SearchSpace.Builder();
@@ -160,6 +168,7 @@ public class BuilderController {
         equalPolicyCB.setOnAction(
             event -> spaceBuilder.equalPolicy(equalPolicyCB.getValue())
         );
+        equalPolicyCB.disableProperty().bind(modificationLocked);
     }
 
     @FXML public void initialize() {
@@ -182,6 +191,19 @@ public class BuilderController {
 
         
         initializeLimitsTF();
+        
+        
+        for(var n : new Control[]{
+                searchNameTF, queuedClassCB, searchAlgCB, heuristicCB, goalQueuedCheck, exploredClassCB, increasedSizeCheck
+        }) {
+            n.disableProperty().bind(modificationLocked);
+        }
+        
+        for(var n : new Control[]{runSearchButton, pauseSearchButton, stopSearchButton, stepsSearchButton, stepsNumberTF}) {
+            n.disableProperty().bind(fullyLocked);
+        }
+        
+        currentGridButton.disableProperty().bind(modificationLocked.not());
     }
     
     
@@ -198,6 +220,7 @@ public class BuilderController {
         var newParameters = new ArrayList<>(List.of(c.getDeclaredMethods()));
         newParameters.removeIf(m -> m.getName().equals("self") || m.getName().equals("build"));
         
+        // resize up the gridpane
         if(newParameters.size() >= searchParameters.getColumnCount()) {
             for(var cc : searchParameters.getColumnConstraints())
                 cc.setMaxWidth(600.0 / (newParameters.size() + 1));
@@ -209,6 +232,7 @@ public class BuilderController {
                 searchParameters.getColumnConstraints().add(colConst);
             }
         }
+        // resize down
         else {
             searchParameters.getColumnConstraints().remove(newParameters.size() + 1, searchParameters.getColumnCount());
             for(var cc : searchParameters.getColumnConstraints())
@@ -238,7 +262,8 @@ public class BuilderController {
                     }
                 }
             );
-
+            tmpCheck.disableProperty().bind(modificationLocked);
+            
             searchParameters.add(tmpCheck, index, 1);
         }
     }
@@ -253,11 +278,11 @@ public class BuilderController {
     }
 
     @FXML private void onStartGridActivated() {
-        var gw = new GridViewer(spaceBuilder, "Start", modificationLocked);
+        var gw = new GridViewer(spaceBuilder, "Start", modificationLocked.get());
     }
 
     @FXML private void onEndGridActivated() {
-        var gw = new GridViewer(spaceBuilder, "End", modificationLocked);
+        var gw = new GridViewer(spaceBuilder, "End", modificationLocked.get());
     }
 
     @FXML private void onQueuedClassActivated() {
@@ -303,50 +328,40 @@ public class BuilderController {
     // ------
 
     private void build() {
-        spaceBuilder.start(new Grid(new int[][]{{6,1,8,3,5},{11,2,13,4,10},{16,7,18,9,15},{21,0,23,14,20},{17,12,22,19,24}}, Grid.EqualPolicy.RANDOM));
-        spaceBuilder.end(new Grid(new int[][]{{1,2,3,4,5},{6,7,8,9,10},{11,12,13,14,15},{16,17,18,19,20},{21,22,23,24,0}}, Grid.EqualPolicy.RANDOM));
         space = spaceBuilder.explored(exploredBuilder.build()).queued(queuedBuilder.build()).build();
         search = searchBuilder.searchSpace(space).build();
-        modificationLocked = true;
+        modificationLocked.set(true);
     }
     
     @FXML private void onRunSearchActivated() {
-        if(fullyLocked) return;
-        
-        if(!modificationLocked) {
+        if(!modificationLocked.get()) {
             build();
         }
         
-        if(modificationLocked) {
+        if(modificationLocked.get()) {
             runner.runSearch(search, progressLabel);
         }
     }
 
     @FXML private void onPauseSearchActivated() {
-        if(fullyLocked) return;
-
-        if(modificationLocked) {
+        if(modificationLocked.get()) {
             runner.pauseSearch(search);
         }
     }
 
     @FXML private void onStopSearchActivated() {
-        if(fullyLocked) return;
-
-        if(modificationLocked) {
+        if(modificationLocked.get()) {
             runner.stopSearch(search);
-            fullyLocked = true;
+            fullyLocked.set(true);
         }
     }
 
     @FXML private void onStepsSearchActivated() {
-        if(fullyLocked) return;
-
-        if(!modificationLocked) {
+        if(!modificationLocked.get()) {
             build();
         }
         
-        if(modificationLocked) {
+        if(modificationLocked.get()) {
             runner.stepsSearch(
                 search, progressLabel, 
                 (stepsNumberTF.getText().equals("")) ? 1 : Integer.parseInt(stepsNumberTF.getText())
@@ -355,8 +370,6 @@ public class BuilderController {
     }
     
     @FXML private void onCurrentGridActivated() {
-        if(!modificationLocked) return;
-        
         var t = new GridViewer(space.getCurrent(), "Current: " + space.getCurrent().getKey(), true);
     }
     
@@ -386,6 +399,7 @@ public class BuilderController {
     
     private void setupLimTF(TextField tf, Search.Limit l) {
         tf.setTextFormatter(new TextFormatter<String>(integerFilter));
+        tf.disableProperty().bind(modificationLocked);
         tf.textProperty().addListener(
             event -> searchBuilder.limit(l, (tf.getText().equals("")) ? 0 : Long.parseLong(tf.getText()))
         );

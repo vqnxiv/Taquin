@@ -2,7 +2,6 @@ package io.github.vqnxiv.taquin.util;
 
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 
 public class Utils {
@@ -25,7 +24,6 @@ public class Utils {
     }
     
     
-    // possibly return Boolean / Integer so we can return null
     public static boolean getBooleanMethodReturn(Class<?> clazz, String methodName) {
         try {
             return (boolean) clazz.getMethod(methodName).invoke(null); 

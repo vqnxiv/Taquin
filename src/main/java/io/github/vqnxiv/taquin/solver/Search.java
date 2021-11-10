@@ -116,15 +116,12 @@ public abstract class Search {
 
     
     private final long id;
-    // name not final?
     private final String name;
     
     private State currentState;
     
     protected final SearchSpace currentSpace;
     protected final Grid.Distance heuristic;
-    // long because of time
-    // Number instead?
     private final EnumMap<Search.Limit, Long> limitsMap;
     
     protected final boolean filterAlreadyExplored;
@@ -132,7 +129,6 @@ public abstract class Search {
     
     boolean userForceStop = false;
     
-    // time, memory stuff
     private long startTime;
     private long elapsedTime = 0;
     
@@ -165,7 +161,6 @@ public abstract class Search {
     
     // ------
 
-    // public?
     protected State getState() { 
         return currentState; 
     }
@@ -315,6 +310,7 @@ public abstract class Search {
                 elapsedTime += System.currentTimeMillis() - startTime;
 
                 // sleep to make sure the last updateMessage() goes through without being throttled
+                // todo: change to a platfrom.runlater()
                 try {
                     Thread.sleep(200);
                 } catch(InterruptedException e) {
@@ -335,6 +331,7 @@ public abstract class Search {
         var sb = new StringBuilder();
         
         // '\t' doesnt work /shrug
+        // todo: progressLabel -> text area progress
         sb.append("State: ").append(currentState).append("  ");
         sb.append("Explored: ").append(currentSpace.getExplored().size()).append("  ");
         sb.append("Queued: ").append(currentSpace.getQueued().size()).append("  ");
@@ -347,9 +344,13 @@ public abstract class Search {
 
     // ------
 
-    public static boolean isHeuristicNeeded() { return false; }
+    public static boolean isHeuristicNeeded() { 
+        return false; 
+    }
 
-    public static String getShortName() { return "search"; }
+    public static String getShortName() { 
+        return "search"; 
+    }
     
     protected abstract void computeHeuristic(Grid g);
 
