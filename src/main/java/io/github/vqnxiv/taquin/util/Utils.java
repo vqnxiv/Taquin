@@ -31,7 +31,6 @@ public class Utils {
             e.printStackTrace();
         }
         
-        // never reached?
         return false;
     }
 

@@ -2,6 +2,7 @@ package io.github.vqnxiv.taquin.solver;
 
 
 import javafx.scene.control.Label;
+import javafx.scene.text.Text;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,34 +45,25 @@ public class SearchRunner {
         s.stop();
     }
     
-    public void stepsSearch(Search s, Label toBind, int n) {
-
-        if(lastRunningSearch == null || lastRunningSearch.getState() != Search.State.RUNNING) {
-            lastRunningSearch = s;
-        }
-
-        if(!s.equals(lastRunningSearch)) {
-            return;
-        }
-        
-        var steps = s.getSteps(n);
-        toBind.textProperty().bind(steps.messageProperty());
-        executorService.execute(steps);
-    }
     
-    public void runSearch(Search s, Label toBind) {
-
+    public void runSearch(Search s, int n, Label... toBind) {
         if(lastRunningSearch == null || lastRunningSearch.getState() != Search.State.RUNNING) {
             lastRunningSearch = s;
         }
-        
+
         if(!s.equals(lastRunningSearch)) {
             return;
         }
-
-        var run = s.getRun();
-        toBind.textProperty().bind(run.messageProperty());
-        executorService.execute(run);
+        
+        var task = s.newSearchTask(n);
+        toBind[0].textProperty().bind(task.searchStateProperty());
+        toBind[1].textProperty().bind(task.timeProperty());
+        toBind[2].textProperty().bind(task.currentKeyProperty());
+        toBind[3].textProperty().bind(task.currentDepthProperty());
+        toBind[4].textProperty().bind(task.exploredProperty());
+        toBind[5].textProperty().bind(task.queuedProperty());
+        
+        executorService.submit(task);
     }
     
 }

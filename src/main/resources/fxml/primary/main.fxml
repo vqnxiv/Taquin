@@ -17,7 +17,7 @@
       <Separator />
       
       <!-- console + searches -->
-      <SplitPane dividerPositions="0.30" VBox.vgrow="ALWAYS">
+      <SplitPane dividerPositions="0.29" VBox.vgrow="ALWAYS">
          <items>
             <!-- console -->
             <fx:include source="console.fxml" fx:id="console" />

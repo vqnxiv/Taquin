@@ -1,12 +1,13 @@
 package io.github.vqnxiv.taquin.controller;
 
+
 import io.github.vqnxiv.taquin.Taquin;
 import io.github.vqnxiv.taquin.solver.SearchRunner;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
-
 import java.io.IOException;
 
 

@@ -7,8 +7,10 @@ import io.github.vqnxiv.taquin.solver.search.Astar;
 import io.github.vqnxiv.taquin.util.Utils;
 
 import javafx.application.Platform;
+import javafx.beans.property.*;
 import javafx.concurrent.Task;
 import java.util.EnumMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 public abstract class Search {
@@ -196,7 +198,7 @@ public abstract class Search {
         for(var l : limitsMap.entrySet()){
 
             long currentVal = switch (l.getKey()) {
-                case MAX_TIME -> System.currentTimeMillis() - startTime;
+                case MAX_TIME -> (System.currentTimeMillis() - startTime) + elapsedTime;
                 //case MAX_MEMORY -> (int) ((runtime.totalMemory() - runtime.freeMemory()) / 1024L - startMemory);
                 case MAX_DEPTH -> currentSpace.getCurrent().getDepth();
                 case MAX_EXPLORED -> currentSpace.getExplored().size();
@@ -233,112 +235,143 @@ public abstract class Search {
         // if(currentState == State.PAUSED) pause();
     }
     
-    public Task<State> getSteps(int n) {
-        return new Steps<>(n);
+    
+    public SearchTask<State> newSearchTask(int n) {
+        return new SearchTask<State>(n);
     }
     
-    public Task<State> getRun() {
-        return new Run<>();
-    }
-    
-    public class Steps<State> extends Task<State> {
+    // Properties:
+    // * currentKey
+    // * currentGrid
+    // * currentDepth
+    // * explored.size()
+    // * queued.size()
+    // * elapsedTime
+    // * state
+
+    public class SearchTask<S> extends Task<S> {
+
+        // all as <String> since they're only used for the GUI
+        // so we can directly bind them to the Labels
+        // also searchState because stateProperty() is final in Task
+        private final AtomicReference<String> currentKeyUpdate    = new AtomicReference<>();
+        private final AtomicReference<String> currentDepthUpdate  = new AtomicReference<>();
+        private final AtomicReference<String> searchStateUpdate   = new AtomicReference<>();
+        private final AtomicReference<String> timeUpdate          = new AtomicReference<>();
+        private final AtomicReference<String> exploredUpdate      = new AtomicReference<>();
+        private final AtomicReference<String> queuedUpdate        = new AtomicReference<>();
         
-        private int iterations;
+        private final StringProperty currentKey     = new SimpleStringProperty(this, "currentKey", "");
+        private final StringProperty currentDepth   = new SimpleStringProperty(this, "currentDepth", "");
+        private final StringProperty searchState    = new SimpleStringProperty(this, "searchState", "");
+        private final StringProperty time           = new SimpleStringProperty(this, "time", "");
+        private final StringProperty explored       = new SimpleStringProperty(this, "explored", "");
+        private final StringProperty queued         = new SimpleStringProperty(this, "queued", "");
         
-        protected Steps(int n) {
-            
+        public final ReadOnlyStringProperty currentKeyProperty()    { return currentKey; }
+        public final ReadOnlyStringProperty currentDepthProperty()  { return currentDepth; }
+        public final ReadOnlyStringProperty searchStateProperty()   { return searchState; }
+        public final ReadOnlyStringProperty timeProperty()          { return time; }
+        public final ReadOnlyStringProperty exploredProperty()      { return explored; }
+        public final ReadOnlyStringProperty queuedProperty()        { return queued; }
+        
+        
+        private void updateAll(String... strings) {
+            if(currentKeyUpdate.getAndSet(strings[0]) == null) {
+                Platform.runLater(() -> {
+                    final String s = currentKeyUpdate.getAndSet(null);
+                    currentKey.set(s);
+                });
+            }
+            if(currentDepthUpdate.getAndSet(strings[1]) == null) {
+                Platform.runLater(() -> {
+                    final String s = currentDepthUpdate.getAndSet(null);
+                    currentDepth.set(s);
+                });
+            }
+            if(searchStateUpdate.getAndSet(strings[2]) == null) {
+                Platform.runLater(() -> {
+                    final String s = searchStateUpdate.getAndSet(null);
+                    searchState.set(s);
+                });
+            }
+            if(timeUpdate.getAndSet(strings[3]) == null) {
+                Platform.runLater(() -> {
+                    final String s = timeUpdate.getAndSet(null);
+                    SearchTask.this.time.set(s);
+                });
+            }
+            if(exploredUpdate.getAndSet(strings[4]) == null) {
+                Platform.runLater(() -> {
+                    final String s = exploredUpdate.getAndSet(null);
+                    explored.set(s);
+                });
+            }
+            if(queuedUpdate.getAndSet(strings[5]) == null) {
+                Platform.runLater(() -> {
+                    final String s = queuedUpdate.getAndSet(null);
+                    queued.set(s);
+                });
+            }
+        }
+        
+
+        private final int iterations;
+        
+        SearchTask(int n) {
             iterations = n;
         }
-
-        @Override
-        protected State call() {
-
-            if(currentState == Search.State.READY || currentState == Search.State.PAUSED) {
-
-                currentState = Search.State.RUNNING;
-                startTime = System.currentTimeMillis();
-
-                for(int i = 0; i < iterations; i++)
-                    if(checkConditions()) {
-                        step();
-                        updateMessage(currentState());
-                    }
-                    else break;
-
-                elapsedTime += System.currentTimeMillis() - startTime;
-            }
-
-            // if false -> we reached the end of the search
-            if(checkConditions()) pause();
-
-            try {
-                Thread.sleep(200);
-            } catch(InterruptedException e) {
-                e.printStackTrace();
-            }
-            updateMessage(currentState());
-
-            return (State) currentState;
-        }
-       
-    }
-
-    public class Run<State> extends Task<State> {
         
-        protected Run() {
-        }
-
         @Override
-        protected State call() {
+        protected S call() throws Exception {
 
             if(currentState == Search.State.READY || currentState == Search.State.PAUSED) {
 
                 currentState = Search.State.RUNNING;
                 startTime = System.currentTimeMillis();
-
-                while(checkConditions()) {
-
-                    // todo: weird case of BFS with LinkedHashSet on the test grid at around ~2013 (constant) h = NONE
-                    // todo: where it doesn't remove the new current from queued and loop over ^ state
-                    // it also happens with other heuristics, it just blocks at another state
-                    // hash conflict?
-
-                    step();
-                    updateMessage(currentState());
+                
+                if(iterations > 0) {
+                    for(int i = 0; i < iterations; i++) {
+                        if(checkConditions()) {
+                            step();
+                            updateAll(getAllStrings());
+                        } 
+                        else break;
+                    }
+                }
+                else {
+                    while(checkConditions()) {
+                        step();
+                        updateAll(getAllStrings());
+                    }
                 }
 
                 elapsedTime += System.currentTimeMillis() - startTime;
 
-                // sleep to make sure the last updateMessage() goes through without being throttled
-                // todo: change to a platfrom.runlater()
+                if(checkConditions()) pause();
+
                 try {
                     Thread.sleep(200);
                 } catch(InterruptedException e) {
                     e.printStackTrace();
                 }
-                updateMessage(currentState());
+                updateAll(getAllStrings());
             }
-
-            // we don't need to currentState = PAUSED / .pause() here 
-            // as it's either ENDED_* or PAUSED if we got out of the loop
-
-            return (State) currentState;
+            
+            
+            return (S) currentState;
         }
-
     }
     
-    private String currentState() {
-        var sb = new StringBuilder();
-        
-        // '\t' doesnt work /shrug
-        // todo: progressLabel -> text area progress
-        sb.append("State: ").append(currentState).append("  ");
-        sb.append("Explored: ").append(currentSpace.getExplored().size()).append("  ");
-        sb.append("Queued: ").append(currentSpace.getQueued().size()).append("  ");
-        sb.append("Current: ").append(currentSpace.getCurrent().getKey()).append("  ");
-        sb.append("Depth: ").append(currentSpace.getCurrent().getDepth()).append("  ");
-        
-        return sb.toString();
+    private String[] getAllStrings() {
+        return new String[]{
+            Integer.toString(currentSpace.getCurrent().getKey()),
+            Integer.toString(currentSpace.getCurrent().getDepth()),
+            currentState.toString(),
+            Long.toString((System.currentTimeMillis() - startTime) + elapsedTime),
+            Integer.toString(currentSpace.getExplored().size()),
+            Integer.toString(currentSpace.getQueued().size())    
+        };
     }
 
 

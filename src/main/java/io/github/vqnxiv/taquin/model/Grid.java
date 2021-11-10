@@ -5,9 +5,7 @@ import java.util.*;
 
 
 public class Grid implements Comparable<Grid> {
-
-
-    // ------
+    
     
     private enum Direction {
         LEFT    { public String toString() { return "Left"; } }, 
@@ -42,9 +40,7 @@ public class Grid implements Comparable<Grid> {
 
     private final Direction parentDirection;
     private final Grid parent;
-    // todo: enummap
-    // merge into enummap
-    // bc we can just get the key and the parent from there
+
     private Grid[] hasGenerated;
     private Grid[] existingNeighbors;
     
@@ -120,13 +116,8 @@ public class Grid implements Comparable<Grid> {
 
     public int getDepth() { return depth; }
 
-    // is this even needed?
     public Grid getParent() { return parent; }
     
-    // todo: make enumMap
-    // and add getter direction from so it can be called in DeprecatedInstance
-    // and later in graph
-    // and then we just if(key > x.key) to see if children or existing neighbors
     public Grid[] getChildren() { return hasGenerated; }
 
     public Grid[] getPreExistingNeighbors() { return existingNeighbors; }
@@ -134,9 +125,13 @@ public class Grid implements Comparable<Grid> {
 
     // ------
     
-    void setKey(int k) { key = k; }
+    void setKey(int k) { 
+        key = k; 
+    }
     
-    public void setHeuristicValue(int v) { heuristicValue = v; }
+    public void setHeuristicValue(int v) { 
+        heuristicValue = v; 
+    }
     
     void addNeighbor(Grid g, boolean children) {
         if(children){
@@ -153,41 +148,60 @@ public class Grid implements Comparable<Grid> {
 
 
     // ------
-    
+
+    // todo: linear conflicts
     public int distanceTo(Grid g, Distance d){
+        
+        return switch(d) {
+            case MANHATTAN -> manhattan(g);
+            case HAMMING -> hamming(g);
+            case EUCLIDEAN -> euclidean(g);
+            case LINEAR_MANHATTAN -> linearManhattan(g);
+            case NONE -> 0;
+        };
+    }
+    
+    private int manhattan(Grid g) {
         int retour = 0;
-
-        switch (d) {
-            case HAMMING -> {
-                for(int row = 0; row < self.length; row++)
-                    for(int col = 0; col < self[0].length; col++)
-                        if(self[row][col] != g.self[row][col] && self[row][col] != 0)
-                            retour++;
-            }
-            case MANHATTAN -> {
-                int[] tmp;
-                for(int row = 0; row < self.length; row++)
-                    for(int col = 0; col < self[0].length; col++)
-                        if(self[row][col] != g.self[row][col] && self[row][col] != 0){
-                            tmp = g.findCoordinates(self[row][col]);
-                            retour += (Math.abs(tmp[0] - row) + Math.abs(tmp[1] - col));
-                        }
-            }
-            case EUCLIDEAN -> {
-                int[] tmp;
-                for(int row = 0; row < self.length; row++)
-                    for(int col = 0; col < self[0].length; col++)
-                        if(self[row][col] != g.self[row][col] && self[row][col] != 0){
-                            tmp = g.findCoordinates(self[row][col]);
-                            retour += (int) Math.floor(Math.sqrt(Math.pow(Math.abs(tmp[0] - row), 2) + Math.pow(Math.abs(tmp[1] - col), 2)));
-                        }
-            }
-
-            // todo: linear conflicts
-            default -> throw new IllegalArgumentException("Illegal distance type: " + d);
-        }
+        
+        int[] tmp;
+        for(int row = 0; row < self.length; row++)
+            for(int col = 0; col < self[0].length; col++)
+                if(self[row][col] != g.self[row][col] && self[row][col] != 0){
+                    tmp = g.findCoordinates(self[row][col]);
+                    retour += (Math.abs(tmp[0] - row) + Math.abs(tmp[1] - col));
+                }
+        
+        return retour;
+    }
+    
+    private int hamming(Grid g) {
+        int retour = 0;
+        
+        for(int row = 0; row < self.length; row++)
+            for(int col = 0; col < self[0].length; col++)
+                if(self[row][col] != g.self[row][col] && self[row][col] != 0)
+                    retour++;
 
         return retour;
+    }
+    
+    private int euclidean(Grid g) {
+        int retour = 0;
+
+        int[] tmp;
+        for(int row = 0; row < self.length; row++)
+            for(int col = 0; col < self[0].length; col++)
+                if(self[row][col] != g.self[row][col] && self[row][col] != 0){
+                    tmp = g.findCoordinates(self[row][col]);
+                    retour += (int) Math.floor(Math.sqrt(Math.pow(Math.abs(tmp[0] - row), 2) + Math.pow(Math.abs(tmp[1] - col), 2)));
+                }
+
+        return retour;
+    }
+    
+    private int linearManhattan(Grid g) {
+        return 0;
     }
     
     // hashset for the 'randomness' instead of always left, right, up, down
@@ -234,7 +248,6 @@ public class Grid implements Comparable<Grid> {
     @Override
     public int hashCode() {
         
-        // todo: investigate the fuckups in BFS
         /*
         var sb = new StringBuilder();
         
@@ -259,7 +272,6 @@ public class Grid implements Comparable<Grid> {
                     Random rnd = new Random();
                     return (rnd.nextBoolean()) ? -1 : 1;
                 }
-                // key can't be equal, its strict < or >
                 case NEWER_FIRST -> {
                     return (key < target.key) ? -1 : 1;
                 }

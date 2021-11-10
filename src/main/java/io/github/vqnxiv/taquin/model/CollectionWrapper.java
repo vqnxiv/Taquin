@@ -12,7 +12,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
         private Class<?> subClass;
         private boolean initialCapacity = false;
         private int userInitialCapacity = 0;
-        private lookupType lookup = lookupType.NATIVE;
         
         public Builder() {}
         
@@ -30,24 +29,10 @@ public class CollectionWrapper<E extends Comparable<E>>{
             userInitialCapacity = n;
             return this;
         }
-        
-        public Builder lookup(lookupType l) {
-            lookup = l;
-            return this;
-        }
-        
+
         public CollectionWrapper<?> build() {
             return new CollectionWrapper<>(this);
         }
-    }
-
-    
-    // ------
-
-    enum lookupType {
-        NATIVE      { public String toString() { return "Default"; } }, 
-        BINARY      { public String toString() { return "Binary"; } }, 
-        EXPONENTIAL { public String toString() { return "Exponential"; } }
     }
 
     
@@ -57,14 +42,12 @@ public class CollectionWrapper<E extends Comparable<E>>{
 
     private boolean naturalOrder;
     private boolean sort;
-    // do we even need this one now
     private boolean initialCapacity;
-    private lookupType lookup;
 
     private static final Class<?>[] acceptedSubClasses = {
             ArrayDeque.class, ArrayList.class,
             LinkedHashSet.class, LinkedList.class,
-            PriorityQueue.class,
+            PriorityQueue.class
     };
 
     private static final Class<?>[] withInitialCapacity = {
@@ -74,7 +57,7 @@ public class CollectionWrapper<E extends Comparable<E>>{
     };
 
     private static final Class<?>[] withNaturalOrder = {
-            PriorityQueue.class,
+            PriorityQueue.class
     };
 
 
@@ -82,8 +65,7 @@ public class CollectionWrapper<E extends Comparable<E>>{
 
     private CollectionWrapper(Builder builder) {
         
-        // todo: if initialCapacity && userInitialCapacity == 0: computeInitialCapacity();
-        // todo: add levels to computeInitialCapacity; enum { LOW, MEDIUM, HIGH, MASSIVE } etc
+        builder.initialCapacity = (builder.userInitialCapacity != 0);
         builder.userInitialCapacity = (builder.userInitialCapacity != 0) ? builder.userInitialCapacity : 100_000; 
         
         boolean initialized = false;
@@ -101,7 +83,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
         }
         
         setProperties();
-        lookup = builder.lookup;
     }
 
     private boolean initializeWithCapacity(Builder builder) {
@@ -141,17 +122,16 @@ public class CollectionWrapper<E extends Comparable<E>>{
         naturalOrder = self instanceof TreeSet<E> || self instanceof PriorityQueue<E>;
         initialCapacity = !(self instanceof LinkedList<E> || self instanceof TreeSet<E>);
     }
-
-
+    
+    
     // ------
-
-    // needed?
+    
     public Collection<E> asCollection() { 
         return self; 
     }
 
     // Class<?> ?
-    public Class<? extends Collection<E>> getSubClass(){
+    public Class<? extends Collection<E>> getSubClass() {
         return (Class<? extends Collection<E>>) self.getClass();
     }
 
@@ -166,8 +146,7 @@ public class CollectionWrapper<E extends Comparable<E>>{
     public boolean isSortable() { 
         return sort; 
     }
-
-    // add boolean initialCapacity, naturalOrdering?
+    
     public static Class<?>[] getAcceptedSubClasses() { 
         return acceptedSubClasses; 
     }
@@ -205,9 +184,7 @@ public class CollectionWrapper<E extends Comparable<E>>{
     }
     
     public boolean contains(E elt) {
-        if(lookup == lookupType.NATIVE)
-            return self.contains(elt);
-        else return false;
+        return self.contains(elt);
     }
 
     public void add(E elt) {
@@ -218,16 +195,13 @@ public class CollectionWrapper<E extends Comparable<E>>{
         self.addAll(toAdd); 
     }
     
-    
     public void sort() { 
         Collections.sort((List<E>) self); 
     }
     
-    // make a Collection<E> ?
     public void mergeWith(LinkedList<E> toAdd) {
         Collections.sort(toAdd);
 
-        // find faster than linkedList?
         var tmp = new LinkedList<>(self);
         self.clear();
         
@@ -278,7 +252,7 @@ public class CollectionWrapper<E extends Comparable<E>>{
     public E pollFirst() {
         E retour;
 
-        switch (self){
+        switch (self) {
             // ArrayDeque, LinkedList, PriorityQueue
             case Queue<E> subQueue -> {
                 retour = subQueue.poll();
@@ -291,13 +265,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
             // LinkedHashSet
             case Set<E> subSet -> {
                 retour = subSet.stream().findFirst().get();
-                
-                // todo: check for errors / add warning
-                /*
-                if(!subSet.contains(retour)) {
-                }
-                */
-                
                 subSet.remove(retour);
             }
             // ArrayList
@@ -314,7 +281,7 @@ public class CollectionWrapper<E extends Comparable<E>>{
     public E pollLast() {
         E retour;
 
-        switch (self){
+        switch (self) {
             // ArrayDeque, LinkedList
             case Deque<E> subQueue -> {
                 retour = subQueue.pollLast();

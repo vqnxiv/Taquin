@@ -10,7 +10,6 @@ import io.github.vqnxiv.taquin.solver.search.Astar;
 import io.github.vqnxiv.taquin.util.GridViewer;
 import io.github.vqnxiv.taquin.util.Utils;
 
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -33,7 +32,9 @@ import java.util.stream.Stream;
 
 
 public class BuilderController {
-    
+
+
+    @FXML private Label stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel;
 
     @FXML private TextField searchNameTF;
     @FXML private Button startGridButton, endGridButton;
@@ -46,6 +47,7 @@ public class BuilderController {
     
     @FXML private ChoiceBox<Class<?>> exploredClassCB;
     @FXML private CheckBox increasedSizeCheck;
+    @FXML private TextField exploredCapacityTF, queuedCapacityTF;
     
     @FXML private GridPane searchParameters;
     private final ChoiceBox<Grid.EqualPolicy> equalPolicyCB;
@@ -53,7 +55,7 @@ public class BuilderController {
     @FXML private TextField maxTimeTF, maxMemoryTF, maxDepthTF, maxExploredTF, maxGeneratedTF;
     @FXML private CheckBox goalQueuedCheck;
 
-    @FXML private Label progressLabel;
+    // @FXML private Label progressLabel;
     
     
     // ------
@@ -184,14 +186,27 @@ public class BuilderController {
         heuristicCB.getItems().remove(Grid.Distance.NONE);
         
         exploredClassCB.setValue(LinkedHashSet.class);
-
+        exploredCapacityTF.setTextFormatter(new TextFormatter<>(integerFilter));
+        exploredCapacityTF.textProperty().addListener(
+            event -> exploredBuilder.userInitialCapacity(
+                exploredCapacityTF.getText().equals("") ?
+                0 : Integer.parseInt(exploredCapacityTF.getText())
+            )        
+        );
+        queuedCapacityTF.setTextFormatter(new TextFormatter<>(integerFilter));
+        queuedCapacityTF.textProperty().addListener(
+            event -> queuedBuilder.userInitialCapacity(
+                queuedCapacityTF.getText().equals("") ?
+                0 : Integer.parseInt(queuedCapacityTF.getText())
+            )
+        );
+        
         
         initializeLimitsTF();
         
         
-        for(var n : new Control[]{
-                searchNameTF, queuedClassCB, searchAlgCB, heuristicCB, goalQueuedCheck, exploredClassCB, increasedSizeCheck
-        }) {
+        for(var n : new Control[]{ searchNameTF, queuedClassCB, searchAlgCB, heuristicCB, 
+                goalQueuedCheck, exploredClassCB, increasedSizeCheck }) {
             n.disableProperty().bind(modificationLocked);
         }
         
@@ -324,6 +339,10 @@ public class BuilderController {
     // ------
 
     private void build() {
+        //spaceBuilder.start(new Grid(new int[][]{{6,1,8,3,5},{11,2,13,4,10},{16,7,18,9,15},{21,0,23,14,20},{17,12,22,19,24}}, Grid.EqualPolicy.RANDOM));
+        //spaceBuilder.end(new Grid(new int[][]{{1,2,3,4,5},{6,7,8,9,10},{11,12,13,14,15},{16,17,18,19,20},{21,22,23,24,0}}, Grid.EqualPolicy.RANDOM));
+        spaceBuilder.start(new Grid(new int[][]{{8,0,6},{1,2,3},{7,4,5}}, Grid.EqualPolicy.RANDOM));
+        spaceBuilder.end(new Grid(new int[][]{{1,2,3},{4,5,6},{7,8,0}}, Grid.EqualPolicy.RANDOM));
         space = spaceBuilder.explored(exploredBuilder.build()).queued(queuedBuilder.build()).build();
         search = searchBuilder.searchSpace(space).build();
         modificationLocked.set(true);
@@ -335,7 +354,7 @@ public class BuilderController {
         }
         
         if(modificationLocked.get()) {
-            runner.runSearch(search, progressLabel);
+            runner.runSearch(search, 0, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
         }
     }
 
@@ -358,10 +377,8 @@ public class BuilderController {
         }
         
         if(modificationLocked.get()) {
-            runner.stepsSearch(
-                search, progressLabel, 
-                (stepsNumberTF.getText().equals("")) ? 1 : Integer.parseInt(stepsNumberTF.getText())
-            );
+            var steps = (stepsNumberTF.getText().equals("")) ? 1 : Integer.parseInt(stepsNumberTF.getText());
+            runner.runSearch(search, steps, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
         }
     }
     
@@ -372,14 +389,14 @@ public class BuilderController {
     
     // ------
     
-    @FXML private void onIncreasedSizeActivated() {
-        exploredBuilder.initialCapacity(increasedSizeCheck.isSelected());
-        queuedBuilder.initialCapacity(increasedSizeCheck.isSelected());
-    }
-
     @FXML private void onExploredClassActivated() {
         if(exploredClassCB.getValue() != null)
             exploredBuilder.subClass(exploredClassCB.getValue());
+    }
+
+    @FXML private void onIncreasedSizeActivated() {
+        exploredBuilder.initialCapacity(increasedSizeCheck.isSelected());
+        queuedBuilder.initialCapacity(increasedSizeCheck.isSelected());
     }
 
     
@@ -404,5 +421,6 @@ public class BuilderController {
     @FXML private void onGoalQueuedActivated() {
         searchBuilder.checkForQueuedEnd(goalQueuedCheck.isSelected());
     }
+
 }
 

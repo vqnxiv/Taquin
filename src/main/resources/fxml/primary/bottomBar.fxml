@@ -16,7 +16,6 @@
     
     <children>
         <Label fx:id="heapUsage" text="Heap: 0 / 0 MB" />
-        <Label fx:id="cpuUsage" text="CPU: 0%" />
     </children>
 
 </HBox>
