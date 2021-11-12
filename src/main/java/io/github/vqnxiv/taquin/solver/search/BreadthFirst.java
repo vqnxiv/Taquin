@@ -52,7 +52,7 @@ public class BreadthFirst extends Search {
 
     // ------
     
-    private BreadthFirst(Builder builder){
+    private BreadthFirst(Builder builder) {
         super(builder);
         
         checkNewStatesForGoal = builder.checkNewStatesForGoal.get();
@@ -67,7 +67,7 @@ public class BreadthFirst extends Search {
     }
 
     @Override
-    protected void computeHeuristic(Grid g){
+    protected void computeHeuristic(Grid g) {
         g.setHeuristicValue(g.distanceTo(currentSpace.getGoal(), heuristic));
     }
 

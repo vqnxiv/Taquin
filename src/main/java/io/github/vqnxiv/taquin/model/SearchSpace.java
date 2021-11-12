@@ -2,6 +2,7 @@ package io.github.vqnxiv.taquin.model;
 
 
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 
 import java.util.ArrayList;
@@ -13,25 +14,20 @@ public class SearchSpace {
     
     
     public static class Builder {
-        private Grid start;
-        private Grid end;
+        //private Grid start;
+        //private Grid end;
         private CollectionWrapper<?> explored;
         private CollectionWrapper<?> queued;
         
         public ObjectProperty<Grid.EqualPolicy> equalPolicy;
         
+        public Property<Grid> start;
+        public Property<Grid> end;
+        
         public Builder() {
             equalPolicy = new SimpleObjectProperty<>(Grid.EqualPolicy.NEWER_FIRST);
-        }
-        
-        public Builder start(Grid g) {
-            start = g;
-            return this;
-        }
-        
-        public Builder end(Grid g) {
-            end = g;
-            return this;
+            start = new SimpleObjectProperty<>();
+            end = new SimpleObjectProperty<>();
         }
         
         public Builder explored(CollectionWrapper<?> cw) {
@@ -43,16 +39,7 @@ public class SearchSpace {
             queued = cw;
             return this;
         }
-        
-        
-        public Grid getGrid(String s) {
-            return switch(s.toLowerCase()) {
-                case "start" -> start;
-                case "end" -> end;
-                default -> throw new IllegalArgumentException("Grid doesn't exist");
-            };
-        }
-        
+
         public SearchSpace build() {
             if(start == null || end == null || explored == null || queued == null) {
                 try {
@@ -62,7 +49,7 @@ public class SearchSpace {
                 }
             }
             
-            return new SearchSpace(start, end, explored, queued, equalPolicy.get());
+            return new SearchSpace(start.getValue(), end.getValue(), explored, queued, equalPolicy.get());
         }
     }
     
@@ -77,10 +64,13 @@ public class SearchSpace {
     private final CollectionWrapper<Grid> queued;
 
     private int currentKeyCounter = 0;
+    
+    public Property<Grid> currentGridProperty;
 
 
     // ------
     
+    @SuppressWarnings("unchecked")
     private SearchSpace(Grid start, Grid end, CollectionWrapper<?> explored, CollectionWrapper<?> queued, Grid.EqualPolicy ep) {
 
         startGrid = new Grid(start.getSelf(), ep);
@@ -95,6 +85,7 @@ public class SearchSpace {
         this.queued.add(startGrid);
         currentGrid = startGrid;
 
+        currentGridProperty = new SimpleObjectProperty<>(currentGrid);
     }
     
 
@@ -128,7 +119,8 @@ public class SearchSpace {
     // ------
 
     public void setCurrent(Grid g) { 
-        currentGrid = g; 
+        currentGrid = g;
+        currentGridProperty.setValue(g);
     }
 
     public boolean isCurrentGoal() { 
@@ -160,7 +152,7 @@ public class SearchSpace {
     
     
     // todo: refactor
-    public LinkedList<Grid> getNewNeighbors(boolean filterExplored, boolean filtereQueued, boolean linkExisting){
+    public LinkedList<Grid> getNewNeighbors(boolean filterExplored, boolean filterQueued, boolean linkExisting){
 
         var possibleNewStates = currentGrid.generateNeighbors();
         var retour = new LinkedList<Grid>();
@@ -168,7 +160,7 @@ public class SearchSpace {
         for(Grid g : possibleNewStates){
             
             
-            if((filterExplored && explored.contains(g)) || (filtereQueued && queued.contains(g))) {
+            if((filterExplored && explored.contains(g)) || (filterQueued && queued.contains(g))) {
                 if(linkExisting) {
                     linkExisting(g);
                 }

@@ -4,6 +4,7 @@ package io.github.vqnxiv.taquin.solver;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
 
+
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.concurrent.Task;
@@ -323,10 +324,10 @@ public abstract class Search {
                     }
                     else break;
                 }
-
-                updateAll();
+                
                 elapsedTime += System.currentTimeMillis() - startTime;
                 if(checkConditions()) pause();
+                updateAll();
             }
             
             return (S) currentState;

@@ -55,7 +55,7 @@ public class Astar extends Search {
     
     // ------
 
-    private Astar(Builder builder){
+    private Astar(Builder builder) {
         super(builder);
 
         useMerge = builder.useMerge.get() || (!currentSpace.getQueued().usesNaturalOrdering() && !currentSpace.getQueued().isSortable());
@@ -92,7 +92,7 @@ public class Astar extends Search {
             else if(useMerge) {
                 currentSpace.getQueued().mergeWith(toAdd);
             }
-            else  {
+            else {
                 Collections.sort(toAdd);
                 currentSpace.getQueued().addAll(toAdd);
                 currentSpace.getQueued().sort();

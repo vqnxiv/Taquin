@@ -63,7 +63,7 @@ public class Grid implements Comparable<Grid> {
         depth = 0;
         equalPolicy = ep;
         
-        int[] z = findCoordinates(0);
+        int[] z = findCoordinates(0, true);
         zeroRow = z[0]; zeroCol = z[1];
     }
 
@@ -96,32 +96,59 @@ public class Grid implements Comparable<Grid> {
 
     // ------
 
-    private int[] findCoordinates(int toFind) {
+    private int[] findCoordinates(int toFind, boolean throwError) {
         for (int row = 0; row < self.length; row++)
             for (int col = 0; col < self[0].length; col++)
                 if (self[row][col] == toFind) {
                     return new int[]{row, col};
                 }
 
-        throw new IllegalArgumentException(toFind + " not found");
+        if(throwError) throw new IllegalArgumentException(toFind + " not found");
+        else return null;
     }
 
+    
+    public boolean hasSameAlphabet(Grid g) {
+        for(int[] ints : self) {
+            for(int i : ints) {
+                if(g.findCoordinates(i, false) == null) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
 
     // ------
 
-    public int[][] getSelf() { return self; }
+    public int[][] getSelf() { 
+        return self; 
+    }
 
-    public int getKey() { return key; }
+    public int getKey() { 
+        return key; 
+    }
 
-    public int getHeuristicValue() { return heuristicValue; }
+    public int getHeuristicValue() { 
+        return heuristicValue; 
+    }
 
-    public int getDepth() { return depth; }
+    public int getDepth() { 
+        return depth; 
+    }
 
-    public Grid getParent() { return parent; }
+    public Grid getParent() { 
+        return parent; 
+    }
     
-    public Grid[] getChildren() { return hasGenerated; }
+    public Grid[] getChildren() { 
+        return hasGenerated; 
+    }
 
-    public Grid[] getPreExistingNeighbors() { return existingNeighbors; }
+    public Grid[] getPreExistingNeighbors() { 
+        return existingNeighbors; 
+    }
 
 
     // ------
@@ -147,6 +174,9 @@ public class Grid implements Comparable<Grid> {
         }
     }
 
+    public void resetNeighbors() {
+        hasGenerated = new Grid[]{};
+    }
 
     // ------
 
@@ -169,7 +199,7 @@ public class Grid implements Comparable<Grid> {
         for(int row = 0; row < self.length; row++)
             for(int col = 0; col < self[0].length; col++)
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0){
-                    tmp = g.findCoordinates(self[row][col]);
+                    tmp = g.findCoordinates(self[row][col], true);
                     retour += (Math.abs(tmp[0] - row) + Math.abs(tmp[1] - col));
                 }
         
@@ -194,7 +224,7 @@ public class Grid implements Comparable<Grid> {
         for(int row = 0; row < self.length; row++)
             for(int col = 0; col < self[0].length; col++)
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0){
-                    tmp = g.findCoordinates(self[row][col]);
+                    tmp = g.findCoordinates(self[row][col], true);
                     retour += (int) Math.floor(Math.sqrt(Math.pow(Math.abs(tmp[0] - row), 2) + Math.pow(Math.abs(tmp[1] - col), 2)));
                 }
 

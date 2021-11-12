@@ -52,7 +52,7 @@ public class DepthFirst extends Search {
 
     // ------
 
-    private DepthFirst(Builder builder){
+    private DepthFirst(Builder builder) {
         super(builder);
         
         checkNewStatesForGoal = builder.checkNewStatesForGoal.get();
@@ -67,7 +67,7 @@ public class DepthFirst extends Search {
     }
 
     @Override
-    protected void computeHeuristic(Grid g){
+    protected void computeHeuristic(Grid g) {
         g.setHeuristicValue(g.distanceTo(currentSpace.getGoal(), heuristic));
     }
 
@@ -80,7 +80,7 @@ public class DepthFirst extends Search {
 
         var toAdd = currentSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
 
-        if(heuristic != Grid.Distance.NONE){
+        if(heuristic != Grid.Distance.NONE) {
             for(Grid g : toAdd) computeHeuristic(g);
             toAdd.sort(Collections.reverseOrder());
         }

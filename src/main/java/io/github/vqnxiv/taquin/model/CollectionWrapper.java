@@ -89,7 +89,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
         for(Class<?> c : withInitialCapacity) {
             if(subClass.equals(c)) {
                 try {
-                    // todo: go back and find how it was done w/o the casts
                     // ^ later with good generification, e.g CollectionWrapper<C extends Collection<E>>
                     self = (Collection<E>) subClass.getDeclaredConstructor(int.class).newInstance(capacity);
                 } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {

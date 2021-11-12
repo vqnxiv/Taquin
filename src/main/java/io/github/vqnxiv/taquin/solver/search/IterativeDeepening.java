@@ -58,7 +58,7 @@ public class IterativeDeepening extends Search {
     
     // ------
 
-    public IterativeDeepening(Builder builder){
+    public IterativeDeepening(Builder builder) {
         super(builder);
 
         checkNewStatesForGoal = builder.checkNewStatesForGoal.get();
@@ -77,7 +77,7 @@ public class IterativeDeepening extends Search {
     }
 
     @Override
-    protected void computeHeuristic(Grid g){
+    protected void computeHeuristic(Grid g) {
         g.setHeuristicValue(g.distanceTo(currentSpace.getGoal(), heuristic));
     }
 
@@ -108,6 +108,7 @@ public class IterativeDeepening extends Search {
         if(currentSpace.getQueued().isEmpty()) {
             currentDepthLimit += limitIncrement;
             currentSpace.getExplored().clear();
+            currentSpace.getStart().resetNeighbors();
             currentSpace.getQueued().add(currentSpace.getStart());
         }
     }

@@ -121,6 +121,8 @@ public class BuilderController {
     private final CollectionWrapper.Builder exploredBuilder;
     private final CollectionWrapper.Builder queuedBuilder;
     
+    private final GridViewer startViewer, endViewer, currentViewer;
+    
     
     // ------
     
@@ -150,9 +152,17 @@ public class BuilderController {
         queuedBuilder = new CollectionWrapper.Builder(PriorityQueue.class);
         
         this.runner = runner;
+        
+        startViewer = new GridViewer("Start", false);
+        endViewer = new GridViewer("End", false);
+        currentViewer = new GridViewer("Current", true);
     }
 
     @FXML public void initialize() {
+
+        searchAlgCB.setItems(SEARCH_CLASSES);
+        searchAlgCB.setConverter(srchClsConv);
+        searchAlgCB.setValue(Astar.class);
         
         searchAlgCB.setItems(SEARCH_CLASSES);
         searchAlgCB.setConverter(srchClsConv);
@@ -160,7 +170,6 @@ public class BuilderController {
         
         heuristicCB.setItems(FXCollections.observableArrayList(Grid.Distance.values()));
 
-        // todo: find why prioQ is in twice on startup
         queuedClassCB.setConverter(clsConv);
         queuedClassCB.getItems().addAll(CollectionWrapper.getAcceptedSubClasses());
         
@@ -190,9 +199,9 @@ public class BuilderController {
     }
     
     private void bindSpaceBuilder() {
-        // todo: bind spaceBuilder startGrid and endGrid
-        // also: 3 Gridviewers bound to start, end and current
-
+        spaceBuilder.start.bindBidirectional(startViewer.gridProperty());
+        spaceBuilder.end.bindBidirectional(endViewer.gridProperty());
+        
         equalPolicyCB.setItems(FXCollections.observableArrayList(Grid.EqualPolicy.values()));
         equalPolicyCB.valueProperty().bindBidirectional(spaceBuilder.equalPolicy);
     }
@@ -232,7 +241,7 @@ public class BuilderController {
         for(var n : new Control[]{ pauseSearchButton, stopSearchButton }) {
             n.disableProperty().bind(modificationLocked.not().or(fullyLocked));
         }
-
+        
         currentGridButton.disableProperty().bind(modificationLocked.not());
     }
     
@@ -253,7 +262,7 @@ public class BuilderController {
     }
     
     private void setQueuedClasses() {
-        if(searchBuilder.isHeuristicRequired()) {
+        if(searchBuilder.isHeuristicRequired() && !queuedClassCB.getItems().isEmpty()) {
             queuedClassCB.getItems().addAll(
                 Arrays
                     .stream(CollectionWrapper.getAcceptedSubClasses())
@@ -276,7 +285,6 @@ public class BuilderController {
         var newParameters = searchBuilder.properties();
         
         if(newParameters.length >= searchParameters.getColumnCount()) {
-            
             for(var cc : searchParameters.getColumnConstraints()) {
                 cc.setMaxWidth(600.0 / newParameters.length);
             }
@@ -324,11 +332,11 @@ public class BuilderController {
     }
     
     @FXML private void onStartGridActivated() {
-        var gw = new GridViewer(spaceBuilder, "Start", modificationLocked.get());
+        startViewer.show(modificationLocked.get());
     }
 
     @FXML private void onEndGridActivated() {
-        var gw = new GridViewer(spaceBuilder, "End", modificationLocked.get());
+        endViewer.show(modificationLocked.get());
     }
     
     @FXML private void onSearchAlgActivated() {
@@ -356,6 +364,19 @@ public class BuilderController {
     
     // ------
 
+    private boolean verification() {
+        
+        Grid sGrid, eGrid;
+        if((sGrid = spaceBuilder.start.getValue()) == null) {
+            return false;
+        }
+        else if((eGrid = spaceBuilder.end.getValue()) == null) {
+            return false;
+        }
+        
+        return sGrid.hasSameAlphabet(eGrid);
+    }
+    
     private void build() {
         space = spaceBuilder.explored(exploredBuilder.build()).queued(queuedBuilder.build()).build();
         search = searchBuilder.searchSpace(space).build();
@@ -363,16 +384,19 @@ public class BuilderController {
         searchNameTF.textProperty().unbindBidirectional(searchBuilder.name);
         searchNameTF.setText(search.getName());
         modificationLocked.set(true);
+        
+        currentViewer.gridProperty().bind(space.currentGridProperty);
     }
     
     @FXML private void onRunSearchActivated() {
         if(!modificationLocked.get()) {
+            if(!verification()) {
+                return;
+            }
             build();
         }
         
-        if(modificationLocked.get()) {
-            runner.runSearch(search, 0, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
-        }
+        runner.runSearch(search, 0, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
     }
 
     @FXML private void onPauseSearchActivated() {
@@ -386,16 +410,17 @@ public class BuilderController {
 
     @FXML private void onStepsSearchActivated() {
         if(!modificationLocked.get()) {
+            if(!verification()) {
+                return;
+            }
             build();
         }
         
-        if(modificationLocked.get()) {
-            var steps = (stepsNumberTF.getText().equals("")) ? 1 : Integer.parseInt(stepsNumberTF.getText());
-            runner.runSearch(search, steps, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
-        }
+        var steps = (stepsNumberTF.getText().equals("")) ? 1 : Integer.parseInt(stepsNumberTF.getText());
+        runner.runSearch(search, steps, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
     }
     
     @FXML private void onCurrentGridActivated() {
-        var t = new GridViewer(space.getCurrent(), "Current: " + space.getCurrent().getKey(), true);
+        currentViewer.show();
     }
 }
