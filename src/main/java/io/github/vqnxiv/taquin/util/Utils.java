@@ -9,6 +9,9 @@ public class Utils {
     
     public static String toReadable(String s) {
         
+        if(s == null) return "NULL STRING";
+        if(s.equals("")) return "EMPTY STRING";
+        
         var sb = new StringBuilder();
 
         String[] splitString = s.split("(?=\\p{Upper})");

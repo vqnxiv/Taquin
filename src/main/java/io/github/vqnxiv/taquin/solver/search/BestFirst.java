@@ -4,6 +4,9 @@ package io.github.vqnxiv.taquin.solver.search;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
 import java.util.Collections;
 
 
@@ -12,17 +15,27 @@ public class BestFirst extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
 
-        private boolean useMerge = false;
+        public BooleanProperty useMerge;
 
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
+
+            useMerge = new SimpleBooleanProperty(this, "Use merge", false);
+            
+            if(heuristic.get() == Grid.Distance.NONE)
+                heuristic.set(Grid.Distance.MANHATTAN);
         }
 
-        public Builder useMerge(boolean b) {
-            useMerge = b;
-            return this;
+        @Override
+        public Property<?>[] properties() {
+            return new Property[]{ useMerge };
         }
-
+        
+        @Override
+        public boolean isHeuristicRequired() {
+            return true;
+        }
+        
         @Override
         protected Builder self() {
             return this;
@@ -45,19 +58,15 @@ public class BestFirst extends Search {
     private BestFirst(Builder builder){
         super(builder);
         
-        useMerge = builder.useMerge || (!currentSpace.getQueued().usesNaturalOrdering() && !currentSpace.getQueued().isSortable());
+        useMerge = builder.useMerge.get() || (!currentSpace.getQueued().usesNaturalOrdering() && !currentSpace.getQueued().isSortable());
         setReady();
     }
 
 
     // ------
-    
-    public static boolean isHeuristicNeeded() { 
-        return true; 
-    }
 
     public static String getShortName() { 
-        return "Best first"; 
+        return "GBFS"; 
     }
 
     @Override
@@ -73,15 +82,17 @@ public class BestFirst extends Search {
         currentSpace.setCurrent(newCurrent);
         currentSpace.getExplored().add(newCurrent);
 
-        var toAdd = currentSpace.getNewNeighbors(filterAlreadyExplored, linkAlreadyExploredNeighbors);
+        var toAdd = currentSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
 
         for(Grid g : toAdd) computeHeuristic(g);
 
         if(!toAdd.isEmpty()) {
-            if(currentSpace.getQueued().usesNaturalOrdering())
+            if(currentSpace.getQueued().usesNaturalOrdering()) {
                 currentSpace.getQueued().addAll(toAdd);
-            else if(useMerge)
+            }
+            else if(useMerge) {
                 currentSpace.getQueued().mergeWith(toAdd);
+            }
             else  {
                 Collections.sort(toAdd);
                 currentSpace.getQueued().addAll(toAdd);

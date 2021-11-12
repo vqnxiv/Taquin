@@ -22,6 +22,7 @@ public class Grid implements Comparable<Grid> {
         LINEAR_MANHATTAN    { public String toString() { return "linear conflicts"; } }
     }
 
+    // todo: refactor as a comparator?
     public enum EqualPolicy {
         RANDOM          { public String toString() { return "Random"; } },
         NEWER_FIRST     { public String toString() { return "Newer"; } },
@@ -53,7 +54,7 @@ public class Grid implements Comparable<Grid> {
     
     // ------
 
-    // constructor called from instance creation
+    // constructor called from SearchSpace/GridViewer creation
     public Grid(int[][] content, EqualPolicy ep) {
         self = Arrays.stream(content).map(int[]::clone).toArray($ -> content.clone());
 
@@ -67,7 +68,7 @@ public class Grid implements Comparable<Grid> {
     }
 
     // constructor called from neighbor generation
-    public Grid(Grid from, Direction d) {
+    private Grid(Grid from, Direction d) {
         self = Arrays.stream(from.self).map(int[]::clone).toArray($ -> from.self.clone());
 
         parent = from;
@@ -292,7 +293,14 @@ public class Grid implements Comparable<Grid> {
 
     @Override
     public String toString(){
-        return "[Grid] " + key + " (" + parent.key + "): " + heuristicValue + "\n" + Arrays.deepToString(self);
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%02d", depth));
+        for(var t : self)
+            sb.append('\n').append(Arrays.toString(t));
+        
+        return sb.toString();
+        //return "{Grid " + key + " (" + ((parent != null) ? parent.key : -2) + "): " + depth + " " + Arrays.deepToString(self) + "}";
+        //return "[Grid] " + key + " (" + ((parent != null) ? parent.key : -2) + "):";
     }
 
 }

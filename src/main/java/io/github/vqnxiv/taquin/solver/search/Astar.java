@@ -4,6 +4,9 @@ package io.github.vqnxiv.taquin.solver.search;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
 import java.util.Collections;
 
 
@@ -12,15 +15,25 @@ public class Astar extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
         
-        private boolean useMerge = false;
+        public BooleanProperty useMerge;
         
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
+            
+            useMerge = new SimpleBooleanProperty(this, "Use merge", false);
+            
+            if(heuristic.get() == Grid.Distance.NONE)
+                heuristic.set(Grid.Distance.MANHATTAN);
+        }
+
+        @Override
+        public Property<?>[] properties() {
+            return new Property[]{ useMerge };
         }
         
-        public Builder useMerge(boolean b) {
-            useMerge = b;
-            return this;
+        @Override
+        public boolean isHeuristicRequired() {
+            return true;
         }
         
         @Override
@@ -45,17 +58,13 @@ public class Astar extends Search {
     private Astar(Builder builder){
         super(builder);
 
-        useMerge = builder.useMerge || (!currentSpace.getQueued().usesNaturalOrdering() && !currentSpace.getQueued().isSortable());
+        useMerge = builder.useMerge.get() || (!currentSpace.getQueued().usesNaturalOrdering() && !currentSpace.getQueued().isSortable());
         setReady();
     }
 
 
     // ------
-
-    public static boolean isHeuristicNeeded() { 
-        return true; 
-    }
-
+    
     public static String getShortName() { 
         return "A*"; 
     }
@@ -73,7 +82,7 @@ public class Astar extends Search {
         currentSpace.setCurrent(newCurrent);
         currentSpace.getExplored().add(newCurrent);
         
-        var toAdd = currentSpace.getNewNeighbors(filterAlreadyExplored, linkAlreadyExploredNeighbors);
+        var toAdd = currentSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
 
         for(Grid g : toAdd) computeHeuristic(g);
         

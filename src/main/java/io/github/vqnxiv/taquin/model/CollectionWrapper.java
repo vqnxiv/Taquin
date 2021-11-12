@@ -1,6 +1,8 @@
 package io.github.vqnxiv.taquin.model;
 
 
+import javafx.beans.property.*;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
@@ -9,27 +11,17 @@ public class CollectionWrapper<E extends Comparable<E>>{
     
     
     public static class Builder {
-        private Class<?> subClass;
-        private boolean initialCapacity = false;
-        private int userInitialCapacity = 0;
         
-        public Builder() {}
+        public ObjectProperty<Class<?>> subClass;
+        public BooleanProperty initialCapacity;
+        public IntegerProperty userInitialCapacity;
         
-        public Builder subClass(Class<?> c) {
-            subClass = c;
-            return this;
+        public Builder(Class<?> c) {
+            subClass = new SimpleObjectProperty<>(c);
+            initialCapacity = new SimpleBooleanProperty(false);
+            userInitialCapacity = new SimpleIntegerProperty(0);
         }
         
-        public Builder initialCapacity(boolean b) {
-            initialCapacity = b;
-            return this;
-        }
-        
-        public Builder userInitialCapacity(int n) {
-            userInitialCapacity = n;
-            return this;
-        }
-
         public CollectionWrapper<?> build() {
             return new CollectionWrapper<>(this);
         }
@@ -65,17 +57,24 @@ public class CollectionWrapper<E extends Comparable<E>>{
 
     private CollectionWrapper(Builder builder) {
         
-        builder.initialCapacity = (builder.userInitialCapacity != 0);
-        builder.userInitialCapacity = (builder.userInitialCapacity != 0) ? builder.userInitialCapacity : 100_000; 
+
+        if(builder.userInitialCapacity.get() > 0) {
+            builder.initialCapacity.set(true);
+        }
+        
+        if(builder.initialCapacity.get() && builder.userInitialCapacity.get() == 0) {
+            builder.userInitialCapacity.set(100_000);
+        }
+        
         
         boolean initialized = false;
         
-        if(builder.initialCapacity) {
-            initialized = initializeWithCapacity(builder);
+        if(builder.initialCapacity.get()) {
+            initialized = initializeWithCapacity(builder.subClass.get(), builder.userInitialCapacity.get());
         }
         
         if(!initialized) {
-            initialized = initialize(builder);
+            initialized = initialize(builder.subClass.get());
         }
         
         if(!initialized) {
@@ -85,13 +84,14 @@ public class CollectionWrapper<E extends Comparable<E>>{
         setProperties();
     }
 
-    private boolean initializeWithCapacity(Builder builder) {
+    @SuppressWarnings("unchecked")
+    private boolean initializeWithCapacity(Class<?> subClass, int capacity) {
         for(Class<?> c : withInitialCapacity) {
-            if(builder.subClass.equals(c)) {
+            if(subClass.equals(c)) {
                 try {
                     // todo: go back and find how it was done w/o the casts
                     // ^ later with good generification, e.g CollectionWrapper<C extends Collection<E>>
-                    self = (Collection<E>) builder.subClass.getDeclaredConstructor(int.class).newInstance(builder.userInitialCapacity);
+                    self = (Collection<E>) subClass.getDeclaredConstructor(int.class).newInstance(capacity);
                 } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
                     e.printStackTrace();
                 }
@@ -101,12 +101,13 @@ public class CollectionWrapper<E extends Comparable<E>>{
         
         return false;
     }
-    
-    private boolean initialize(Builder builder) {
+
+    @SuppressWarnings("unchecked")
+    private boolean initialize(Class<?> subClass) {
         for(Class<?> c : acceptedSubClasses) {
-            if(builder.subClass.equals(c)) {
+            if(subClass.equals(c)) {
                 try {
-                    self = (Collection<E>) builder.subClass.getDeclaredConstructor().newInstance();
+                    self = (Collection<E>) subClass.getDeclaredConstructor().newInstance();
                 } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
                     e.printStackTrace();
                 }
@@ -131,6 +132,7 @@ public class CollectionWrapper<E extends Comparable<E>>{
     }
 
     // Class<?> ?
+    @SuppressWarnings("unchecked")
     public Class<? extends Collection<E>> getSubClass() {
         return (Class<? extends Collection<E>>) self.getClass();
     }

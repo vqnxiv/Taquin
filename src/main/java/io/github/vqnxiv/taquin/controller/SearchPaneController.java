@@ -26,6 +26,10 @@ public class SearchPaneController {
         runner = new SearchRunner();
     }
     
+    public void initialize() {
+        onAddBuilderActivated();
+    }
+    
     public SearchRunner getRunner() {
         return runner;
     }

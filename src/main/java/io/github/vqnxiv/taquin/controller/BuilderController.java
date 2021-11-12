@@ -11,6 +11,8 @@ import io.github.vqnxiv.taquin.util.GridViewer;
 import io.github.vqnxiv.taquin.util.Utils;
 
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -24,16 +26,13 @@ import javafx.util.StringConverter;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 public class BuilderController {
 
-
+    
     @FXML private Label stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel;
 
     @FXML private TextField searchNameTF;
@@ -49,21 +48,35 @@ public class BuilderController {
     @FXML private CheckBox increasedSizeCheck;
     @FXML private TextField exploredCapacityTF, queuedCapacityTF;
     
+    @FXML private CheckBox filterExploredCheck;
+    @FXML private CheckBox filterQueuedCheck;
+    @FXML private ChoiceBox<Grid.EqualPolicy> equalPolicyCB;
+    @FXML private TextField throttleTF;
+    @FXML private CheckBox linkExistingCheck;
+    
     @FXML private GridPane searchParameters;
-    private final ChoiceBox<Grid.EqualPolicy> equalPolicyCB;
     
     @FXML private TextField maxTimeTF, maxMemoryTF, maxDepthTF, maxExploredTF, maxGeneratedTF;
     @FXML private CheckBox goalQueuedCheck;
-
-    // @FXML private Label progressLabel;
     
     
     // ------
 
+    private final StringConverter<Integer> intConv = new StringConverter<>() {
+        @Override
+        public String toString(Integer object) {
+            return (object != null) ? Integer.toString(object) : "0";
+        }
+
+        @Override
+        public Integer fromString(String string) {
+            return (!string.equals("")) ? Integer.parseInt(string) : 0;
+        }
+    };
+    
     private final StringConverter<Class<?>> clsConv = new StringConverter<>() {
         @Override
         public String toString(Class object) {
-            // remove null check when defaults are done
             return (object != null) ? object.getSimpleName() : "";
         }
 
@@ -96,7 +109,6 @@ public class BuilderController {
     
     // ------
 
-    // cant run while its not locked (= built)
     private final BooleanProperty modificationLocked;
     private final BooleanProperty fullyLocked;
 
@@ -108,32 +120,13 @@ public class BuilderController {
     private final SearchSpace.Builder spaceBuilder;
     private final CollectionWrapper.Builder exploredBuilder;
     private final CollectionWrapper.Builder queuedBuilder;
-
-    // todo: limited gridviewers (3)
     
     
     // ------
     
-    // false = insert order, true = natural + insert order
-    static final HashMap<Boolean, ObservableList<Class<?>>> CWRAPPER_CLASSES;
     static final ObservableList<Class<?>> SEARCH_CLASSES;
 
     static {
-        Map<Boolean, List<Class<?>>> splitClasses =
-            Arrays
-                .stream(CollectionWrapper.getAcceptedSubClasses())
-                .collect(Collectors.partitioningBy(CollectionWrapper::doesClassUseNaturalOrder));
-
-        CWRAPPER_CLASSES = new HashMap<>();
-        CWRAPPER_CLASSES.put(true,
-            FXCollections.observableList(
-                Stream.concat(
-                    splitClasses.get(false).stream(),
-                    splitClasses.get(true).stream()
-                ).collect(Collectors.toList()))
-        );
-        CWRAPPER_CLASSES.put(false, FXCollections.observableList(splitClasses.get(false)));
-        
         Reflections reflections = new Reflections("io.github.vqnxiv.taquin");
         
         SEARCH_CLASSES = FXCollections.observableList(
@@ -147,74 +140,131 @@ public class BuilderController {
     
     // ------
     
-    // todo: defaults
-
     public BuilderController(SearchRunner runner) {
         modificationLocked = new SimpleBooleanProperty(false);
         fullyLocked = new SimpleBooleanProperty(false);
-
         
         searchBuilder = new Astar.Builder(null);
         spaceBuilder = new SearchSpace.Builder();
-        exploredBuilder = new CollectionWrapper.Builder();
-        queuedBuilder = new CollectionWrapper.Builder();
-        this.runner = runner;
+        exploredBuilder = new CollectionWrapper.Builder(LinkedHashSet.class);
+        queuedBuilder = new CollectionWrapper.Builder(PriorityQueue.class);
         
-        equalPolicyCB = new ChoiceBox<>();
-        equalPolicyCB.setItems(FXCollections.observableArrayList(Grid.EqualPolicy.values()));
-        equalPolicyCB.setValue(Grid.EqualPolicy.NEWER_FIRST);
-        equalPolicyCB.setOnAction(
-            event -> spaceBuilder.equalPolicy(equalPolicyCB.getValue())
-        );
-        equalPolicyCB.disableProperty().bind(modificationLocked);
+        this.runner = runner;
     }
 
     @FXML public void initialize() {
         
-        // todo: defaults
-        searchAlgCB.setConverter(srchClsConv);
-        queuedClassCB.setConverter(clsConv);
-        exploredClassCB.setConverter(clsConv);
-        
         searchAlgCB.setItems(SEARCH_CLASSES);
+        searchAlgCB.setConverter(srchClsConv);
         searchAlgCB.setValue(Astar.class);
-        setQueuedClasses();
-        exploredClassCB.setItems(CWRAPPER_CLASSES.get(false));
+        
         heuristicCB.setItems(FXCollections.observableArrayList(Grid.Distance.values()));
+
+        // todo: find why prioQ is in twice on startup
+        queuedClassCB.setConverter(clsConv);
+        queuedClassCB.getItems().addAll(CollectionWrapper.getAcceptedSubClasses());
         
-        
-        heuristicCB.getItems().remove(Grid.Distance.NONE);
-        
-        exploredClassCB.setValue(LinkedHashSet.class);
-        exploredCapacityTF.setTextFormatter(new TextFormatter<>(integerFilter));
-        exploredCapacityTF.textProperty().addListener(
-            event -> exploredBuilder.userInitialCapacity(
-                exploredCapacityTF.getText().equals("") ?
-                0 : Integer.parseInt(exploredCapacityTF.getText())
-            )        
+        exploredClassCB.setConverter(clsConv);
+        exploredClassCB.getItems().addAll(
+            Arrays.stream(CollectionWrapper.getAcceptedSubClasses())
+                .filter(c -> !CollectionWrapper.doesClassUseNaturalOrder(c))
+                .toList()
         );
-        queuedCapacityTF.setTextFormatter(new TextFormatter<>(integerFilter));
-        queuedCapacityTF.textProperty().addListener(
-            event -> queuedBuilder.userInitialCapacity(
-                queuedCapacityTF.getText().equals("") ?
-                0 : Integer.parseInt(queuedCapacityTF.getText())
-            )
-        );
-        
         
         initializeLimitsTF();
         
+        bindSearchBuilder();
+        bindSpaceBuilder();
+        bindCWrapperBuilders();
+        bindDisableProperties();
+    }
+    
+    // todo: throttle
+    private void bindSearchBuilder() {
+        heuristicCB.valueProperty().bindBidirectional(searchBuilder.heuristic);
+        filterExploredCheck.selectedProperty().bindBidirectional(searchBuilder.filterExplored);
+        filterQueuedCheck.selectedProperty().bindBidirectional(searchBuilder.filterQueued);
+        linkExistingCheck.selectedProperty().bindBidirectional(searchBuilder.linkExplored);
+        goalQueuedCheck.selectedProperty().bindBidirectional(searchBuilder.checkForQueuedEnd);
+        searchNameTF.textProperty().bindBidirectional(searchBuilder.name);
+    }
+    
+    private void bindSpaceBuilder() {
+        // todo: bind spaceBuilder startGrid and endGrid
+        // also: 3 Gridviewers bound to start, end and current
+
+        equalPolicyCB.setItems(FXCollections.observableArrayList(Grid.EqualPolicy.values()));
+        equalPolicyCB.valueProperty().bindBidirectional(spaceBuilder.equalPolicy);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void bindCWrapperBuilders() {
+        exploredClassCB.valueProperty().bindBidirectional(exploredBuilder.subClass);
+        queuedClassCB.valueProperty().bindBidirectional(queuedBuilder.subClass);
+        increasedSizeCheck.selectedProperty().bindBidirectional(exploredBuilder.initialCapacity);
+        increasedSizeCheck.selectedProperty().bindBidirectional(queuedBuilder.initialCapacity);
         
-        for(var n : new Control[]{ searchNameTF, queuedClassCB, searchAlgCB, heuristicCB, 
-                goalQueuedCheck, exploredClassCB, increasedSizeCheck }) {
+        exploredCapacityTF.setTextFormatter(new TextFormatter<>(intConv, 0, integerFilter));
+        queuedCapacityTF.setTextFormatter(new TextFormatter<>(intConv, 0, integerFilter));
+        
+        exploredBuilder.userInitialCapacity.bindBidirectional(
+            (Property<Number>) exploredCapacityTF.getTextFormatter().valueProperty()
+        );
+        queuedBuilder.userInitialCapacity.bindBidirectional(
+                (Property<Number>) queuedCapacityTF.getTextFormatter().valueProperty()
+        );
+    }
+    
+    private void bindDisableProperties() {
+
+        for(var n : new Control[]{
+            searchNameTF, queuedClassCB, searchAlgCB, heuristicCB,
+            exploredClassCB, increasedSizeCheck, exploredCapacityTF, queuedCapacityTF, 
+            filterExploredCheck, filterQueuedCheck, equalPolicyCB, throttleTF, linkExistingCheck,
+            goalQueuedCheck }) {
             n.disableProperty().bind(modificationLocked);
         }
-        
-        for(var n : new Control[]{runSearchButton, pauseSearchButton, stopSearchButton, stepsSearchButton, stepsNumberTF}) {
+
+        for(var n : new Control[]{ runSearchButton, pauseSearchButton, stepsSearchButton, stepsNumberTF }) {
             n.disableProperty().bind(fullyLocked);
         }
         
+        for(var n : new Control[]{ pauseSearchButton, stopSearchButton }) {
+            n.disableProperty().bind(modificationLocked.not().or(fullyLocked));
+        }
+
         currentGridButton.disableProperty().bind(modificationLocked.not());
+    }
+    
+    private void initializeLimitsTF() {
+        setupLimTF(maxTimeTF, Search.Limit.MAX_TIME);
+        setupLimTF(maxMemoryTF, Search.Limit.MAX_MEMORY);
+        setupLimTF(maxDepthTF, Search.Limit.MAX_DEPTH);
+        setupLimTF(maxExploredTF, Search.Limit.MAX_EXPLORED);
+        setupLimTF(maxGeneratedTF, Search.Limit.MAX_GENERATED);
+    }
+
+    private void setupLimTF(TextField tf, Search.Limit l) {
+        tf.setTextFormatter(new TextFormatter<String>(integerFilter));
+        tf.disableProperty().bind(modificationLocked);
+        tf.textProperty().addListener(
+                event -> searchBuilder.limit(l, (tf.getText().equals("")) ? 0 : Long.parseLong(tf.getText()))
+        );
+    }
+    
+    private void setQueuedClasses() {
+        if(searchBuilder.isHeuristicRequired()) {
+            queuedClassCB.getItems().addAll(
+                Arrays
+                    .stream(CollectionWrapper.getAcceptedSubClasses())
+                    .filter(CollectionWrapper::doesClassUseNaturalOrder)
+                    .filter(c -> !queuedClassCB.getItems().contains(c))
+                    .toList()
+            );
+        }
+        else {
+            queuedClassCB.getItems().removeIf(CollectionWrapper::doesClassUseNaturalOrder);
+        }
     }
     
     
@@ -222,72 +272,57 @@ public class BuilderController {
     
     private void setSearchParams() {
         searchParameters.getChildren().clear();
-
-        searchParameters.add(new Label("Equal policy"), 0, 0);
-        searchParameters.add(equalPolicyCB, 0, 1);
         
-        var c = searchAlgCB.getValue().getDeclaredClasses()[0];
-
-        var newParameters = new ArrayList<>(List.of(c.getDeclaredMethods()));
-        newParameters.removeIf(m -> m.getName().equals("self") || m.getName().equals("build"));
+        var newParameters = searchBuilder.properties();
         
-        // resize up the gridpane
-        if(newParameters.size() >= searchParameters.getColumnCount()) {
-            for(var cc : searchParameters.getColumnConstraints())
-                cc.setMaxWidth(600.0 / (newParameters.size() + 1));
+        if(newParameters.length >= searchParameters.getColumnCount()) {
             
-            for(int i = searchParameters.getColumnCount(); i < newParameters.size() + 1; i++) {
+            for(var cc : searchParameters.getColumnConstraints()) {
+                cc.setMaxWidth(600.0 / newParameters.length);
+            }
+
+            for(int i = searchParameters.getColumnCount(); i < newParameters.length; i++) {
                 var colConst = new ColumnConstraints();
                 colConst.setHalignment(HPos.CENTER);
                 colConst.setHgrow(Priority.SOMETIMES);
                 searchParameters.getColumnConstraints().add(colConst);
             }
         }
-        // resize down
         else {
-            searchParameters.getColumnConstraints().remove(newParameters.size() + 1, searchParameters.getColumnCount());
-            for(var cc : searchParameters.getColumnConstraints())
-                cc.setMaxWidth(600.0 / (newParameters.size() + 1));
+            searchParameters.getColumnConstraints().remove(newParameters.length, searchParameters.getColumnCount());
+            for(var cc : searchParameters.getColumnConstraints()) {
+                cc.setMaxWidth(600.0 / newParameters.length);
+            }
         }
         
-        for(var m : newParameters) {
-            addControlFromMethod(m, newParameters.indexOf(m) + 1);
+        for(int i = 0; i < newParameters.length; i++) {
+            createControlsFromPoperty(newParameters[i], i);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void createControlsFromPoperty(Property<?> p, int index) {
+        searchParameters.add(new Label(p.getName()), index, 0);
+        
+        switch(p) {
+            case BooleanProperty b -> {
+                var cb = new CheckBox();
+                cb.selectedProperty().bindBidirectional(b);
+                cb.disableProperty().bind(modificationLocked);
+                searchParameters.add(cb, index, 1);
+            }
+            case IntegerProperty i -> {
+                var tf = new TextField(Integer.toString(i.get()));
+                tf.setTextFormatter(new TextFormatter<>(intConv, 0, integerFilter));
+                i.bindBidirectional((Property<Number>) tf.getTextFormatter().valueProperty());
+                tf.setMaxWidth(85);
+                tf.disableProperty().bind(modificationLocked);
+                searchParameters.add(tf, index, 1);
+            }
+            default -> {}
         }
     }
     
-    private void addControlFromMethod(Method m, int index) {
-
-        searchParameters.add(
-            new Label(Utils.toReadable(m.getName())), 
-            index, 0
-        );
-
-        if(m.getParameterTypes()[0] == boolean.class) {
-            var tmpCheck = new CheckBox();
-            tmpCheck.setOnAction(
-                event -> {
-                    try {
-                        m.invoke(searchBuilder, tmpCheck.isSelected());
-                    } catch(IllegalAccessException | InvocationTargetException e) {
-                        e.printStackTrace();
-                    }
-                }
-            );
-            tmpCheck.disableProperty().bind(modificationLocked);
-            
-            searchParameters.add(tmpCheck, index, 1);
-        }
-    }
-    
-    private void setQueuedClasses() {
-        queuedClassCB.setItems(CWRAPPER_CLASSES.get(Utils.getBooleanMethodReturn(searchAlgCB.getValue(), "isHeuristicNeeded")));
-        queuedClassCB.setValue(LinkedHashSet.class);
-    }
-
-    @FXML private void onSearchNameActivated() {
-        searchBuilder.name(searchNameTF.getText());
-    }
-
     @FXML private void onStartGridActivated() {
         var gw = new GridViewer(spaceBuilder, "Start", modificationLocked.get());
     }
@@ -295,56 +330,38 @@ public class BuilderController {
     @FXML private void onEndGridActivated() {
         var gw = new GridViewer(spaceBuilder, "End", modificationLocked.get());
     }
-
-    @FXML private void onQueuedClassActivated() {
-        if(queuedClassCB.getValue() != null)
-            queuedBuilder.subClass(queuedClassCB.getValue());
-    }
     
     @FXML private void onSearchAlgActivated() {
-        // new class input vs current builder class
-        boolean update = Utils.getBooleanMethodReturn(searchAlgCB.getValue(), "isHeuristicNeeded") !=
-                Utils.getBooleanMethodReturn(searchBuilder.getClass().getDeclaringClass(), "isHeuristicNeeded");
         
         // converts the builder eg BreadthFirst.Builder -> DepthFirst.Builder
         var c = searchAlgCB.getValue().getDeclaredClasses()[0];
+        
         try {
             searchBuilder = (Search.Builder<?>) c.getDeclaredConstructors()[0].newInstance(searchBuilder);
         } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();
         }
         
-       setSearchParams();
+        setSearchParams();
+        setQueuedClasses();
         
-        if(update) {
-            setQueuedClasses();
-            
-            if(Utils.getBooleanMethodReturn(searchAlgCB.getValue(), "isHeuristicNeeded")) {
-                heuristicCB.getItems().remove(Grid.Distance.NONE);
-                if(heuristicCB.getValue() == Grid.Distance.NONE) heuristicCB.setValue(Grid.Distance.MANHATTAN);
-            }
-            else {
-                heuristicCB.getItems().add(Grid.Distance.NONE);
-            }
+        if(searchBuilder.isHeuristicRequired()) {
+            heuristicCB.getItems().remove(Grid.Distance.NONE);
         }
-        
-    }
-    
-    @FXML private void onHeuristicActivated() {
-        if(heuristicCB.getValue() != null)
-            searchBuilder.heuristic(heuristicCB.getValue());
+        else if(!heuristicCB.getItems().contains(Grid.Distance.NONE)) {
+            heuristicCB.getItems().add(Grid.Distance.NONE);
+        }
     }
 
     
     // ------
 
     private void build() {
-        //spaceBuilder.start(new Grid(new int[][]{{6,1,8,3,5},{11,2,13,4,10},{16,7,18,9,15},{21,0,23,14,20},{17,12,22,19,24}}, Grid.EqualPolicy.RANDOM));
-        //spaceBuilder.end(new Grid(new int[][]{{1,2,3,4,5},{6,7,8,9,10},{11,12,13,14,15},{16,17,18,19,20},{21,22,23,24,0}}, Grid.EqualPolicy.RANDOM));
-        spaceBuilder.start(new Grid(new int[][]{{8,0,6},{1,2,3},{7,4,5}}, Grid.EqualPolicy.RANDOM));
-        spaceBuilder.end(new Grid(new int[][]{{1,2,3},{4,5,6},{7,8,0}}, Grid.EqualPolicy.RANDOM));
         space = spaceBuilder.explored(exploredBuilder.build()).queued(queuedBuilder.build()).build();
         search = searchBuilder.searchSpace(space).build();
+        
+        searchNameTF.textProperty().unbindBidirectional(searchBuilder.name);
+        searchNameTF.setText(search.getName());
         modificationLocked.set(true);
     }
     
@@ -359,16 +376,12 @@ public class BuilderController {
     }
 
     @FXML private void onPauseSearchActivated() {
-        if(modificationLocked.get()) {
-            runner.pauseSearch(search);
-        }
+        runner.pauseSearch(search);
     }
 
     @FXML private void onStopSearchActivated() {
-        if(modificationLocked.get()) {
-            runner.stopSearch(search);
-            fullyLocked.set(true);
-        }
+        runner.stopSearch(search);
+        fullyLocked.set(true);
     }
 
     @FXML private void onStepsSearchActivated() {
@@ -385,42 +398,4 @@ public class BuilderController {
     @FXML private void onCurrentGridActivated() {
         var t = new GridViewer(space.getCurrent(), "Current: " + space.getCurrent().getKey(), true);
     }
-    
-    
-    // ------
-    
-    @FXML private void onExploredClassActivated() {
-        if(exploredClassCB.getValue() != null)
-            exploredBuilder.subClass(exploredClassCB.getValue());
-    }
-
-    @FXML private void onIncreasedSizeActivated() {
-        exploredBuilder.initialCapacity(increasedSizeCheck.isSelected());
-        queuedBuilder.initialCapacity(increasedSizeCheck.isSelected());
-    }
-
-    
-    // ------
-    
-    private void initializeLimitsTF() {
-        setupLimTF(maxTimeTF, Search.Limit.MAX_TIME);
-        setupLimTF(maxMemoryTF, Search.Limit.MAX_MEMORY);
-        setupLimTF(maxDepthTF, Search.Limit.MAX_DEPTH);
-        setupLimTF(maxExploredTF, Search.Limit.MAX_EXPLORED);
-        setupLimTF(maxGeneratedTF, Search.Limit.MAX_GENERATED);
-    }
-    
-    private void setupLimTF(TextField tf, Search.Limit l) {
-        tf.setTextFormatter(new TextFormatter<String>(integerFilter));
-        tf.disableProperty().bind(modificationLocked);
-        tf.textProperty().addListener(
-            event -> searchBuilder.limit(l, (tf.getText().equals("")) ? 0 : Long.parseLong(tf.getText()))
-        );
-    }
-
-    @FXML private void onGoalQueuedActivated() {
-        searchBuilder.checkForQueuedEnd(goalQueuedCheck.isSelected());
-    }
-
 }
-

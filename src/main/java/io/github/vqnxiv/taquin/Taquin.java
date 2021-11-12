@@ -3,15 +3,9 @@ package io.github.vqnxiv.taquin;
 
 import io.github.vqnxiv.taquin.controller.*;
 import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.ToolBar;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import jfxtras.styles.jmetro.JMetro;
 import jfxtras.styles.jmetro.Style;
@@ -19,6 +13,8 @@ import java.io.IOException;
 
 
 public class Taquin extends Application {
+    
+    // https://sematext.com/blog/log4j2-tutorial/
     
     
     public static final int PRIMARY_MIN_WIDTH = 533;

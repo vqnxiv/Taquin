@@ -25,12 +25,12 @@
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
         </padding>
 
-        <TextField fx:id="searchNameTF" onAction="#onSearchNameActivated" prefWidth="110.0" promptText="name" />
+        <TextField fx:id="searchNameTF" prefWidth="110.0" promptText="name" />
         <Button fx:id="startGridButton" mnemonicParsing="false" onAction="#onStartGridActivated" prefWidth="40.0" text="start" />
         <Button fx:id="endGridButton" mnemonicParsing="false" onAction="#onEndGridActivated" prefWidth="40.0" text="end" />
-        <ChoiceBox fx:id="queuedClassCB" onAction="#onQueuedClassActivated" prefWidth="110.0" />
+        <ChoiceBox fx:id="queuedClassCB" prefWidth="110.0" />
         <ChoiceBox fx:id="searchAlgCB" onAction="#onSearchAlgActivated" prefWidth="110.0" />
-        <ChoiceBox fx:id="heuristicCB" onAction="#onHeuristicActivated" prefWidth="110.0" />
+        <ChoiceBox fx:id="heuristicCB" prefWidth="110.0" />
     </HBox>
 
     <!-- main bar, part 2 -->
@@ -113,32 +113,55 @@
                     </rowConstraints>
 
                     <Label text="Closed collection" />
-                    <ChoiceBox fx:id="exploredClassCB" maxWidth="120.0" onAction="#onExploredClassActivated" GridPane.rowIndex="1" />
+                    <ChoiceBox fx:id="exploredClassCB" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="120.0" GridPane.rowIndex="1" />
                     <Label text="Increased capacity" GridPane.columnIndex="1" />
-                    <CheckBox fx:id="increasedSizeCheck" mnemonicParsing="false" onAction="#onIncreasedSizeActivated" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                    <CheckBox fx:id="increasedSizeCheck" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                     <Label text="Explored capacity" GridPane.columnIndex="2" />
-                    <TextField fx:id="exploredCapacityTF" maxWidth="120.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                    <TextField fx:id="exploredCapacityTF" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="120.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                     <Label text="Queued capacity" GridPane.columnIndex="3" />
-                    <TextField fx:id="queuedCapacityTF" maxWidth="120.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                    <TextField fx:id="queuedCapacityTF" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="120.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
                 </GridPane>
             </Tab>
-
-            <Tab text="Search">
-                <GridPane fx:id="searchParameters" vgap="2.0">
+            
+            <Tab text="Search Main">
+                <GridPane vgap="2.0">
                     <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                     </padding>
-
-                    <!-- need at least one to open in scene builder -->
-                    <columnConstraints>
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                    </columnConstraints>
-
+                    
                     <rowConstraints>
                         <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
                         <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
                     </rowConstraints>
+                    
+                    <columnConstraints>
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                    </columnConstraints>
+                    
+                    <children>
+                    <Label text="Filter explored" />
+                        <CheckBox fx:id="filterExploredCheck" mnemonicParsing="false" GridPane.rowIndex="1" />
+                        <Label text="Filter queued" GridPane.columnIndex="1" />
+                        <CheckBox fx:id="filterQueuedCheck" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <Label text="Equal policy" GridPane.columnIndex="2" />
+                        <ChoiceBox fx:id="equalPolicyCB" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="85.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                        <Label text="Throttle" GridPane.columnIndex="3" />
+                        <TextField fx:id="throttleTF" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="85.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                        <Label text="Link existing neighbors" GridPane.columnIndex="4" />
+                        <CheckBox fx:id="linkExistingCheck" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+                    </children>
+                </GridPane>
+            </Tab>
 
+            <Tab text="Search Extra">
+                <GridPane fx:id="searchParameters" vgap="2.0">
+                    <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                    </padding>
                 </GridPane>
             </Tab>
 
@@ -173,7 +196,7 @@
                     <Label text="Generated" GridPane.columnIndex="4" />
                     <TextField fx:id="maxGeneratedTF" maxWidth="85.0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
                     <Label text="Check goal queued" GridPane.columnIndex="5" />
-                    <CheckBox fx:id="goalQueuedCheck" mnemonicParsing="false" onAction="#onGoalQueuedActivated" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+                    <CheckBox fx:id="goalQueuedCheck" mnemonicParsing="false" GridPane.columnIndex="5" GridPane.rowIndex="1" />
                 </GridPane>
             </Tab>
 

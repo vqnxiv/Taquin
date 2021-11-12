@@ -1,6 +1,11 @@
 package io.github.vqnxiv.taquin.model;
 
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 
 
@@ -12,9 +17,12 @@ public class SearchSpace {
         private Grid end;
         private CollectionWrapper<?> explored;
         private CollectionWrapper<?> queued;
-        private Grid.EqualPolicy equalPolicy = Grid.EqualPolicy.NEWER_FIRST;
         
-        public Builder() {}
+        public ObjectProperty<Grid.EqualPolicy> equalPolicy;
+        
+        public Builder() {
+            equalPolicy = new SimpleObjectProperty<>(Grid.EqualPolicy.NEWER_FIRST);
+        }
         
         public Builder start(Grid g) {
             start = g;
@@ -36,10 +44,6 @@ public class SearchSpace {
             return this;
         }
         
-        public Builder equalPolicy(Grid.EqualPolicy ep) {
-            equalPolicy = ep;
-            return this;
-        }
         
         public Grid getGrid(String s) {
             return switch(s.toLowerCase()) {
@@ -58,7 +62,7 @@ public class SearchSpace {
                 }
             }
             
-            return new SearchSpace(start, end, explored, queued, equalPolicy);
+            return new SearchSpace(start, end, explored, queued, equalPolicy.get());
         }
     }
     
@@ -72,7 +76,7 @@ public class SearchSpace {
     private final CollectionWrapper<Grid> explored;
     private final CollectionWrapper<Grid> queued;
 
-    private int currentKeyCounter = 1;
+    private int currentKeyCounter = 0;
 
 
     // ------
@@ -135,16 +139,38 @@ public class SearchSpace {
         return g.equals(goalGrid); 
     }
     
-    public LinkedList<Grid> getNewNeighbors(boolean filterOldNeighbors, boolean linkOldNeighbors){
+    public void pathFromStart() {
+        var l = new ArrayList<Grid>();
+        var g = currentGrid;
+        
+        while(!g.equals(startGrid)) {
+            l.add(g);
+            g = g.getParent();
+        }
+
+        // start
+        l.add(g);
+        
+        l.sort(Comparator.comparingInt(Grid::getDepth));
+        
+        for(Grid g2 : l) {
+            System.out.println(g2);
+        }
+    }
+    
+    
+    // todo: refactor
+    public LinkedList<Grid> getNewNeighbors(boolean filterExplored, boolean filtereQueued, boolean linkExisting){
 
         var possibleNewStates = currentGrid.generateNeighbors();
         var retour = new LinkedList<Grid>();
 
         for(Grid g : possibleNewStates){
             
-            if((explored.contains(g) || queued.contains(g)) && filterOldNeighbors) {
-                if(linkOldNeighbors) {
-                   linkOldNeighbor(g);
+            
+            if((filterExplored && explored.contains(g)) || (filtereQueued && queued.contains(g))) {
+                if(linkExisting) {
+                    linkExisting(g);
                 }
             }
             else {
@@ -158,7 +184,7 @@ public class SearchSpace {
         return retour;
     }
 
-    private void linkOldNeighbor(Grid g) {
+    private void linkExisting(Grid g) {
         boolean wasFound = false;
 
         for(Grid g2 : explored.asCollection()) {

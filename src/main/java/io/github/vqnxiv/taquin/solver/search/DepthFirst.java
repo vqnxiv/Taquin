@@ -4,6 +4,9 @@ package io.github.vqnxiv.taquin.solver.search;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
 import java.util.Collections;
 
 
@@ -12,17 +15,24 @@ public class DepthFirst extends Search {
     
     public static class Builder extends Search.Builder<Builder> {
 
-        private boolean checkNewStatesForGoal = false;
-
+        public BooleanProperty checkNewStatesForGoal;
+        
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
+            
+            checkNewStatesForGoal = new SimpleBooleanProperty(false);
         }
-
-        public Builder checkNewStatesForGoal(boolean b) {
-            checkNewStatesForGoal = b;
-            return this;
+        
+        @Override
+        public Property<?>[] properties() {
+            return new Property[]{ checkNewStatesForGoal };
         }
-
+        
+        @Override
+        public boolean isHeuristicRequired() {
+            return false;
+        }
+        
         @Override
         protected Builder self() {
             return this;
@@ -42,20 +52,16 @@ public class DepthFirst extends Search {
 
     // ------
 
-    public DepthFirst(Builder builder){
+    private DepthFirst(Builder builder){
         super(builder);
         
-        checkNewStatesForGoal = builder.checkNewStatesForGoal;
+        checkNewStatesForGoal = builder.checkNewStatesForGoal.get();
         setReady();
     }
 
 
     // ------
-
-    public static boolean isHeuristicNeeded() { 
-        return false; 
-    }
-
+    
     public static String getShortName() { 
         return "DFS"; 
     }
@@ -72,11 +78,11 @@ public class DepthFirst extends Search {
         currentSpace.setCurrent(newCurrent);
         currentSpace.getExplored().add(newCurrent);
 
-        var toAdd = currentSpace.getNewNeighbors(filterAlreadyExplored, linkAlreadyExploredNeighbors);
+        var toAdd = currentSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
 
         if(heuristic != Grid.Distance.NONE){
             for(Grid g : toAdd) computeHeuristic(g);
-            Collections.sort(toAdd);
+            toAdd.sort(Collections.reverseOrder());
         }
 
         if(checkNewStatesForGoal) 

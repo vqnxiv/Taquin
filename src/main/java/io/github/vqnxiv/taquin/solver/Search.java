@@ -3,8 +3,6 @@ package io.github.vqnxiv.taquin.solver;
 
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
-import io.github.vqnxiv.taquin.solver.search.Astar;
-import io.github.vqnxiv.taquin.util.Utils;
 
 import javafx.application.Platform;
 import javafx.beans.property.*;
@@ -19,40 +17,49 @@ public abstract class Search {
     public abstract static class Builder<B extends Builder<B>> {
         
         private SearchSpace space;
-        private Grid.Distance heuristic = Grid.Distance.NONE;
-        private EnumMap<Limit, Long> limits;
-        private boolean filterExplored = true;
-        private boolean linkExplored = false;
-        private boolean checkForQueuedEnd = false;
-        private int throttle = 0;
-        private String name = "";
-        
+        private final EnumMap<Limit, Long> limits;
+
+        public ObjectProperty<Grid.Distance> heuristic;
+        // public final EnumMap<Limit, Long> limits;
+        public BooleanProperty filterExplored;
+        public BooleanProperty filterQueued;
+        public BooleanProperty linkExplored;
+        public BooleanProperty checkForQueuedEnd;
+        public IntegerProperty throttle;
+        public StringProperty name;
         
         // used when converting from a search type to another
-        public Builder(Builder toCopy) {
-            if(toCopy != null) {
+        public Builder(Builder<?> toCopy) {
+            
+            if(toCopy == null) {
+                limits = new EnumMap<>(Limit.class);
+                for (var l : Limit.values()) limits.put(l, 0L);
+                
+                heuristic = new SimpleObjectProperty<>(Grid.Distance.NONE);
+                filterExplored = new SimpleBooleanProperty(true);
+                filterQueued = new SimpleBooleanProperty(true);
+                linkExplored = new SimpleBooleanProperty(false);
+                checkForQueuedEnd = new SimpleBooleanProperty(false);
+                throttle = new SimpleIntegerProperty(0);
+                name = new SimpleStringProperty("");
+            }
+            // do we need to copy space? since its only used once and its when everything is created
+            else {
                 space = toCopy.space;
-                heuristic = toCopy.heuristic;
                 limits = toCopy.limits;
+                heuristic = toCopy.heuristic;
                 filterExplored = toCopy.filterExplored;
+                filterQueued = toCopy.filterQueued;
                 linkExplored = toCopy.linkExplored;
+                checkForQueuedEnd = toCopy.checkForQueuedEnd;
+                throttle = toCopy.throttle;
                 name = toCopy.name;
             }
-            else {
-                limits = new EnumMap<>(Limit.class);
-                for (var l : Limit.values())
-                    limits.put(l, 0L);
-            }
+
         }
-        
         
         public B searchSpace(SearchSpace s) {
             space = s;
-            return self();
-        }
-
-        public B heuristic(Grid.Distance d) {
-            heuristic = d;
             return self();
         }
         
@@ -61,30 +68,9 @@ public abstract class Search {
             return self();
         }
         
-        public B filterExplored(boolean b) {
-            filterExplored = b;
-            return self();
-        }
+        public abstract Property<?>[] properties();
         
-        public B linkExploredNeighbors(boolean b) {
-            linkExplored = b;
-            return self();
-        }
-        
-        public B checkForQueuedEnd(boolean b) {
-            checkForQueuedEnd = b;
-            return self();
-        }
-        
-        public B throttle(int n) {
-            throttle = n;
-            return self();
-        }
-        
-        public B name(String s) {
-            name = s;
-            return self();
-        }
+        public abstract boolean isHeuristicRequired();
         
         protected abstract B self();
         
@@ -115,7 +101,6 @@ public abstract class Search {
 
 
     // ------
-
     
     private final long id;
     private final String name;
@@ -126,7 +111,8 @@ public abstract class Search {
     protected final Grid.Distance heuristic;
     private final EnumMap<Search.Limit, Long> limitsMap;
     
-    protected final boolean filterAlreadyExplored;
+    protected final boolean filterExplored;
+    protected final boolean filterQueued;
     protected final boolean linkAlreadyExploredNeighbors;
     
     boolean userForceStop = false;
@@ -134,30 +120,33 @@ public abstract class Search {
     private long startTime;
     private long elapsedTime = 0;
     
-    private int throttle;
-    private boolean checkIfEndWasQueued;
+    private final int throttle;
+    private final boolean checkIfEndWasQueued;
     
     
     // ------
     
     protected Search(Builder<?> builder) {
         currentSpace = builder.space;
-        heuristic = builder.heuristic;
+        heuristic = builder.heuristic.get();
         
         builder.limits.entrySet().removeIf(e -> e.getValue() == 0);
         limitsMap = builder.limits;
         
-        filterAlreadyExplored = builder.filterExplored;
-        linkAlreadyExploredNeighbors = builder.linkExplored;
+        filterExplored = builder.filterExplored.get();
+        filterQueued = builder.filterQueued.get();
+        linkAlreadyExploredNeighbors = builder.linkExplored.get();
         
-        checkIfEndWasQueued = builder.checkForQueuedEnd;
-        throttle = builder.throttle;
+        checkIfEndWasQueued = builder.checkForQueuedEnd.get();
+        throttle = builder.throttle.get();
 
+        id = System.currentTimeMillis();
+        var s = builder.name.get();
+        name = (s.equals("")) ? Long.toString(id) : s;
+        
+        // needed?
         if(heuristic != Grid.Distance.NONE)
             currentSpace.getStart().setHeuristicValue(currentSpace.getStart().distanceTo(currentSpace.getGoal(), heuristic));
-        
-        id = System.currentTimeMillis();
-        name = (builder.name.equals("")) ? Long.toString(id) : builder.name; 
     }
 
     
@@ -169,6 +158,10 @@ public abstract class Search {
 
     protected void setReady() { 
         currentState = State.READY; 
+    }
+    
+    public String getName() {
+        return name;
     }
     
 
@@ -227,7 +220,7 @@ public abstract class Search {
     }
 
     protected void stop() {
-        if(currentState != State.RUNNING && this.currentState != State.PAUSED)
+        if(currentState != State.RUNNING && currentState != State.PAUSED)
             return;
         
         userForceStop = true;
@@ -237,17 +230,9 @@ public abstract class Search {
     
     
     public SearchTask<State> newSearchTask(int n) {
-        return new SearchTask<State>(n);
+        return new SearchTask<>(n);
     }
     
-    // Properties:
-    // * currentKey
-    // * currentGrid
-    // * currentDepth
-    // * explored.size()
-    // * queued.size()
-    // * elapsedTime
-    // * state
 
     public class SearchTask<S> extends Task<S> {
 
@@ -260,7 +245,8 @@ public abstract class Search {
         private final AtomicReference<String> timeUpdate          = new AtomicReference<>();
         private final AtomicReference<String> exploredUpdate      = new AtomicReference<>();
         private final AtomicReference<String> queuedUpdate        = new AtomicReference<>();
-        
+
+        // todo: refactor as Search properties instead of SearchTask
         private final StringProperty currentKey     = new SimpleStringProperty(this, "currentKey", "");
         private final StringProperty currentDepth   = new SimpleStringProperty(this, "currentDepth", "");
         private final StringProperty searchState    = new SimpleStringProperty(this, "searchState", "");
@@ -275,39 +261,39 @@ public abstract class Search {
         public final ReadOnlyStringProperty exploredProperty()      { return explored; }
         public final ReadOnlyStringProperty queuedProperty()        { return queued; }
         
-        
-        private void updateAll(String... strings) {
-            if(currentKeyUpdate.getAndSet(strings[0]) == null) {
+
+        private void updateAll() {
+            if(currentKeyUpdate.getAndSet(Integer.toString(currentSpace.getCurrent().getKey())) == null) {
                 Platform.runLater(() -> {
                     final String s = currentKeyUpdate.getAndSet(null);
                     currentKey.set(s);
                 });
             }
-            if(currentDepthUpdate.getAndSet(strings[1]) == null) {
+            if(currentDepthUpdate.getAndSet(Integer.toString(currentSpace.getCurrent().getDepth())) == null) {
                 Platform.runLater(() -> {
                     final String s = currentDepthUpdate.getAndSet(null);
                     currentDepth.set(s);
                 });
             }
-            if(searchStateUpdate.getAndSet(strings[2]) == null) {
+            if(searchStateUpdate.getAndSet(currentState.toString()) == null) {
                 Platform.runLater(() -> {
                     final String s = searchStateUpdate.getAndSet(null);
                     searchState.set(s);
                 });
             }
-            if(timeUpdate.getAndSet(strings[3]) == null) {
+            if(timeUpdate.getAndSet(Long.toString((System.currentTimeMillis() - startTime) + elapsedTime)) == null) {
                 Platform.runLater(() -> {
                     final String s = timeUpdate.getAndSet(null);
                     SearchTask.this.time.set(s);
                 });
             }
-            if(exploredUpdate.getAndSet(strings[4]) == null) {
+            if(exploredUpdate.getAndSet(Integer.toString(currentSpace.getExplored().size())) == null) {
                 Platform.runLater(() -> {
                     final String s = exploredUpdate.getAndSet(null);
                     explored.set(s);
                 });
             }
-            if(queuedUpdate.getAndSet(strings[5]) == null) {
+            if(queuedUpdate.getAndSet(Integer.toString(currentSpace.getQueued().size())) == null) {
                 Platform.runLater(() -> {
                     final String s = queuedUpdate.getAndSet(null);
                     queued.set(s);
@@ -330,56 +316,25 @@ public abstract class Search {
                 currentState = Search.State.RUNNING;
                 startTime = System.currentTimeMillis();
                 
-                if(iterations > 0) {
-                    for(int i = 0; i < iterations; i++) {
-                        if(checkConditions()) {
-                            step();
-                            updateAll(getAllStrings());
-                        } 
-                        else break;
-                    }
-                }
-                else {
-                    while(checkConditions()) {
+                for(int i = 0; i < ((iterations > 0) ? iterations : iterations + 1) ; i += (iterations > 0) ? 1 : 0) {
+                    if(checkConditions()) {
                         step();
-                        updateAll(getAllStrings());
+                        updateAll();
                     }
+                    else break;
                 }
 
+                updateAll();
                 elapsedTime += System.currentTimeMillis() - startTime;
-
                 if(checkConditions()) pause();
-
-                try {
-                    Thread.sleep(200);
-                } catch(InterruptedException e) {
-                    e.printStackTrace();
-                }
-                updateAll(getAllStrings());
             }
-            
             
             return (S) currentState;
         }
     }
     
-    private String[] getAllStrings() {
-        return new String[]{
-            Integer.toString(currentSpace.getCurrent().getKey()),
-            Integer.toString(currentSpace.getCurrent().getDepth()),
-            currentState.toString(),
-            Long.toString((System.currentTimeMillis() - startTime) + elapsedTime),
-            Integer.toString(currentSpace.getExplored().size()),
-            Integer.toString(currentSpace.getQueued().size())    
-        };
-    }
-
 
     // ------
-
-    public static boolean isHeuristicNeeded() { 
-        return false; 
-    }
 
     public static String getShortName() { 
         return "search"; 
@@ -399,9 +354,7 @@ public abstract class Search {
 
         Search search = (Search) o;
 
-        if (id != search.id) return false;
-
-        return true;
+        return id == search.id;
     }
 
     @Override
@@ -411,8 +364,6 @@ public abstract class Search {
 
     @Override
     public String toString() {
-        return "[" + id + "] " + name; 
-        // return Utils.getStringMethodReturn(this.getClass(), "getShortName")
-        //         + " search type with " + this.heuristic + " heuristic function: " + this.currentState;
+        return "[" + id + "] " + name + ": " + currentState;
     }
 }
