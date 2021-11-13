@@ -89,7 +89,8 @@ public class BuilderController {
     private final StringConverter<Class<?>> srchClsConv = new StringConverter<>() {
         @Override
         public String toString(Class<?> object) {
-            return (object != null) ? Utils.getStringMethodReturn(object, "getShortName") : "";
+            // return (object != null) ? Utils.getStringMethodReturn(object, "getShortName") : "";
+            return (object != null) ? Utils.staticMethodReflectionCall(object, "getShortName", String.class) : "";
         }
 
         @Override
@@ -146,15 +147,17 @@ public class BuilderController {
         modificationLocked = new SimpleBooleanProperty(false);
         fullyLocked = new SimpleBooleanProperty(false);
         
-        searchBuilder = new Astar.Builder(null);
-        spaceBuilder = new SearchSpace.Builder();
+        searchBuilder   = new Astar.Builder(null);
+        spaceBuilder    = new SearchSpace.Builder();
         exploredBuilder = new CollectionWrapper.Builder(LinkedHashSet.class);
-        queuedBuilder = new CollectionWrapper.Builder(PriorityQueue.class);
+        queuedBuilder   = new CollectionWrapper.Builder(PriorityQueue.class);
         
         this.runner = runner;
         
         startViewer = new GridViewer("Start", false);
+        startViewer.readOnlyProperty().bind(modificationLocked);
         endViewer = new GridViewer("End", false);
+        endViewer.readOnlyProperty().bind(modificationLocked);
         currentViewer = new GridViewer("Current", true);
     }
 
@@ -162,11 +165,7 @@ public class BuilderController {
 
         searchAlgCB.setItems(SEARCH_CLASSES);
         searchAlgCB.setConverter(srchClsConv);
-        searchAlgCB.setValue(Astar.class);
-        
-        searchAlgCB.setItems(SEARCH_CLASSES);
-        searchAlgCB.setConverter(srchClsConv);
-        searchAlgCB.setValue(Astar.class);
+        searchAlgCB.setValue(searchBuilder.getClass().getDeclaringClass());
         
         heuristicCB.setItems(FXCollections.observableArrayList(Grid.Distance.values()));
 
@@ -188,7 +187,7 @@ public class BuilderController {
         bindDisableProperties();
     }
     
-    // todo: throttle
+    @SuppressWarnings("unchecked")
     private void bindSearchBuilder() {
         heuristicCB.valueProperty().bindBidirectional(searchBuilder.heuristic);
         filterExploredCheck.selectedProperty().bindBidirectional(searchBuilder.filterExplored);
@@ -196,6 +195,9 @@ public class BuilderController {
         linkExistingCheck.selectedProperty().bindBidirectional(searchBuilder.linkExplored);
         goalQueuedCheck.selectedProperty().bindBidirectional(searchBuilder.checkForQueuedEnd);
         searchNameTF.textProperty().bindBidirectional(searchBuilder.name);
+        
+        throttleTF.setTextFormatter(new TextFormatter<>(intConv, 0, integerFilter));
+        searchBuilder.throttle.bindBidirectional((Property<Number>) throttleTF.getTextFormatter().valueProperty());
     }
     
     private void bindSpaceBuilder() {
@@ -273,6 +275,9 @@ public class BuilderController {
         }
         else {
             queuedClassCB.getItems().removeIf(CollectionWrapper::doesClassUseNaturalOrder);
+            if(queuedClassCB.getValue() != null && CollectionWrapper.doesClassUseNaturalOrder(queuedClassCB.getValue())) {
+                queuedClassCB.setValue(ArrayDeque.class);
+            }
         }
     }
     
@@ -332,11 +337,11 @@ public class BuilderController {
     }
     
     @FXML private void onStartGridActivated() {
-        startViewer.show(modificationLocked.get());
+        startViewer.show();
     }
 
     @FXML private void onEndGridActivated() {
-        endViewer.show(modificationLocked.get());
+        endViewer.show();
     }
     
     @FXML private void onSearchAlgActivated() {
@@ -364,8 +369,7 @@ public class BuilderController {
     
     // ------
 
-    private boolean verification() {
-        
+    private boolean verifyGrids() {
         Grid sGrid, eGrid;
         if((sGrid = spaceBuilder.start.getValue()) == null) {
             return false;
@@ -390,7 +394,7 @@ public class BuilderController {
     
     @FXML private void onRunSearchActivated() {
         if(!modificationLocked.get()) {
-            if(!verification()) {
+            if(!verifyGrids()) {
                 return;
             }
             build();
@@ -410,7 +414,7 @@ public class BuilderController {
 
     @FXML private void onStepsSearchActivated() {
         if(!modificationLocked.get()) {
-            if(!verification()) {
+            if(!verifyGrids()) {
                 return;
             }
             build();

@@ -2,6 +2,7 @@ package io.github.vqnxiv.taquin;
 
 
 import io.github.vqnxiv.taquin.controller.*;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -9,12 +10,16 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import jfxtras.styles.jmetro.JMetro;
 import jfxtras.styles.jmetro.Style;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 
 
 public class Taquin extends Application {
+
     
     // https://sematext.com/blog/log4j2-tutorial/
+    // https://github.com/MSPaintIDE/MSPaintIDE/tree/master/src/main/java/com/uddernetworks/mspaint/logging
     
     
     public static final int PRIMARY_MIN_WIDTH = 533;
@@ -27,13 +32,15 @@ public class Taquin extends Application {
     
     
     private MainController mainController;
-    
 
+    private static final Logger LOGGER = LogManager.getLogger();
+
+    
     public static void main(String[] args) {
         launch();
     }
     
-
+     
     @Override
     public void start(Stage primaryStage) throws IOException {
         
@@ -56,11 +63,12 @@ public class Taquin extends Application {
         primaryStage.setScene(scene);
         
         primaryStage.show();
+        LOGGER.error("ok");
     }
-
+    
     @Override
     public void stop() throws Exception {
         mainController.shutdown();
     }
-
+    
 }

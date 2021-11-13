@@ -4,7 +4,6 @@ package io.github.vqnxiv.taquin.solver;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
 
-
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.concurrent.Task;
@@ -21,7 +20,6 @@ public abstract class Search {
         private final EnumMap<Limit, Long> limits;
 
         public ObjectProperty<Grid.Distance> heuristic;
-        // public final EnumMap<Limit, Long> limits;
         public BooleanProperty filterExplored;
         public BooleanProperty filterQueued;
         public BooleanProperty linkExplored;
@@ -44,9 +42,7 @@ public abstract class Search {
                 throttle = new SimpleIntegerProperty(0);
                 name = new SimpleStringProperty("");
             }
-            // do we need to copy space? since its only used once and its when everything is created
             else {
-                space = toCopy.space;
                 limits = toCopy.limits;
                 heuristic = toCopy.heuristic;
                 filterExplored = toCopy.filterExplored;
@@ -56,7 +52,6 @@ public abstract class Search {
                 throttle = toCopy.throttle;
                 name = toCopy.name;
             }
-
         }
         
         public B searchSpace(SearchSpace s) {
@@ -137,7 +132,7 @@ public abstract class Search {
         filterExplored = builder.filterExplored.get();
         filterQueued = builder.filterQueued.get();
         linkAlreadyExploredNeighbors = builder.linkExplored.get();
-        
+
         checkIfEndWasQueued = builder.checkForQueuedEnd.get();
         throttle = builder.throttle.get();
 
@@ -282,7 +277,14 @@ public abstract class Search {
                     searchState.set(s);
                 });
             }
-            if(timeUpdate.getAndSet(Long.toString((System.currentTimeMillis() - startTime) + elapsedTime)) == null) {
+            // throwup but it avoids showing double time when it ends
+            if(timeUpdate.getAndSet(
+                Long.toString(
+                    (currentState == Search.State.RUNNING)
+                    ? (System.currentTimeMillis() - startTime) + elapsedTime
+                    : (elapsedTime)
+                )
+            ) == null) {
                 Platform.runLater(() -> {
                     final String s = timeUpdate.getAndSet(null);
                     SearchTask.this.time.set(s);
@@ -317,10 +319,16 @@ public abstract class Search {
                 currentState = Search.State.RUNNING;
                 startTime = System.currentTimeMillis();
                 
-                for(int i = 0; i < ((iterations > 0) ? iterations : iterations + 1) ; i += (iterations > 0) ? 1 : 0) {
+                for(int i = 0; i < ((iterations > 0) ? iterations : iterations + 1); i += (iterations > 0) ? 1 : 0) {
                     if(checkConditions()) {
                         step();
                         updateAll();
+                        
+                        if(throttle > 0) {
+                            elapsedTime += System.currentTimeMillis() - startTime;
+                            Thread.sleep(throttle);
+                            startTime = System.currentTimeMillis();
+                        }
                     }
                     else break;
                 }
@@ -329,7 +337,7 @@ public abstract class Search {
                 if(checkConditions()) pause();
                 updateAll();
             }
-            
+
             return (S) currentState;
         }
     }
@@ -338,13 +346,13 @@ public abstract class Search {
     // ------
 
     public static String getShortName() { 
-        return "search"; 
+        return "Abstract search"; 
     }
     
     protected abstract void computeHeuristic(Grid g);
 
     protected abstract void step();
-
+    
     
     // ------
     

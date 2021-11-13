@@ -3,8 +3,8 @@ package io.github.vqnxiv.taquin.solver.search;
 
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
-import javafx.beans.property.*;
 
+import javafx.beans.property.*;
 import java.util.Collections;
 
 
@@ -64,8 +64,8 @@ public class IterativeDeepening extends Search {
         checkNewStatesForGoal = builder.checkNewStatesForGoal.get();
         initialDepthLimit = builder.initialDepthLimit.get();
         limitIncrement = builder.limitIncrement.get();
+        
         currentDepthLimit = initialDepthLimit;
-
         setReady();
     }
 
@@ -87,7 +87,7 @@ public class IterativeDeepening extends Search {
         Grid newCurrent = currentSpace.getQueued().pollLast();
         currentSpace.setCurrent(newCurrent);
         currentSpace.getExplored().add(newCurrent);
-
+        
         if(currentSpace.getCurrent().getDepth() < currentDepthLimit) {
             var toAdd = currentSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
             
@@ -104,8 +104,10 @@ public class IterativeDeepening extends Search {
             currentSpace.getQueued().addAll(toAdd);
         }
         
-        // todo: add MAX_DEPTH_LIMIT to avoid infinite looping
-        if(currentSpace.getQueued().isEmpty()) {
+        // considering there's (n*m)! / 2 accessible configurations maybe just cap at Integer.MAX_VALUE
+        // should be enough to still be higher than the upper bounds and way higher than the lower bounds
+        // (which IDDFS is supposed to reach)
+        if(currentSpace.getQueued().isEmpty() && currentDepthLimit < Integer.MAX_VALUE) {
             currentDepthLimit += limitIncrement;
             currentSpace.getExplored().clear();
             currentSpace.getStart().resetNeighbors();

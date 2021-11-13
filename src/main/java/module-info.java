@@ -9,6 +9,9 @@ module io.github.vqnxiv.taquin {
     requires org.jfxtras.styles.jmetro;
     requires java.management;
     requires jdk.management;
+
+    requires org.apache.logging.log4j;
+    requires org.apache.logging.log4j.core;
     
     
     opens io.github.vqnxiv.taquin.controller;

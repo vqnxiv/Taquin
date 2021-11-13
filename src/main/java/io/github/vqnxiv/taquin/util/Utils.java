@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public class Utils {
     
-    
+    // genericFieldOrMethodName -> Generic field or method name
     public static String toReadable(String s) {
         
         if(s == null) return "NULL STRING";
@@ -26,34 +26,14 @@ public class Utils {
         return sb.toString();
     }
     
-    
-    public static boolean getBooleanMethodReturn(Class<?> clazz, String methodName) {
+    @SuppressWarnings("unchecked")
+    public static <T> T staticMethodReflectionCall(Class <?> clazz, String methodName, Class<T> returnType) {
         try {
-            return (boolean) clazz.getMethod(methodName).invoke(null); 
+            return (T) clazz.getMethod(methodName).invoke(null);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
         
-        return false;
-    }
-
-    public static int getIntMethodReturn(Class<?> clazz, String methodName) {
-        try {
-            return (int) clazz.getMethod(methodName).invoke(null);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
-
-        return 0;
-    }
-
-    public static String getStringMethodReturn(Class<?> clazz, String methodName) {
-        try {
-            return (String) clazz.getMethod(methodName).invoke(null);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
-
         return null;
     }
 }

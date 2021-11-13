@@ -2,7 +2,6 @@ package io.github.vqnxiv.taquin.model;
 
 
 import javafx.beans.property.*;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
@@ -57,7 +56,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
 
     private CollectionWrapper(Builder builder) {
         
-
         if(builder.userInitialCapacity.get() > 0) {
             builder.initialCapacity.set(true);
         }
@@ -65,7 +63,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
         if(builder.initialCapacity.get() && builder.userInitialCapacity.get() == 0) {
             builder.userInitialCapacity.set(100_000);
         }
-        
         
         boolean initialized = false;
         
@@ -119,8 +116,8 @@ public class CollectionWrapper<E extends Comparable<E>>{
     
     private void setProperties(){
         sort = self instanceof List<E>;
-        naturalOrder = self instanceof TreeSet<E> || self instanceof PriorityQueue<E>;
-        initialCapacity = !(self instanceof LinkedList<E> || self instanceof TreeSet<E>);
+        naturalOrder = self instanceof PriorityQueue<E>;
+        initialCapacity = !(self instanceof LinkedList<E>);
     }
     
     
@@ -212,20 +209,19 @@ public class CollectionWrapper<E extends Comparable<E>>{
                 (toAdd.peekFirst().compareTo(tmp.peekFirst()) > 0) ?
                 tmp.pollFirst() : toAdd.pollFirst()       
             );
-            //for(E e : self) System.out.println(e);
         }
         
         // mutually exclusive
         if(!toAdd.isEmpty()) self.addAll(toAdd);
         else if(!tmp.isEmpty()) self.addAll(tmp);
     }
-
+    
     public E peekFirst() {
         return switch (self){
             // ArrayDeque, LinkedList, PriorityQueue
             case Queue<E> subQueue -> subQueue.peek();
             // TreeSet
-            case SortedSet<E> subSSet -> subSSet.first();
+            // case SortedSet<E> subSSet -> subSSet.first();
             // LinkedHashSet
             case Set<E> subSet -> subSet.stream().findFirst().get();
             // ArrayList
@@ -239,7 +235,7 @@ public class CollectionWrapper<E extends Comparable<E>>{
             // ArrayDeque, LinkedList
             case Deque<E> subQueue -> subQueue.peekLast();
             // TreeSet
-            case SortedSet<E> subSSet -> subSSet.last();
+            // case SortedSet<E> subSSet -> subSSet.last();
             // ArrayList
             case List<E> subList -> subList.get(subList.size()-1);
             // PriorityQueue
@@ -259,10 +255,10 @@ public class CollectionWrapper<E extends Comparable<E>>{
                 retour = subQueue.poll();
             }
             // TreeSet
-            case SortedSet<E> subSSet -> {
+            /* case SortedSet<E> subSSet -> {
                 retour = subSSet.first();
                 subSSet.remove(retour);
-            }
+            } */
             // LinkedHashSet
             case Set<E> subSet -> {
                 retour = subSet.stream().findFirst().get();
@@ -288,10 +284,10 @@ public class CollectionWrapper<E extends Comparable<E>>{
                 retour = subQueue.pollLast();
             }
             // TreeSet
-            case SortedSet<E> subSSet -> {
+            /* case SortedSet<E> subSSet -> {
                 retour = subSSet.last();
                 subSSet.remove(retour);
-            }
+            } */
             // ArrayList
             case List<E> subList -> {
                 retour = subList.get(subList.size()-1);

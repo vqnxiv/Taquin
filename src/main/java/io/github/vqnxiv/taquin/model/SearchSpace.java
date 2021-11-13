@@ -14,18 +14,15 @@ public class SearchSpace {
     
     
     public static class Builder {
-        //private Grid start;
-        //private Grid end;
         private CollectionWrapper<?> explored;
         private CollectionWrapper<?> queued;
         
         public ObjectProperty<Grid.EqualPolicy> equalPolicy;
-        
         public Property<Grid> start;
         public Property<Grid> end;
         
         public Builder() {
-            equalPolicy = new SimpleObjectProperty<>(Grid.EqualPolicy.NEWER_FIRST);
+            equalPolicy = new SimpleObjectProperty<>(Grid.EqualPolicy.NONE);
             start = new SimpleObjectProperty<>();
             end = new SimpleObjectProperty<>();
         }
@@ -150,15 +147,12 @@ public class SearchSpace {
         }
     }
     
-    
-    // todo: refactor
     public LinkedList<Grid> getNewNeighbors(boolean filterExplored, boolean filterQueued, boolean linkExisting){
 
         var possibleNewStates = currentGrid.generateNeighbors();
         var retour = new LinkedList<Grid>();
-
+        
         for(Grid g : possibleNewStates){
-            
             
             if((filterExplored && explored.contains(g)) || (filterQueued && queued.contains(g))) {
                 if(linkExisting) {

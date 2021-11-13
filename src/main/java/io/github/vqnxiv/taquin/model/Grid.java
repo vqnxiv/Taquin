@@ -24,15 +24,18 @@ public class Grid implements Comparable<Grid> {
 
     // todo: refactor as a comparator?
     public enum EqualPolicy {
+        NONE            { public String toString() { return "None"; } },
         RANDOM          { public String toString() { return "Random"; } },
         NEWER_FIRST     { public String toString() { return "Newer"; } },
         OLDER_FIRST     { public String toString() { return "Older"; } },
         DEEPER_FIRST    { public String toString() { return "Deeper"; } },
-        HIGHER_FIRST    { public String toString() { return "Higher"; } },
+        HIGHER_FIRST    { public String toString() { return "Higher"; } }
     } 
 
     
     // ------
+
+    private static final int HASH_VALUE = 31;
 
     private final int[][] self;
     private int key = -2;
@@ -106,9 +109,15 @@ public class Grid implements Comparable<Grid> {
         if(throwError) throw new IllegalArgumentException(toFind + " not found");
         else return null;
     }
-
     
     public boolean hasSameAlphabet(Grid g) {
+        if(self.length != g.self.length) {
+            return false;
+        }
+        else if(self[0].length != g.self[0].length) {
+            return false;
+        }
+        
         for(int[] ints : self) {
             for(int i : ints) {
                 if(g.findCoordinates(i, false) == null) {
@@ -120,10 +129,12 @@ public class Grid implements Comparable<Grid> {
         return true;
     }
 
+    
     // ------
 
     public int[][] getSelf() { 
-        return self; 
+        //return self; 
+        return Arrays.stream(self).map(int[]::clone).toArray($ -> self.clone());
     }
 
     public int getKey() { 
@@ -177,6 +188,7 @@ public class Grid implements Comparable<Grid> {
     public void resetNeighbors() {
         hasGenerated = new Grid[]{};
     }
+    
 
     // ------
 
@@ -265,7 +277,6 @@ public class Grid implements Comparable<Grid> {
 
 
     // ------
-    // OVERRIDES
     
     @Override
     public boolean equals(Object o) {
@@ -278,20 +289,18 @@ public class Grid implements Comparable<Grid> {
     
     @Override
     public int hashCode() {
-        
-        /*
-        var sb = new StringBuilder();
+        int result = 1;        
+        int tmp = 1;
         
         for(var t : self) {
             for(var i : t) {
-                sb.append(i);
+                tmp = HASH_VALUE * tmp + i;
             }
+            result = HASH_VALUE * result + tmp;
+            tmp = 1;
         }
         
-        return Integer.parseInt(sb.toString());
-        */
-        
-        return Arrays.deepHashCode(self);
+        return result;
     }
 
     @Override
@@ -299,6 +308,9 @@ public class Grid implements Comparable<Grid> {
         
         if(heuristicValue == target.getHeuristicValue()) {
             switch(equalPolicy) {
+                case NONE -> {
+                    return 0;
+                }
                 case RANDOM -> {
                     Random rnd = new Random();
                     return (rnd.nextBoolean()) ? -1 : 1;
@@ -316,19 +328,23 @@ public class Grid implements Comparable<Grid> {
                     return (depth <= target.depth) ? -1 : 1;
                 }
             }
-        }
+        } 
         
         return Integer.compare(heuristicValue, target.heuristicValue);
     }
 
     @Override
     public String toString(){
+        
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%02d", depth));
+        sb.append(key).append(": ");
+        //sb.append(String.format("%02d, %02d\n", depth, hashCode()));
+        //sb.append(hashCodes.toString());
         for(var t : self)
             sb.append('\n').append(Arrays.toString(t));
         
         return sb.toString();
+        
         //return "{Grid " + key + " (" + ((parent != null) ? parent.key : -2) + "): " + depth + " " + Arrays.deepToString(self) + "}";
         //return "[Grid] " + key + " (" + ((parent != null) ? parent.key : -2) + "):";
     }
