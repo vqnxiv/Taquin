@@ -133,8 +133,8 @@ public class Grid implements Comparable<Grid> {
     // ------
 
     public int[][] getSelf() { 
-        //return self; 
-        return Arrays.stream(self).map(int[]::clone).toArray($ -> self.clone());
+        return self; 
+        // return Arrays.stream(self).map(int[]::clone).toArray($ -> self.clone());
     }
 
     public int getKey() { 
@@ -336,16 +336,16 @@ public class Grid implements Comparable<Grid> {
     @Override
     public String toString(){
         
+        /*
         StringBuilder sb = new StringBuilder();
         sb.append(key).append(": ");
-        //sb.append(String.format("%02d, %02d\n", depth, hashCode()));
-        //sb.append(hashCodes.toString());
         for(var t : self)
             sb.append('\n').append(Arrays.toString(t));
         
         return sb.toString();
+        */
         
-        //return "{Grid " + key + " (" + ((parent != null) ? parent.key : -2) + "): " + depth + " " + Arrays.deepToString(self) + "}";
+        return "{Grid " + key + " (" + ((parent != null) ? parent.key : -2) + "): " + depth + " " + Arrays.deepToString(self) + "}";
         //return "[Grid] " + key + " (" + ((parent != null) ? parent.key : -2) + "):";
     }
 

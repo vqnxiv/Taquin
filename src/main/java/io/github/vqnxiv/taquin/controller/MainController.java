@@ -1,6 +1,7 @@
 package io.github.vqnxiv.taquin.controller;
 
 
+import io.github.vqnxiv.taquin.solver.SearchRunner;
 import javafx.fxml.FXML;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ToolBar;
@@ -20,9 +21,10 @@ public class MainController {
     @FXML private HBox bottomBar;
     @FXML private BottomBarController bottomBarController;
     
+    private final SearchRunner searchRunner;
     
     public MainController() {
-        
+        searchRunner = SearchRunner.createRunner();
     }
     
     public void initialize() {
@@ -30,7 +32,7 @@ public class MainController {
     }
     
     public void shutdown() {
-        searchPaneController.getRunner().shutdown();
+        searchRunner.shutdown();
         bottomBarController.shutdown();
     }
 }

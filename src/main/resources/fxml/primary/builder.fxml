@@ -150,7 +150,7 @@
                         <Label text="Equal policy" GridPane.columnIndex="2" />
                         <ChoiceBox fx:id="equalPolicyCB" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="85.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                         <Label text="Throttle" GridPane.columnIndex="3" />
-                        <TextField fx:id="throttleTF" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="85.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                        <TextField fx:id="throttleTF" maxWidth="85.0" promptText="ms" GridPane.columnIndex="3" GridPane.rowIndex="1" />
                         <Label text="Link existing neighbors" GridPane.columnIndex="4" />
                         <CheckBox fx:id="linkExistingCheck" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="1" />
                     </children>
@@ -199,70 +199,6 @@
                     <CheckBox fx:id="goalQueuedCheck" mnemonicParsing="false" GridPane.columnIndex="5" GridPane.rowIndex="1" />
                 </GridPane>
             </Tab>
-
-            <!--
-                    <Tab text="Graph">
-                        <content>
-                            <GridPane vgap="2.0">
-                                <padding>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                </padding>
-
-                                <columnConstraints>
-                                    <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                                    <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                                </columnConstraints>
-
-                                <rowConstraints>
-                                    <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                                    <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                                </rowConstraints>
-
-                                <children>
-                                    <Label text="Live graph" />
-                                    <CheckBox mnemonicParsing="false" GridPane.rowIndex="1" />
-                                    <Label text="Existing neighbors" GridPane.columnIndex="1" />
-                                    <CheckBox mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                </children>
-                            </GridPane>
-                        </content>
-                    </Tab>
-                    -->
-
-            <!--
-                    <Tab text="Misc">
-                        <content>
-                            <GridPane vgap="2.0">
-                                <padding>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                </padding>
-
-                                <columnConstraints>
-                                    <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                                    <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                                    <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                                    <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                                    <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                                </columnConstraints>
-
-                                <rowConstraints>
-                                    <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                                    <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                                </rowConstraints>
-
-                                <children>
-                                    <!- - todo: remove refreshrate since we're now using updateMessage - ->
-                                    <Label text="Refresh rate" />
-                                    <TextField maxWidth="85.0" GridPane.rowIndex="1" />
-                                    <Label text="Throttling" GridPane.columnIndex="1" />
-                                    <TextField maxWidth="85.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                    <Label text="Info level" GridPane.columnIndex="2" />
-                                    <TextField maxWidth="85.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                                </children>
-                            </GridPane>
-                        </content>
-                    </Tab>
-                    -->
         </TabPane>
 
     </TitledPane>

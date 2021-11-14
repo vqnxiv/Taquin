@@ -89,7 +89,6 @@ public class BuilderController {
     private final StringConverter<Class<?>> srchClsConv = new StringConverter<>() {
         @Override
         public String toString(Class<?> object) {
-            // return (object != null) ? Utils.getStringMethodReturn(object, "getShortName") : "";
             return (object != null) ? Utils.staticMethodReflectionCall(object, "getShortName", String.class) : "";
         }
 
@@ -113,7 +112,7 @@ public class BuilderController {
     private final BooleanProperty modificationLocked;
     private final BooleanProperty fullyLocked;
 
-    private final SearchRunner runner;
+    private final SearchRunner searchRunner;
     private Search search;
     private SearchSpace space;
     
@@ -143,7 +142,7 @@ public class BuilderController {
     
     // ------
     
-    public BuilderController(SearchRunner runner) {
+    public BuilderController() {
         modificationLocked = new SimpleBooleanProperty(false);
         fullyLocked = new SimpleBooleanProperty(false);
         
@@ -152,7 +151,7 @@ public class BuilderController {
         exploredBuilder = new CollectionWrapper.Builder(LinkedHashSet.class);
         queuedBuilder   = new CollectionWrapper.Builder(PriorityQueue.class);
         
-        this.runner = runner;
+        searchRunner = SearchRunner.createRunner();
         
         startViewer = new GridViewer("Start", false);
         startViewer.readOnlyProperty().bind(modificationLocked);
@@ -327,7 +326,7 @@ public class BuilderController {
             case IntegerProperty i -> {
                 var tf = new TextField(Integer.toString(i.get()));
                 tf.setTextFormatter(new TextFormatter<>(intConv, 0, integerFilter));
-                i.bindBidirectional((Property<Number>) tf.getTextFormatter().valueProperty());
+                ((Property<Number>) tf.getTextFormatter().valueProperty()).bindBidirectional(i);
                 tf.setMaxWidth(85);
                 tf.disableProperty().bind(modificationLocked);
                 searchParameters.add(tf, index, 1);
@@ -400,15 +399,15 @@ public class BuilderController {
             build();
         }
         
-        runner.runSearch(search, 0, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
+        searchRunner.runSearch(search, 0, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
     }
 
     @FXML private void onPauseSearchActivated() {
-        runner.pauseSearch(search);
+        searchRunner.pauseSearch(search);
     }
 
     @FXML private void onStopSearchActivated() {
-        runner.stopSearch(search);
+        searchRunner.stopSearch(search);
         fullyLocked.set(true);
     }
 
@@ -421,7 +420,7 @@ public class BuilderController {
         }
         
         var steps = (stepsNumberTF.getText().equals("")) ? 1 : Integer.parseInt(stepsNumberTF.getText());
-        runner.runSearch(search, steps, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
+        searchRunner.runSearch(search, steps, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
     }
     
     @FXML private void onCurrentGridActivated() {

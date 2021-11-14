@@ -19,25 +19,20 @@ public class SearchPaneController {
     
     FXMLLoader loader;
     
-    private final SearchRunner runner;
+    private final SearchRunner searchRunner;
     
     
     public SearchPaneController() {
-        runner = new SearchRunner();
+        searchRunner = SearchRunner.createRunner();
     }
     
     public void initialize() {
         onAddBuilderActivated();
     }
     
-    public SearchRunner getRunner() {
-        return runner;
-    }
-    
     
     @FXML private void onAddBuilderActivated() {
         loader = new FXMLLoader(Taquin.class.getResource("/fxml/primary/builder.fxml"));
-        loader.setControllerFactory(SearchBuilderController -> new BuilderController(runner));
         
         try {
             builderVBox.getChildren().add(loader.load());

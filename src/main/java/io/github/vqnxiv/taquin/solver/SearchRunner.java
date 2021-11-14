@@ -8,6 +8,8 @@ import java.util.concurrent.Executors;
 
 public class SearchRunner {
     
+    private static boolean IS_SEARCH_RUNNER_INITIALISED;
+    private static SearchRunner runner;
     
     private int maximumAllowedConcurrentSearches = 1;
     
@@ -15,7 +17,26 @@ public class SearchRunner {
     private Search lastRunningSearch;
     
     
-    public SearchRunner() {
+    public String getLastSearchInfoAsString() {
+        if(lastRunningSearch == null) {
+            return "";
+        }
+        
+        return lastRunningSearch.getName() + ": " + lastRunningSearch.getState();
+    }
+    
+    
+    public static SearchRunner createRunner() {
+        if(IS_SEARCH_RUNNER_INITIALISED) {
+            return runner;
+        }
+        
+        return new SearchRunner();
+    }
+    
+    private SearchRunner() {
+        IS_SEARCH_RUNNER_INITIALISED = true;
+        runner = this;
         executorService = Executors.newFixedThreadPool(maximumAllowedConcurrentSearches);
     }
 
