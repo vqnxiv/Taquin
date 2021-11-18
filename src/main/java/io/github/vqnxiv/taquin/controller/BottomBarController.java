@@ -24,7 +24,7 @@ public class BottomBarController {
     
     
     public BottomBarController() {
-        searchRunner = SearchRunner.createRunner();
+        searchRunner = SearchRunner.getRunner();
         
         execHeap = Executors.newScheduledThreadPool(1);
         memoryMXBean = ManagementFactory.getMemoryMXBean();
@@ -34,10 +34,7 @@ public class BottomBarController {
     @FXML
     public void initialize() {
         execHeap.scheduleAtFixedRate(updateHeapUsage, 0, 200, TimeUnit.MILLISECONDS);
-    }
-    
-    public void shutdown() {
-        execHeap.shutdown();
+        searchInfo.textProperty().bind(searchRunner.lastSearchInfo());
     }
     
     
@@ -46,7 +43,6 @@ public class BottomBarController {
         public void run() {
             var cH = memoryMXBean.getHeapMemoryUsage().getUsed() / 1048576;
             Platform.runLater(() -> heapUsage.setText(formatHeapLabel(cH)));
-            Platform.runLater(() -> searchInfo.setText(searchRunner.getLastSearchInfoAsString()));
         }
     };
     
@@ -54,4 +50,8 @@ public class BottomBarController {
         return String.format("Heap: %4d / %4d MB", current, maxHeap);
     }
 
+
+    public void shutdown() {
+        execHeap.shutdown();
+    }
 }

@@ -23,7 +23,7 @@ public class SearchPaneController {
     
     
     public SearchPaneController() {
-        searchRunner = SearchRunner.createRunner();
+        searchRunner = SearchRunner.getRunner();
     }
     
     public void initialize() {

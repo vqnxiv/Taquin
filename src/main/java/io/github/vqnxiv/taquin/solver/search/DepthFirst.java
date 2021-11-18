@@ -68,17 +68,17 @@ public class DepthFirst extends Search {
 
     @Override
     protected void computeHeuristic(Grid g) {
-        g.setHeuristicValue(g.distanceTo(currentSpace.getGoal(), heuristic));
+        g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic));
     }
 
     @Override
     protected void step(){
-        Grid newCurrent = currentSpace.getQueued().pollLast();
+        Grid newCurrent = searchSpace.getQueued().pollLast();
 
-        currentSpace.setCurrent(newCurrent);
-        currentSpace.getExplored().add(newCurrent);
+        searchSpace.setCurrent(newCurrent);
+        searchSpace.getExplored().add(newCurrent);
 
-        var toAdd = currentSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
+        var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
 
         if(heuristic != Grid.Distance.NONE) {
             for(Grid g : toAdd) computeHeuristic(g);
@@ -87,10 +87,10 @@ public class DepthFirst extends Search {
 
         if(checkNewStatesForGoal) 
             for(Grid g : toAdd) 
-                if(currentSpace.isGoal(g)) 
-                    currentSpace.setCurrent(g);
+                if(searchSpace.isGoal(g)) 
+                    searchSpace.setCurrent(g);
 
-        currentSpace.getQueued().addAll(toAdd);
+        searchSpace.getQueued().addAll(toAdd);
     }
     
 }

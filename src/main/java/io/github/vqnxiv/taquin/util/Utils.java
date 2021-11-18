@@ -2,6 +2,7 @@ package io.github.vqnxiv.taquin.util;
 
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Optional;
 
 
 public class Utils {
@@ -27,13 +28,13 @@ public class Utils {
     }
     
     @SuppressWarnings("unchecked")
-    public static <T> T staticMethodReflectionCall(Class <?> clazz, String methodName, Class<T> returnType) {
+    public static <T> Optional<T> staticMethodReflectionCall(Class <?> clazz, String methodName, Class<T> returnType) {
         try {
-            return (T) clazz.getMethod(methodName).invoke(null);
+            return Optional.ofNullable((T) clazz.getMethod(methodName).invoke(null));
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
         
-        return null;
+        return Optional.empty();
     }
 }

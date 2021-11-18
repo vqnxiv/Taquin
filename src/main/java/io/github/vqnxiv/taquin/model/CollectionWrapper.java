@@ -184,6 +184,20 @@ public class CollectionWrapper<E extends Comparable<E>>{
     public boolean contains(E elt) {
         return self.contains(elt);
     }
+    
+    public int indexOf(E elt) {
+        if(self instanceof List l) {
+            return l.indexOf(elt);
+        }
+        int i = 0;
+        for(E e : self) {
+            if(e.equals(elt)) {
+                return i;
+            }
+            i++;
+        }
+        return -1;
+    }
 
     public void add(E elt) {
         self.add(elt);
@@ -220,8 +234,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
         return switch (self){
             // ArrayDeque, LinkedList, PriorityQueue
             case Queue<E> subQueue -> subQueue.peek();
-            // TreeSet
-            // case SortedSet<E> subSSet -> subSSet.first();
             // LinkedHashSet
             case Set<E> subSet -> subSet.stream().findFirst().get();
             // ArrayList
@@ -234,8 +246,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
         return switch (self){
             // ArrayDeque, LinkedList
             case Deque<E> subQueue -> subQueue.peekLast();
-            // TreeSet
-            // case SortedSet<E> subSSet -> subSSet.last();
             // ArrayList
             case List<E> subList -> subList.get(subList.size()-1);
             // PriorityQueue
@@ -254,11 +264,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
             case Queue<E> subQueue -> {
                 retour = subQueue.poll();
             }
-            // TreeSet
-            /* case SortedSet<E> subSSet -> {
-                retour = subSSet.first();
-                subSSet.remove(retour);
-            } */
             // LinkedHashSet
             case Set<E> subSet -> {
                 retour = subSet.stream().findFirst().get();
@@ -283,11 +288,6 @@ public class CollectionWrapper<E extends Comparable<E>>{
             case Deque<E> subQueue -> {
                 retour = subQueue.pollLast();
             }
-            // TreeSet
-            /* case SortedSet<E> subSSet -> {
-                retour = subSSet.last();
-                subSSet.remove(retour);
-            } */
             // ArrayList
             case List<E> subList -> {
                 retour = subList.get(subList.size()-1);

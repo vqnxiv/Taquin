@@ -17,8 +17,8 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
-import jfxtras.styles.jmetro.JMetro;
-import jfxtras.styles.jmetro.Style;
+//import jfxtras.styles.jmetro.JMetro;
+//import jfxtras.styles.jmetro.Style;
 import java.util.HashSet;
 import java.util.function.UnaryOperator;
 
@@ -123,8 +123,8 @@ public class GridViewer {
 
         setAnchors();
 
-        JMetro j = new JMetro(Style.LIGHT);
-        j.setScene(scene);
+        //JMetro j = new JMetro(Style.LIGHT);
+        //j.setScene(scene);
         stage.setScene(scene);
         // stage.initStyle(StageStyle.UTILITY);
         

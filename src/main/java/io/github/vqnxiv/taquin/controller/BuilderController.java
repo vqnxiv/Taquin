@@ -31,9 +31,10 @@ import java.util.function.UnaryOperator;
 
 
 public class BuilderController {
-
     
-    @FXML private Label stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel;
+    
+    @FXML private Label stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, 
+        exploredProgressLabel, exploredMemoryLabel, queuedProgressLabel, queuedMemoryLabel;
 
     @FXML private TextField searchNameTF;
     @FXML private Button startGridButton, endGridButton;
@@ -64,8 +65,8 @@ public class BuilderController {
 
     private final StringConverter<Integer> intConv = new StringConverter<>() {
         @Override
-        public String toString(Integer object) {
-            return (object != null) ? Integer.toString(object) : "0";
+        public String toString(Integer n) {
+            return (n != null) ? Integer.toString(n) : "0";
         }
 
         @Override
@@ -76,8 +77,8 @@ public class BuilderController {
     
     private final StringConverter<Class<?>> clsConv = new StringConverter<>() {
         @Override
-        public String toString(Class object) {
-            return (object != null) ? object.getSimpleName() : "";
+        public String toString(Class clazz) {
+            return (clazz != null) ? clazz.getSimpleName() : "";
         }
 
         @Override
@@ -88,8 +89,8 @@ public class BuilderController {
     
     private final StringConverter<Class<?>> srchClsConv = new StringConverter<>() {
         @Override
-        public String toString(Class<?> object) {
-            return (object != null) ? Utils.staticMethodReflectionCall(object, "getShortName", String.class) : "";
+        public String toString(Class<?> srchCls) {
+            return Utils.staticMethodReflectionCall(srchCls, "getShortName", String.class).orElse("");
         }
 
         @Override
@@ -126,7 +127,7 @@ public class BuilderController {
     
     // ------
     
-    static final ObservableList<Class<?>> SEARCH_CLASSES;
+    private static final ObservableList<Class<?>> SEARCH_CLASSES;
 
     static {
         Reflections reflections = new Reflections("io.github.vqnxiv.taquin");
@@ -151,7 +152,7 @@ public class BuilderController {
         exploredBuilder = new CollectionWrapper.Builder(LinkedHashSet.class);
         queuedBuilder   = new CollectionWrapper.Builder(PriorityQueue.class);
         
-        searchRunner = SearchRunner.createRunner();
+        searchRunner = SearchRunner.getRunner();
         
         startViewer = new GridViewer("Start", false);
         startViewer.readOnlyProperty().bind(modificationLocked);
@@ -389,6 +390,16 @@ public class BuilderController {
         modificationLocked.set(true);
         
         currentViewer.gridProperty().bind(space.currentGridProperty);
+        bindToSearchProperties();
+    }
+    
+    private void bindToSearchProperties() {
+        var props = search.getProperties();
+        var labs = new Label[]{ stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, 
+            exploredProgressLabel, exploredMemoryLabel, queuedProgressLabel, queuedMemoryLabel };
+        for(int i = 0; i < labs.length; i++) {
+            labs[i].textProperty().bind(props[i]);
+        }
     }
     
     @FXML private void onRunSearchActivated() {
@@ -399,7 +410,7 @@ public class BuilderController {
             build();
         }
         
-        searchRunner.runSearch(search, 0, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
+        searchRunner.runSearch(search, 0);
     }
 
     @FXML private void onPauseSearchActivated() {
@@ -420,7 +431,7 @@ public class BuilderController {
         }
         
         var steps = (stepsNumberTF.getText().equals("")) ? 1 : Integer.parseInt(stepsNumberTF.getText());
-        searchRunner.runSearch(search, steps, stateProgressLabel, timeProgressLabel, keyProgressLabel, depthProgressLabel, exploredProgressLabel, queuedProgressLabel);
+        searchRunner.runSearch(search, steps);
     }
     
     @FXML private void onCurrentGridActivated() {

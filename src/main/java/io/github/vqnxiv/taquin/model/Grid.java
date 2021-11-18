@@ -280,8 +280,8 @@ public class Grid implements Comparable<Grid> {
     
     @Override
     public boolean equals(Object o) {
-        if (o instanceof Grid c) {
-            return Arrays.deepEquals(self, c.self);
+        if (o instanceof Grid g) {
+            return Arrays.deepEquals(self, g.self);
         }
         
         return false;

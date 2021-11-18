@@ -27,5 +27,6 @@ public class TopBarController {
     }
 
     @FXML private void onAboutButtonActivated() {
+        new AboutController();
     }
 }

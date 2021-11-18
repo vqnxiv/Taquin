@@ -24,7 +24,7 @@ public class MainController {
     private final SearchRunner searchRunner;
     
     public MainController() {
-        searchRunner = SearchRunner.createRunner();
+        searchRunner = SearchRunner.getRunner();
     }
     
     public void initialize() {

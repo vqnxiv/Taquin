@@ -78,18 +78,18 @@ public class IterativeDeepening extends Search {
 
     @Override
     protected void computeHeuristic(Grid g) {
-        g.setHeuristicValue(g.distanceTo(currentSpace.getGoal(), heuristic));
+        g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic));
     }
 
     @Override
     protected void step(){
         
-        Grid newCurrent = currentSpace.getQueued().pollLast();
-        currentSpace.setCurrent(newCurrent);
-        currentSpace.getExplored().add(newCurrent);
+        Grid newCurrent = searchSpace.getQueued().pollLast();
+        searchSpace.setCurrent(newCurrent);
+        searchSpace.getExplored().add(newCurrent);
         
-        if(currentSpace.getCurrent().getDepth() < currentDepthLimit) {
-            var toAdd = currentSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
+        if(searchSpace.getCurrent().getDepth() < currentDepthLimit) {
+            var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
             
             if(heuristic != Grid.Distance.NONE) {
                 for(Grid g : toAdd) computeHeuristic(g);
@@ -98,20 +98,20 @@ public class IterativeDeepening extends Search {
 
             if(checkNewStatesForGoal)
                 for(Grid g : toAdd)
-                    if(currentSpace.isGoal(g))
-                        currentSpace.setCurrent(g);
+                    if(searchSpace.isGoal(g))
+                        searchSpace.setCurrent(g);
 
-            currentSpace.getQueued().addAll(toAdd);
+            searchSpace.getQueued().addAll(toAdd);
         }
         
         // considering there's (n*m)! / 2 accessible configurations maybe just cap at Integer.MAX_VALUE
         // should be enough to still be higher than the upper bounds and way higher than the lower bounds
         // (which IDDFS is supposed to reach)
-        if(currentSpace.getQueued().isEmpty() && currentDepthLimit < Integer.MAX_VALUE) {
+        if(searchSpace.getQueued().isEmpty() && currentDepthLimit < Integer.MAX_VALUE) {
             currentDepthLimit += limitIncrement;
-            currentSpace.getExplored().clear();
-            currentSpace.getStart().resetNeighbors();
-            currentSpace.getQueued().add(currentSpace.getStart());
+            searchSpace.getExplored().clear();
+            searchSpace.getStart().resetNeighbors();
+            searchSpace.getQueued().add(searchSpace.getStart());
         }
     }
 

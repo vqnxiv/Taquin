@@ -66,6 +66,8 @@
                 <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
                 <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
                 <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
             </columnConstraints>
 
             <rowConstraints>
@@ -76,15 +78,17 @@
             <Label text="State" />
             <Label fx:id="stateProgressLabel" text="not ready" GridPane.rowIndex="1" />
             <Label text="Time" GridPane.columnIndex="1" />
-            <Label fx:id="timeProgressLabel" text="0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Label fx:id="timeProgressLabel" text="0ms" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             <Label text="Current" GridPane.columnIndex="2" />
             <Label fx:id="keyProgressLabel" text="0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
             <Label text="Depth" GridPane.columnIndex="3" />
             <Label fx:id="depthProgressLabel" text="0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-            <Label text="Explored" GridPane.columnIndex="4" />
+            <Label text="Explored" GridPane.columnIndex="4" GridPane.columnSpan="2" />
             <Label fx:id="exploredProgressLabel" text="0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-            <Label text="Queued" GridPane.columnIndex="5" />
-            <Label fx:id="queuedProgressLabel" text="0" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+            <Label fx:id="exploredMemoryLabel" text="0b" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+            <Label text="Queued" GridPane.columnIndex="6" GridPane.columnSpan="2" />
+            <Label fx:id="queuedProgressLabel" text="0" GridPane.columnIndex="6" GridPane.rowIndex="1" />
+            <Label fx:id="queuedMemoryLabel" text="0b" GridPane.columnIndex="7" GridPane.rowIndex="1" />
         </GridPane>
 
     </TitledPane>
@@ -188,7 +192,7 @@
                     <Label text="Time" />
                     <TextField fx:id="maxTimeTF" maxWidth="85.0" promptText="ms" GridPane.rowIndex="1" />
                     <Label text="Memory" GridPane.columnIndex="1" />
-                    <TextField fx:id="maxMemoryTF" maxWidth="85.0" promptText="mbyte" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                    <TextField fx:id="maxMemoryTF" maxWidth="85.0" promptText="byte" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                     <Label text="Depth" GridPane.columnIndex="2" />
                     <TextField fx:id="maxDepthTF" maxWidth="85.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                     <Label text="Explored" GridPane.columnIndex="3" />

@@ -58,7 +58,7 @@ public class BestFirst extends Search {
     private BestFirst(Builder builder) {
         super(builder);
         
-        useMerge = builder.useMerge.get() || (!currentSpace.getQueued().usesNaturalOrdering() && !currentSpace.getQueued().isSortable());
+        useMerge = builder.useMerge.get() || (!searchSpace.getQueued().usesNaturalOrdering() && !searchSpace.getQueued().isSortable());
         setReady();
     }
 
@@ -71,32 +71,32 @@ public class BestFirst extends Search {
 
     @Override
     protected void computeHeuristic(Grid g) {
-        g.setHeuristicValue(g.distanceTo(currentSpace.getGoal(), heuristic));
+        g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic));
     }
 
     @Override
     protected void step() {
         
-        Grid newCurrent = currentSpace.getQueued().pollFirst();
+        Grid newCurrent = searchSpace.getQueued().pollFirst();
 
-        currentSpace.setCurrent(newCurrent);
-        currentSpace.getExplored().add(newCurrent);
+        searchSpace.setCurrent(newCurrent);
+        searchSpace.getExplored().add(newCurrent);
 
-        var toAdd = currentSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
+        var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
 
         for(Grid g : toAdd) computeHeuristic(g);
 
         if(!toAdd.isEmpty()) {
-            if(currentSpace.getQueued().usesNaturalOrdering()) {
-                currentSpace.getQueued().addAll(toAdd);
+            if(searchSpace.getQueued().usesNaturalOrdering()) {
+                searchSpace.getQueued().addAll(toAdd);
             }
             else if(useMerge) {
-                currentSpace.getQueued().mergeWith(toAdd);
+                searchSpace.getQueued().mergeWith(toAdd);
             }
             else {
                 Collections.sort(toAdd);
-                currentSpace.getQueued().addAll(toAdd);
-                currentSpace.getQueued().sort();
+                searchSpace.getQueued().addAll(toAdd);
+                searchSpace.getQueued().sort();
             }
         }
     }
