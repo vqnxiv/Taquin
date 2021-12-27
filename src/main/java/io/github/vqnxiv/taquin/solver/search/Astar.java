@@ -1,6 +1,7 @@
 package io.github.vqnxiv.taquin.solver.search;
 
 
+import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
@@ -8,6 +9,9 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class Astar extends Search {
@@ -15,25 +19,32 @@ public class Astar extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
         
-        public BooleanProperty useMerge;
+        private BooleanProperty useMerge;
         
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
             
-            useMerge = new SimpleBooleanProperty(this, "Use merge", false);
+            useMerge = new SimpleBooleanProperty(this, "use merge", false);
             
             if(heuristic.get() == Grid.Distance.NONE)
                 heuristic.set(Grid.Distance.MANHATTAN);
-        }
-
-        @Override
-        public Property<?>[] properties() {
-            return new Property[]{ useMerge };
         }
         
         @Override
         public boolean isHeuristicRequired() {
             return true;
+        }
+
+        @Override
+        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+            
+            var m = super.getBatchProperties();
+            m.put(
+                BuilderController.TabPaneItem.SEARCH_EXTRA, 
+                List.of(useMerge)
+            );
+            
+            return m;
         }
         
         @Override
@@ -42,7 +53,7 @@ public class Astar extends Search {
         }
 
         @Override
-        public Astar build() {
+        protected Astar build() {
             return new Astar(this);
         }
     }
@@ -50,6 +61,8 @@ public class Astar extends Search {
 
     // ------
 
+    public static final String SEARCH_SHORT_NAME = "A*";
+    
     private final boolean useMerge;
 
     
@@ -64,10 +77,6 @@ public class Astar extends Search {
 
 
     // ------
-    
-    public static String getShortName() { 
-        return "A*"; 
-    }
 
     @Override
     protected void computeHeuristic(Grid g) {

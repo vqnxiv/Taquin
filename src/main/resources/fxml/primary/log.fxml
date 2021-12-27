@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TextArea?>
+
+
+<TextArea fx:id="logOutput" editable="false" wrapText="false"
+          xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+          fx:controller="io.github.vqnxiv.taquin.controller.LogController">
+</TextArea>

@@ -5,6 +5,9 @@ import io.github.vqnxiv.taquin.solver.SearchRunner;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.concurrent.Executors;
@@ -14,18 +17,26 @@ import java.util.concurrent.TimeUnit;
 
 public class BottomBarController {
 
+    private static final Logger LOGGER = LogManager.getLogger();
 
-    @FXML private Label heapUsage, searchInfo;
+    @FXML private Label heapUsage;
+    @FXML private Label searchInfo;
     
     private final ScheduledExecutorService execHeap;
     private final MemoryMXBean memoryMXBean;
     private final long maxHeap;
     private final SearchRunner searchRunner;
     
+    private boolean belowWarningValue = true;
+    private double warningValue = 0.9d;
+    
     
     public BottomBarController() {
+        LOGGER.info("Creating bottom bar");
+
         searchRunner = SearchRunner.getRunner();
         
+        // todo: thread naming
         execHeap = Executors.newScheduledThreadPool(1);
         memoryMXBean = ManagementFactory.getMemoryMXBean();
         maxHeap = memoryMXBean.getHeapMemoryUsage().getMax() / 1048576;
@@ -33,25 +44,31 @@ public class BottomBarController {
 
     @FXML
     public void initialize() {
-        execHeap.scheduleAtFixedRate(updateHeapUsage, 0, 200, TimeUnit.MILLISECONDS);
+        LOGGER.trace("Initializing bottom bar");
+        // todo: faster heap update
+        execHeap.scheduleAtFixedRate(this::monitorHeap, 0, 50, TimeUnit.MILLISECONDS);
         searchInfo.textProperty().bind(searchRunner.lastSearchInfo());
     }
     
     
-    private final Runnable updateHeapUsage = new Runnable() {
-        @Override
-        public void run() {
-            var cH = memoryMXBean.getHeapMemoryUsage().getUsed() / 1048576;
-            Platform.runLater(() -> heapUsage.setText(formatHeapLabel(cH)));
+    private void monitorHeap() {
+        var cH = memoryMXBean.getHeapMemoryUsage().getUsed() / 1048576;
+        if((double) cH / maxHeap >= warningValue) {
+            if(belowWarningValue) {
+                belowWarningValue = false;
+                LOGGER.warn((int) (warningValue * 100) +  "% heap usage: the app may be slowed down");
+            }
         }
-    };
-    
-    private String formatHeapLabel(long current) {
-        return String.format("Heap: %4d / %4d MB", current, maxHeap);
+        else {
+            belowWarningValue = true;
+        }
+
+        Platform.runLater(() -> heapUsage.setText(String.format("Heap: %4d / %4d MB", cH, maxHeap)));
     }
 
-
     public void shutdown() {
+        LOGGER.info("Shutting down bottom bar");
+
         execHeap.shutdown();
     }
 }

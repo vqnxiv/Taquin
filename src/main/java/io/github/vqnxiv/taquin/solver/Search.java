@@ -1,47 +1,53 @@
 package io.github.vqnxiv.taquin.solver;
 
 
+import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
 
+import io.github.vqnxiv.taquin.util.IBuilder;
+import io.github.vqnxiv.taquin.util.Utils;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.concurrent.Task;
 import org.openjdk.jol.info.GraphLayout;
-import java.util.EnumMap;
+
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 
 public abstract class Search {
 
     
-    public abstract static class Builder<B extends Builder<B>> {
+    public abstract static class Builder<B extends Builder<B>> implements IBuilder {
         
+        // todo integerProperties for limits? then put back into a map when creating
         private SearchSpace space;
-        private final EnumMap<Limit, Long> limits;
+        private final EnumMap<SearchLimit, Long> limits;
 
-        public ObjectProperty<Grid.Distance> heuristic;
-        public BooleanProperty filterExplored;
-        public BooleanProperty filterQueued;
-        public BooleanProperty linkExplored;
-        public BooleanProperty checkForQueuedEnd;
-        public IntegerProperty throttle;
-        public StringProperty name;
+        protected final  ObjectProperty<Grid.Distance> heuristic;
+        protected final  BooleanProperty filterExplored;
+        protected final  BooleanProperty filterQueued;
+        protected final  BooleanProperty linkExplored;
+        protected final  BooleanProperty checkForQueuedEnd;
+        protected final  StringProperty name;
+        protected final  BooleanProperty monitorMemory;
         
         // used when converting from a search type to another
-        public Builder(Builder<?> toCopy) {
+        protected Builder(Builder<?> toCopy) {
             
             if(toCopy == null) {
-                limits = new EnumMap<>(Limit.class);
-                for (var l : Limit.values()) limits.put(l, 0L);
+                limits = new EnumMap<>(SearchLimit.class);
+                for (var l : SearchLimit.values()) limits.put(l, 0L);
                 
-                heuristic = new SimpleObjectProperty<>(Grid.Distance.NONE);
-                filterExplored = new SimpleBooleanProperty(true);
-                filterQueued = new SimpleBooleanProperty(true);
-                linkExplored = new SimpleBooleanProperty(false);
-                checkForQueuedEnd = new SimpleBooleanProperty(false);
-                throttle = new SimpleIntegerProperty(0);
-                name = new SimpleStringProperty("");
+                heuristic = new SimpleObjectProperty<>(this, "heuristic", Grid.Distance.NONE);
+                filterExplored = new SimpleBooleanProperty(this, "filter explored", true);
+                filterQueued = new SimpleBooleanProperty(this, "filter queued", true);
+                linkExplored = new SimpleBooleanProperty(this, "link already explored", false);
+                checkForQueuedEnd = new SimpleBooleanProperty(this, "check if goal queued", false);
+                name = new SimpleStringProperty(this, "name", "");
+                monitorMemory = new SimpleBooleanProperty(this, "monitor memory", false);
             }
             else {
                 limits = toCopy.limits;
@@ -50,8 +56,8 @@ public abstract class Search {
                 filterQueued = toCopy.filterQueued;
                 linkExplored = toCopy.linkExplored;
                 checkForQueuedEnd = toCopy.checkForQueuedEnd;
-                throttle = toCopy.throttle;
                 name = toCopy.name;
+                monitorMemory = toCopy.monitorMemory;
             }
         }
         
@@ -60,87 +66,265 @@ public abstract class Search {
             return self();
         }
         
-        public B limit(Limit l, long n) {
+        public B limit(SearchLimit l, long n) {
             limits.put(l, n);
             return self();
         }
-        
-        public abstract Property<?>[] properties();
+
+        @Override
+        public Map<String, Property<?>> getNamedProperties() {
+            return Map.of(
+                name.getName(), name,
+                heuristic.getName(), heuristic
+            );
+        }
+
+        @Override
+        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+            return new EnumMap<>(Map.of(
+                BuilderController.TabPaneItem.SEARCH_MAIN, List.of(filterExplored, filterQueued, linkExplored),
+                BuilderController.TabPaneItem.LIMITS, List.of(checkForQueuedEnd),
+                BuilderController.TabPaneItem.MISCELLANEOUS, List.of(monitorMemory)
+            ));
+        }
         
         public abstract boolean isHeuristicRequired();
         
         protected abstract B self();
         
-        public abstract Search build();
+        protected abstract Search build();
     }
     
+public class SearchTask<S> extends Task<S> {
+        
+        private final EnumMap<SearchProperty, AtomicReference<String>> atomicReferences;
+
+        {
+            atomicReferences = new EnumMap<SearchProperty, AtomicReference<String>>(SearchProperty.class);
+            
+            for(var k : properties.keySet()) {
+                atomicReferences.put(k, new AtomicReference<>());
+            }
+        }
+        
+        private void updateAll() {
+            for(var e : atomicReferences.entrySet()) {
+                var k = e.getKey(); 
+                var v = e.getValue();
+                if(v.getAndSet(k.calcToString(Search.this)) == null) {
+                    Platform.runLater(() -> {
+                        final String s = v.getAndSet(null);
+                        properties.get(k).set(s);
+                    });
+                }
+            }
+        }
+        
+        private void throttle() {
+            if(throttle <= 0) {
+                return;
+            }
+            
+            elapsedTime += System.currentTimeMillis() - startTime;
+            try {
+                Thread.sleep(throttle);
+            } catch(InterruptedException e) {
+                // e.printStackTrace();
+                Search.this.stop();
+            }
+            startTime = System.currentTimeMillis();
+        }
+        
+        
+        private final int iterations;
+        private final int throttle;
+
+        
+        private SearchTask(int iter, int thr) {
+            iterations = iter;
+            throttle = thr;
+        }
+
+        @Override
+        protected S call() throws Exception {
+
+            if(currentSearchState == SearchState.READY || currentSearchState == SearchState.PAUSED) {
+
+                currentSearchState = SearchState.RUNNING;
+                startTime = System.currentTimeMillis();
+
+                for(int i = 0; i < ((iterations > 0) ? iterations : iterations + 1); i += (iterations > 0) ? 1 : 0) {
+                    if(checkConditions()) {
+                        step();
+                        updateAll();
+                        throttle();
+                    }
+                    else break;
+                }
+
+                elapsedTime += System.currentTimeMillis() - startTime;
+                if(checkConditions()) pause();
+                //monitorMemory = true;
+                updateAll();
+
+                /*
+                if(checkIfEndWasQueued && currentSearchState == SearchState.ENDED_FAILURE_LIMIT) {
+                    int n;
+                    if((n = searchSpace.getQueued().indexOf(searchSpace.getGoal())) > -1) {
+                        System.out.println("end queued at " + n);
+                    }
+                    else {
+                        System.out.println("end not queued");
+                    }
+                }
+                */
+            }
+
+            return (S) currentSearchState;
+        }
+    }
+
+    public enum SearchLimit {
+        
+        /*
+        (s -> SProperty.ELAPSED_TIME.calc(s) >= s.limitsMap.get(Limit.MAXIMUM_TIME)),
+        (s -> SProperty.ELAPSED_TIME.calc(s) >= s.limitsMap.get(this)),
+        => illegal self reference
+        so we have to use an extra method for the check
+        */
+        
+        MAXIMUM_TIME
+            (SearchProperty.ELAPSED_TIME::calc),
+        MAXIMUM_MEMORY
+            (s -> (Long) SearchProperty.EXPLORED_MEMORY.calc(s) + (Long) SearchProperty.QUEUED_MEMORY.calc(s)),
+        MAXIMUM_DEPTH
+            (SearchProperty.CURRENT_DEPTH::calc),
+        MAXIMUM_EXPLORED_STATES
+            (SearchProperty.EXPLORED_SIZE::calc),
+        MAXIMUM_GENERATED_STATES
+            (s -> (Long) SearchProperty.EXPLORED_SIZE.calc(s) + (Long) SearchProperty.QUEUED_SIZE.calc(s));
+        
+        private final Function<Search, Long> function;
+        
+        SearchLimit(Function<Search, Long> func) {
+            function = func;
+        }
+
+        private boolean check(Search s) {
+            return function.apply(s) >= s.limitsMap.get(this);
+        }
+
+        @Override
+        public String toString() {
+            return Utils.constantToReadable(this.name());
+        }
+    }
+    
+    public enum SearchState {
+        NOT_READY,
+        READY,
+        RUNNING,
+        PAUSED,
+        ENDED_SUCCESS { 
+            @Override 
+            public String toString() { 
+                return "successfully ended"; 
+            } 
+        },
+        ENDED_FAILURE_USER_FORCED { 
+            @Override 
+            public String toString() { 
+                return "forcefully ended"; 
+            } 
+        },
+        ENDED_FAILURE_EMPTY_SPACE { 
+            @Override 
+            public String toString() { 
+                return "empty space search";
+            } 
+        },
+        ENDED_FAILURE_LIMIT { 
+            @Override 
+            public String toString() { 
+                return "reached limit"; 
+            } 
+        };
+        
+        @Override
+        public String toString() {
+            return Utils.constantToReadable(this.name());
+        }
+    }
+    
+    public enum SearchProperty {
+        CURRENT_STATE
+            (x -> x.currentSearchState),
+        ELAPSED_TIME
+            (x ->
+                (x.currentSearchState == SearchState.RUNNING)
+                ? (System.currentTimeMillis() - x.startTime) + x.elapsedTime
+                : (x.elapsedTime)
+            ),
+        CURRENT_KEY
+            (x -> x.searchSpace.getCurrent().getKey()),
+        CURRENT_DEPTH
+            (x -> x.searchSpace.getCurrent().getDepth()),
+        EXPLORED_SIZE
+            (x -> x.searchSpace.getExplored().size()),
+        EXPLORED_MEMORY
+            (x -> GraphLayout.parseInstance(x.searchSpace.getExplored()).totalSize() / 1048576L),
+        QUEUED_SIZE
+            (x -> x.searchSpace.getQueued().size()),
+        QUEUED_MEMORY
+            (x -> GraphLayout.parseInstance(x.searchSpace.getQueued()).totalSize() / 1048576L);
+        
+        private final Function<Search, ?> function;
+        
+        SearchProperty(Function<Search, ?> func) {
+            function = func;
+        }
+        
+        public <T> T calc(Search s) {
+            return (T) function.apply(s);
+        }
+        
+        public String calcToString(Search s) {
+            return function.apply(s).toString();
+        }
+
+        @Override
+        public String toString() {
+            return Utils.constantToReadable(this.name());
+        }
+    }
+
     
     // ------
-
-    public enum Limit {
-        MAX_TIME        { public String toString() { return "maximum time allowed"; } },
-        MAX_MEMORY      { public String toString() { return "maximum memory allowed"; } },
-        MAX_DEPTH       { public String toString() { return "maximum depth allowed"; } },
-        MAX_EXPLORED    { public String toString() { return "maximum explored states allowed"; } },
-        MAX_GENERATED   { public String toString() { return "maximum generated states allowed"; } }
-    }
-
-    public enum State {
-        NOT_READY                   { public String toString() { return "not ready"; } },
-        READY                       { public String toString() { return "ready"; } },
-        RUNNING                     { public String toString() { return "running"; } },
-        PAUSED                      { public String toString() { return "paused"; } },
-        ENDED_SUCCESS               { public String toString() { return "successfully ended"; } },
-        ENDED_FAILURE_USER_FORCED   { public String toString() { return "forcefully ended"; } },
-        ENDED_FAILURE_EMPTY_SPACE   { public String toString() { return "empty space search"; } },
-        ENDED_FAILURE_LIMIT         { public String toString() { return "reached limit"; } },
-    }
-
-
-    // ------
     
-    private final long id;
+    private static int SEARCH_ID_COUNT;
+    
+    private final int id;
     private final String name;
     
-    private State currentState = State.NOT_READY;
+    private SearchState currentSearchState = SearchState.NOT_READY;
     
     protected final SearchSpace searchSpace;
     protected final Grid.Distance heuristic;
-    private final EnumMap<Search.Limit, Long> limitsMap;
+    private final EnumMap<SearchLimit, Long> limitsMap;
     
     protected final boolean filterExplored;
     protected final boolean filterQueued;
     protected final boolean linkAlreadyExploredNeighbors;
     
-    boolean userForceStop = false;
-    
+    // todo: int time + move start/elapsed calc to task?
+    // todo: use instant
     private long startTime;
     private long elapsedTime = 0;
-    
-    private final int throttle;
+   
     private final boolean checkIfEndWasQueued;
-    private boolean monitorMemory = false;
     
+    private final EnumMap<SearchProperty, StringProperty> properties;
 
-    // ------
-    
-    private final StringProperty currentKey     = new SimpleStringProperty(this, "currentKey", "");
-    private final StringProperty currentDepth   = new SimpleStringProperty(this, "currentDepth", "");
-    private final StringProperty searchState    = new SimpleStringProperty(this, "searchState", "");
-    private final StringProperty time           = new SimpleStringProperty(this, "time", "");
-    private final StringProperty explored       = new SimpleStringProperty(this, "explored", "");
-    private final StringProperty exploredMem    = new SimpleStringProperty(this, "exploredMem", "0b");
-    private final StringProperty queued         = new SimpleStringProperty(this, "queued", "");
-    private final StringProperty queuedMem      = new SimpleStringProperty(this, "queuedMem", "0b");
-
-    private final ReadOnlyStringProperty[] properties = {
-        searchState, time, currentKey, currentDepth, explored, exploredMem, queued, queuedMem
-    };
-    
-    public final ReadOnlyStringProperty currentStateProperty() {
-        return searchState;
-    }
-    
     
     // ------
     
@@ -156,78 +340,87 @@ public abstract class Search {
         linkAlreadyExploredNeighbors = builder.linkExplored.get();
 
         checkIfEndWasQueued = builder.checkForQueuedEnd.get();
-        throttle = builder.throttle.get();
-
-        id = System.currentTimeMillis();
-        var s = builder.name.get();
-        name = (s.equals("")) ? Long.toString(id) : s;
+        
+        id = SEARCH_ID_COUNT;
+        SEARCH_ID_COUNT++;
+        name = (builder.name.get().equals("")) ? Integer.toString(id) : builder.name.get();
+        
+        properties = createProperties(builder.monitorMemory.get());
         
         // needed?
         if(heuristic != Grid.Distance.NONE)
             searchSpace.getStart().setHeuristicValue(searchSpace.getStart().distanceTo(searchSpace.getGoal(), heuristic));
     }
 
+    private EnumMap<SearchProperty, StringProperty> createProperties(boolean monitorMemory) {
+
+        var s = EnumSet.allOf(SearchProperty.class);
+        
+        if(!monitorMemory) {
+            s.remove(SearchProperty.EXPLORED_MEMORY);
+            s.remove(SearchProperty.QUEUED_MEMORY);
+        }
+        
+        var propsMap = new EnumMap<SearchProperty, StringProperty>(SearchProperty.class);
+
+        for(var s2 : s) {
+            propsMap.put(
+                s2,
+                new SimpleStringProperty(this, s2.toString(), "")
+            );
+        }
+
+        return propsMap;
+    };
+    
     
     // ------
 
-    protected State getState() { 
-        return currentState; 
+    protected SearchState getState() { 
+        return currentSearchState; 
     }
 
     protected void setReady() { 
-        currentState = State.READY; 
+        currentSearchState = SearchState.READY; 
     }
     
     public String getName() {
         return name;
     }
     
-    public ReadOnlyStringProperty[] getProperties() {
+    public EnumMap<SearchProperty, StringProperty> getProperties() {
         return properties;
     }
-    
+
+    public final ReadOnlyStringProperty getCurrentStateProperty() {
+        return properties.get(SearchProperty.CURRENT_STATE);
+    }
     
     // ------
     
     private boolean checkConditions(){
 
-        if(currentState == State.PAUSED) {
+        if(currentSearchState == SearchState.PAUSED || currentSearchState == SearchState.ENDED_FAILURE_USER_FORCED) {
             return false;
         }
 
         if(searchSpace.isCurrentGoal()){
-            currentState = State.ENDED_SUCCESS;
+            currentSearchState = SearchState.ENDED_SUCCESS;
             return false;
         }
 
         if(searchSpace.getQueued().isEmpty()){
-            currentState = State.ENDED_FAILURE_EMPTY_SPACE;
+            currentSearchState = SearchState.ENDED_FAILURE_EMPTY_SPACE;
             return false;
         }
-
-        if(userForceStop){
-            currentState = State.ENDED_FAILURE_USER_FORCED;
-            return false;
-        }
-
-        for(var l : limitsMap.entrySet()){
-
-            long currentVal = switch (l.getKey()) {
-                case MAX_TIME -> (System.currentTimeMillis() - startTime) + elapsedTime;
-                case MAX_MEMORY -> GraphLayout.parseInstance(searchSpace.getExplored()).totalSize() 
-                    + GraphLayout.parseInstance(searchSpace.getQueued()).totalSize();
-                case MAX_DEPTH -> searchSpace.getCurrent().getDepth();
-                case MAX_EXPLORED -> searchSpace.getExplored().size();
-                case MAX_GENERATED -> searchSpace.getExplored().size() + searchSpace.getQueued().size();
-                default -> -1;
-            };
-
-            if(currentVal >= l.getValue()){
-                currentState = State.ENDED_FAILURE_LIMIT;
+        
+        for(var l : limitsMap.keySet()) {
+            if(l.check(this)){
+                currentSearchState = SearchState.ENDED_FAILURE_LIMIT;
                 return false;
             }
         }
-
+    
         return true;
     }
 
@@ -235,169 +428,28 @@ public abstract class Search {
     // ------
 
     protected void pause() {
-        if(currentState != State.RUNNING) {
+        if(currentSearchState != SearchState.RUNNING) {
             return;
         }
 
-        this.currentState = State.PAUSED;
+        this.currentSearchState = SearchState.PAUSED;
     }
 
     protected void stop() {
-        if(currentState != State.RUNNING && currentState != State.PAUSED)
+        if(currentSearchState != SearchState.RUNNING && currentSearchState != SearchState.PAUSED) {
             return;
+        }
         
-        userForceStop = true;
-        // find a way to update here
-        // if(currentState == State.PAUSED) pause();
+        this.currentSearchState = SearchState.ENDED_FAILURE_USER_FORCED;
     }
     
     
-    public SearchTask<State> newSearchTask(int n) {
-        return new SearchTask<>(n);
-    }
-    
-
-    public class SearchTask<S> extends Task<S> {
-
-        private final AtomicReference<String> currentKeyUpdate    = new AtomicReference<>();
-        private final AtomicReference<String> currentDepthUpdate  = new AtomicReference<>();
-        private final AtomicReference<String> searchStateUpdate   = new AtomicReference<>();
-        private final AtomicReference<String> timeUpdate          = new AtomicReference<>();
-        private final AtomicReference<String> exploredUpdate      = new AtomicReference<>();
-        private final AtomicReference<String> exploredMemUpdate   = new AtomicReference<>();
-        private final AtomicReference<String> queuedUpdate        = new AtomicReference<>();
-        private final AtomicReference<String> queuedMemUpdate     = new AtomicReference<>();
-        
-        
-        private void updateAll() {
-            if(currentKeyUpdate.getAndSet(
-                Integer.toString(searchSpace.getCurrent().getKey())
-            ) == null) {
-                Platform.runLater(() -> {
-                    final String s = currentKeyUpdate.getAndSet(null);
-                    currentKey.set(s);
-                });
-            }
-            if(currentDepthUpdate.getAndSet(
-                Integer.toString(searchSpace.getCurrent().getDepth())
-            ) == null) {
-                Platform.runLater(() -> {
-                    final String s = currentDepthUpdate.getAndSet(null);
-                    currentDepth.set(s);
-                });
-            }
-            if(searchStateUpdate.getAndSet(
-                currentState.toString()
-            ) == null) {
-                Platform.runLater(() -> {
-                    final String s = searchStateUpdate.getAndSet(null);
-                    searchState.set(s);
-                });
-            }
-            // throwup but it avoids showing double time when it ends
-            if(timeUpdate.getAndSet(
-                Long.toString(
-                    (currentState == Search.State.RUNNING)
-                    ? (System.currentTimeMillis() - startTime) + elapsedTime
-                    : (elapsedTime)
-                )
-            ) == null) {
-                Platform.runLater(() -> {
-                    final String s = timeUpdate.getAndSet(null) + "ms";
-                    time.set(s);
-                });
-            }
-            if(exploredUpdate.getAndSet(
-                Integer.toString(searchSpace.getExplored().size())
-            ) == null) {
-                Platform.runLater(() -> {
-                    final String s = exploredUpdate.getAndSet(null);
-                    explored.set(s);
-                });
-            }
-            if(queuedUpdate.getAndSet(
-                Integer.toString(searchSpace.getQueued().size())
-            ) == null) {
-                Platform.runLater(() -> {
-                    final String s = queuedUpdate.getAndSet(null);
-                    queued.set(s);
-                });
-            }
-            if(monitorMemory) {
-                if(exploredMemUpdate.getAndSet(
-                    Long.toString(GraphLayout.parseInstance(searchSpace.getExplored()).totalSize() / 1048576L)
-                ) == null) {
-                    Platform.runLater(() -> {
-                        final String s = exploredMemUpdate.getAndSet(null) + "mb";
-                        exploredMem.set(s);
-                    });
-                }
-                if(queuedMemUpdate.getAndSet(
-                    Long.toString(GraphLayout.parseInstance(searchSpace.getQueued()).totalSize() / 1048576L)
-                ) == null) {
-                    Platform.runLater(() -> {
-                        final String s = queuedMemUpdate.getAndSet(null) + "mb";
-                        queuedMem.set(s);
-                    });
-                }
-            }
-        }
-        
-
-        private final int iterations;
-        
-        SearchTask(int n) {
-            iterations = n;
-        }
-        
-        @Override
-        protected S call() throws Exception {
-
-            if(currentState == Search.State.READY || currentState == Search.State.PAUSED) {
-
-                currentState = Search.State.RUNNING;
-                startTime = System.currentTimeMillis();
-                
-                for(int i = 0; i < ((iterations > 0) ? iterations : iterations + 1); i += (iterations > 0) ? 1 : 0) {
-                    if(checkConditions()) {
-                        step();
-                        updateAll();
-                        
-                        if(throttle > 0) {
-                            elapsedTime += System.currentTimeMillis() - startTime;
-                            Thread.sleep(throttle);
-                            startTime = System.currentTimeMillis();
-                        }
-                    }
-                    else break;
-                }
-                
-                elapsedTime += System.currentTimeMillis() - startTime;
-                if(checkConditions()) pause();
-                monitorMemory = true;
-                updateAll();
-                
-                if(checkIfEndWasQueued && currentState == Search.State.ENDED_FAILURE_LIMIT) {
-                    int n;
-                    if((n = searchSpace.getQueued().indexOf(searchSpace.getGoal())) > -1) {
-                        System.out.println("end queued at " + n);
-                    }
-                    else {
-                        System.out.println("end not queued");
-                    }
-                }
-            }
-
-            return (S) currentState;
-        }
+    public SearchTask<SearchState> newSearchTask(int n, int o) {
+        return new SearchTask<>(n, o);
     }
     
 
     // ------
-
-    public static String getShortName() { 
-        return "Abstract search"; 
-    }
     
     protected abstract void computeHeuristic(Grid g);
 
@@ -422,6 +474,6 @@ public abstract class Search {
 
     @Override
     public String toString() {
-        return "[" + id + "] " + name + ": " + currentState;
+        return "[" + id + "] " + name + ": " + currentSearchState;
     }
 }

@@ -1,11 +1,14 @@
 package io.github.vqnxiv.taquin.solver.search;
 
 
+import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
 import javafx.beans.property.*;
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
 
 
 public class IterativeDeepening extends Search {
@@ -13,41 +16,50 @@ public class IterativeDeepening extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
 
-        public BooleanProperty checkNewStatesForGoal;
-        public IntegerProperty initialDepthLimit;
-        public IntegerProperty limitIncrement;
+        private BooleanProperty checkNewStatesForGoal;
+        private IntegerProperty initialDepthLimit;
+        private IntegerProperty limitIncrement;
 
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
             
-            checkNewStatesForGoal = new SimpleBooleanProperty(this, "Check new states for goal", false);
-            initialDepthLimit = new SimpleIntegerProperty(this, "Initial depth limit", 1);
-            limitIncrement = new SimpleIntegerProperty(this, "Limit increment", 1);
-        }
-        
-        @Override
-        public Property<?>[] properties() {
-            return new Property[]{ checkNewStatesForGoal, initialDepthLimit, limitIncrement };
+            checkNewStatesForGoal = new SimpleBooleanProperty(this, "check new states for goal", false);
+            initialDepthLimit = new SimpleIntegerProperty(this, "initial depth limit", 1);
+            limitIncrement = new SimpleIntegerProperty(this, "limit increment", 1);
         }
         
         @Override
         public boolean isHeuristicRequired() {
             return false;
         }
-        
+
+        @Override
+        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+
+            var m = super.getBatchProperties();
+            m.put(
+                BuilderController.TabPaneItem.SEARCH_EXTRA, 
+                List.of(checkNewStatesForGoal, initialDepthLimit, limitIncrement)
+            );
+
+            return m;
+        }
+
         @Override
         protected Builder self() {
             return this;
         }
 
         @Override
-        public IterativeDeepening build() {
+        protected IterativeDeepening build() {
             return new IterativeDeepening(this);
         }
     }
 
 
     // ------
+
+    public static final String SEARCH_SHORT_NAME = "IDDFS";
 
     private final boolean checkNewStatesForGoal;
     private final int initialDepthLimit;
@@ -71,10 +83,6 @@ public class IterativeDeepening extends Search {
 
 
     // ------
-
-    public static String getShortName() {
-        return "IDDFS";
-    }
 
     @Override
     protected void computeHeuristic(Grid g) {

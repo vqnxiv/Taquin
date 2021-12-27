@@ -20,7 +20,7 @@
       <SplitPane dividerPositions="0.29" VBox.vgrow="ALWAYS">
          <items>
             <!-- console -->
-            <fx:include source="console.fxml" fx:id="console" />
+            <fx:include source="log.fxml" fx:id="console" />
             <!-- searches -->
             <fx:include source="searchPane.fxml" fx:id="searchPane" />
          </items>

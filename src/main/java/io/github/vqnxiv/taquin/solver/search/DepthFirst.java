@@ -1,6 +1,7 @@
 package io.github.vqnxiv.taquin.solver.search;
 
 
+import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
@@ -8,6 +9,9 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class DepthFirst extends Search {
@@ -15,37 +19,46 @@ public class DepthFirst extends Search {
     
     public static class Builder extends Search.Builder<Builder> {
 
-        public BooleanProperty checkNewStatesForGoal;
+        private BooleanProperty checkNewStatesForGoal;
         
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
             
-            checkNewStatesForGoal = new SimpleBooleanProperty(false);
-        }
-        
-        @Override
-        public Property<?>[] properties() {
-            return new Property[]{ checkNewStatesForGoal };
+            checkNewStatesForGoal = new SimpleBooleanProperty(this, "check new states for goal", false);
         }
         
         @Override
         public boolean isHeuristicRequired() {
             return false;
         }
-        
+
+        @Override
+        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+
+            var m = super.getBatchProperties();
+            m.put(
+                BuilderController.TabPaneItem.SEARCH_EXTRA,
+                List.of(checkNewStatesForGoal)
+            );
+
+            return m;
+        }
+
         @Override
         protected Builder self() {
             return this;
         }
 
         @Override
-        public DepthFirst build() {
+        protected DepthFirst build() {
             return new DepthFirst(this);
         }
     }
     
 
     // ------
+
+    public static final String SEARCH_SHORT_NAME = "DFS";
 
     private final boolean checkNewStatesForGoal;
 
@@ -61,10 +74,6 @@ public class DepthFirst extends Search {
 
 
     // ------
-    
-    public static String getShortName() { 
-        return "DFS"; 
-    }
 
     @Override
     protected void computeHeuristic(Grid g) {

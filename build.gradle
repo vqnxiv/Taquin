@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'io.github.vqnxiv'
-version '1.0-SNAPSHOT'
+version '0.1'
 
 repositories {
     mavenCentral()
@@ -40,26 +40,22 @@ javafx {
 
 dependencies {
 
-    testImplementation('org.junit.jupiter:junit-jupiter-api:5.8.1')
-    testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.8.1')
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.8.2')
+    testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.8.2')
 
     implementation 'org.openjdk.jol:jol-core:0.16'
     implementation 'org.reflections:reflections:0.10.2'
     implementation 'org.jfxtras:jmetro:11.6.15'
-    implementation 'org.apache.logging.log4j:log4j-api:2.14.1'
-    implementation 'org.apache.logging.log4j:log4j-core:2.14.1'
+    implementation 'org.apache.logging.log4j:log4j-api:2.16.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.16.0'
 }
 
 extraJavaModuleInfo {
     //automaticModule("jol-core-0.16.jar", "")
     automaticModule("reflections-0.10.2.jar", "")
     
-    // ????
-    // needed otherwise ->
-    //   Failed to transform .jar (com.thing.z:name:version)
-    //   to match attributes {artifactType=jar, javaModule=true, org.gradle.category=library, org.gradle.libraryelements=jar, org.gradle.status=release, org.gradle.usage=java-api}.
-    //      Execution failed for ExtraModuleInfoTransform: Path/to/jar/in/.gradle/cache/modules-2
-    //         Not a module and no mapping defined: name.jar
+
+    // keep if JOL and reflections
     automaticModule("javassist-3.28.0-GA.jar", "javassist")
     automaticModule("jsr305-3.0.2.jar", "jsr305")
     

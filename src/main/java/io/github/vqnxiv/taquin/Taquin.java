@@ -33,17 +33,22 @@ public class Taquin extends Application {
 
     private MainController mainController;
 
+    // todo: logger
     private static final Logger LOGGER = LogManager.getLogger();
 
 
     public static void main(String[] args) {
+        LOGGER.info("Starting application");
+        
         launch();
     }
 
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-
+        Thread.currentThread().setName("JFX Thread");
+        LOGGER.info("Creating main stage");
+        
         primaryStage.setTitle(APP_NAME + " " + APP_VERSION);
 
         primaryStage.setMinWidth(PRIMARY_MIN_WIDTH);
@@ -63,12 +68,13 @@ public class Taquin extends Application {
         primaryStage.setScene(scene);
 
         primaryStage.show();
-        LOGGER.error("ok");
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
+        LOGGER.info("Shutting down application");
         mainController.shutdown();
+        LOGGER.info("Closing application");
     }
 
 }

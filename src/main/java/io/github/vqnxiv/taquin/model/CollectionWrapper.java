@@ -1,28 +1,43 @@
 package io.github.vqnxiv.taquin.model;
 
 
+import io.github.vqnxiv.taquin.controller.BuilderController;
+import io.github.vqnxiv.taquin.util.IBuilder;
 import javafx.beans.property.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 
-public class CollectionWrapper<E extends Comparable<E>>{
+public class CollectionWrapper<E extends Comparable<E>> {
     
     
-    public static class Builder {
+    public static class Builder implements IBuilder {
         
-        public ObjectProperty<Class<?>> subClass;
-        public BooleanProperty initialCapacity;
-        public IntegerProperty userInitialCapacity;
+        private final ObjectProperty<Class<?>> subClass;
+        private final BooleanProperty initialCapacity;
+        private final IntegerProperty userInitialCapacity;
         
-        public Builder(Class<?> c) {
-            subClass = new SimpleObjectProperty<>(c);
-            initialCapacity = new SimpleBooleanProperty(false);
-            userInitialCapacity = new SimpleIntegerProperty(0);
+        public Builder(String s, Class<?> c) {
+            subClass = new SimpleObjectProperty<>(this, s + " class", c);
+            initialCapacity = new SimpleBooleanProperty(this, s + " increase capacity", false);
+            userInitialCapacity = new SimpleIntegerProperty(this, s + " capacity", 0);
         }
         
         public CollectionWrapper<?> build() {
             return new CollectionWrapper<>(this);
+        }
+
+        @Override
+        public Map<String, Property<?>> getNamedProperties() {
+            return Map.of(subClass.getName(), subClass);
+        }
+
+        @Override
+        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+            return new EnumMap<>(Map.of(
+                BuilderController.TabPaneItem.COLLECTION, 
+                List.of(initialCapacity, userInitialCapacity)
+            ));
         }
     }
 
@@ -186,7 +201,7 @@ public class CollectionWrapper<E extends Comparable<E>>{
     }
     
     public int indexOf(E elt) {
-        if(self instanceof List l) {
+        if(self instanceof List<E> l) {
             return l.indexOf(elt);
         }
         int i = 0;
@@ -211,17 +226,15 @@ public class CollectionWrapper<E extends Comparable<E>>{
         Collections.sort((List<E>) self); 
     }
     
-    public void mergeWith(LinkedList<E> toAdd) {
-        Collections.sort(toAdd);
-
+    public void mergeWith(Queue<E> toAdd) {
         var tmp = new LinkedList<>(self);
         self.clear();
         
         while(!toAdd.isEmpty() && !tmp.isEmpty()) {
             self.add(
                 // if toAdd.peekFirst() < tmp.peekFirst()
-                (toAdd.peekFirst().compareTo(tmp.peekFirst()) > 0) ?
-                tmp.pollFirst() : toAdd.pollFirst()       
+                (toAdd.peek().compareTo(tmp.peekFirst()) > 0) ?
+                tmp.pollFirst() : toAdd.poll()       
             );
         }
         
@@ -257,56 +270,49 @@ public class CollectionWrapper<E extends Comparable<E>>{
     }
 
     public E pollFirst() {
-        E retour;
-
-        switch (self) {
+        return switch (self) {
             // ArrayDeque, LinkedList, PriorityQueue
-            case Queue<E> subQueue -> {
-                retour = subQueue.poll();
-            }
+            case Queue<E> subQueue -> subQueue.poll();
             // LinkedHashSet
             case Set<E> subSet -> {
-                retour = subSet.stream().findFirst().get();
-                subSet.remove(retour);
+                E e = subSet.stream().findFirst().get();
+                subSet.remove(e);
+                yield e;
             }
             // ArrayList
             case List<E> subList -> {
-                retour = subList.get(0);
+                E e = subList.get(0);
                 subList.remove(0);
+                yield e;
             }
             default -> throw new IllegalStateException("Unexpected value: " + self);
-        }
-
-        return retour;
+        };
     }
 
     public E pollLast() {
-        E retour;
-
-        switch (self) {
+        return switch (self) {
             // ArrayDeque, LinkedList
-            case Deque<E> subQueue -> {
-                retour = subQueue.pollLast();
-            }
+            case Deque<E> subQueue -> subQueue.pollLast();
             // ArrayList
             case List<E> subList -> {
-                retour = subList.get(subList.size()-1);
+                E e = subList.get(subList.size()-1);
                 subList.remove(subList.size()-1);
+                yield e;
             }
             // PriorityQueue
             case Queue<E> subQueue -> {
-                retour = subQueue.stream().skip(subQueue.size()-1).findFirst().get();
-                subQueue.remove(retour);
+                E e = subQueue.stream().skip(subQueue.size()-1).findFirst().get();
+                subQueue.remove(e);
+                yield e;
             }
             // LinkedHashSet
             case Set<E> subSet -> {
-                retour = subSet.stream().skip(subSet.size()-1).findFirst().get();
-                subSet.remove(retour);
+                E e = subSet.stream().skip(subSet.size()-1).findFirst().get();
+                subSet.remove(e);
+                yield e;
             }
             default -> throw new IllegalStateException("Unexpected value: " + self);
-        }
-
-        return retour;
+        };
     }
 
 

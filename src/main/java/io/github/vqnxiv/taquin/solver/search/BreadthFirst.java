@@ -1,6 +1,7 @@
 package io.github.vqnxiv.taquin.solver.search;
 
 
+import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
@@ -8,6 +9,8 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
 
 
 public class BreadthFirst extends Search {
@@ -15,37 +18,46 @@ public class BreadthFirst extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
 
-        public BooleanProperty checkNewStatesForGoal;
+        private BooleanProperty checkNewStatesForGoal;
         
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
             
-            checkNewStatesForGoal = new SimpleBooleanProperty(this, "Check new states for goal",true);
-        }
-
-        @Override
-        public Property<?>[] properties() {
-            return new Property[]{ checkNewStatesForGoal };
+            checkNewStatesForGoal = new SimpleBooleanProperty(this, "check new states for goal",true);
         }
 
         @Override
         public boolean isHeuristicRequired() {
             return false;
         }
-        
+
+        @Override
+        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+
+            var m = super.getBatchProperties();
+            m.put(
+                BuilderController.TabPaneItem.SEARCH_EXTRA, 
+                List.of(checkNewStatesForGoal)
+            );
+
+            return m;
+        }
+
         @Override
         protected Builder self() {
             return this;
         }
 
         @Override
-        public BreadthFirst build() {
+        protected BreadthFirst build() {
             return new BreadthFirst(this);
         }
     }
     
     
     // ------
+
+    public static final String SEARCH_SHORT_NAME = "BFS";
 
     private final boolean checkNewStatesForGoal;
 
@@ -61,10 +73,6 @@ public class BreadthFirst extends Search {
 
 
     // ------
-
-    public static String getShortName() {
-        return "BFS"; 
-    }
 
     @Override
     protected void computeHeuristic(Grid g) {

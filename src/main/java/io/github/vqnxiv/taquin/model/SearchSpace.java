@@ -1,30 +1,33 @@
 package io.github.vqnxiv.taquin.model;
 
 
+import io.github.vqnxiv.taquin.controller.BuilderController;
+import io.github.vqnxiv.taquin.util.IBuilder;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.*;
+
 
 
 public class SearchSpace {
     
     
-    public static class Builder {
+    public static class Builder implements IBuilder {
         private CollectionWrapper<?> explored;
         private CollectionWrapper<?> queued;
         
-        public ObjectProperty<Grid.EqualPolicy> equalPolicy;
-        public Property<Grid> start;
-        public Property<Grid> end;
+        private final ObjectProperty<Grid.EqualPolicy> equalPolicy;
+        private final ObjectProperty<Grid> start;
+        private final ObjectProperty<Grid> end;
         
+        // todo: Grid.empty()
+        // todo: immutable Grid
         public Builder() {
-            equalPolicy = new SimpleObjectProperty<>(Grid.EqualPolicy.NONE);
-            start = new SimpleObjectProperty<>();
-            end = new SimpleObjectProperty<>();
+            equalPolicy = new SimpleObjectProperty<>(this, "equal policy", Grid.EqualPolicy.NONE);
+            start = new SimpleObjectProperty<>(this, "start", new Grid(new int[1][1], Grid.EqualPolicy.RANDOM));
+            end = new SimpleObjectProperty<>(this, "end", new Grid(new int[1][1], Grid.EqualPolicy.RANDOM));
         }
         
         public Builder explored(CollectionWrapper<?> cw) {
@@ -38,15 +41,30 @@ public class SearchSpace {
         }
 
         public SearchSpace build() {
-            if(start == null || end == null || explored == null || queued == null) {
+            if(start.get() == null || end.get() == null || explored == null || queued == null) {
                 try {
-                    throw new Exception("null fields");
+                    throw new NullPointerException("null fields");
                 } catch(Exception e) {
                     e.printStackTrace();
                 }
             }
             
             return new SearchSpace(start.getValue(), end.getValue(), explored, queued, equalPolicy.get());
+        }
+
+        @Override
+        public Map<String, Property<?>> getNamedProperties() {
+            return Map.of(
+                start.getName(), start,
+                end.getName(), end
+            );
+        }
+
+        @Override
+        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+            return new EnumMap<>(Map.of(
+                BuilderController.TabPaneItem.SEARCH_MAIN, List.of(equalPolicy) 
+            ));
         }
     }
     
@@ -147,7 +165,9 @@ public class SearchSpace {
         }
     }
     
-    public LinkedList<Grid> getNewNeighbors(boolean filterExplored, boolean filterQueued, boolean linkExisting){
+    //public LinkedList<Grid> getNewNeighbors(boolean filterExplored, boolean filterQueued, boolean linkExisting){
+    @SuppressWarnings("unchecked")
+    public <T extends Queue<Grid> & List<Grid>> T getNewNeighbors(boolean filterExplored, boolean filterQueued, boolean linkExisting){
 
         var possibleNewStates = currentGrid.generateNeighbors();
         var retour = new LinkedList<Grid>();
@@ -167,7 +187,7 @@ public class SearchSpace {
             }
         }
 
-        return retour;
+        return (T) retour;
     }
 
     private void linkExisting(Grid g) {

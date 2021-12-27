@@ -17,6 +17,8 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 //import jfxtras.styles.jmetro.JMetro;
 //import jfxtras.styles.jmetro.Style;
 import java.util.HashSet;
@@ -24,28 +26,33 @@ import java.util.function.UnaryOperator;
 
 
 public class GridViewer {
-    
-    
+
+    private static final Logger LOGGER = LogManager.getLogger();
+
     Stage stage;
     Scene scene;
     AnchorPane anchorPane;
     GridPane gridPane;
     ToolBar toolBar;
     
+    // todo: remove?
     int toolBarHeight = 30;
     int minCellSize = 50;
     
+    // todo: remove
     int stageWidth = 250;
     int stageHeight = 250;
     
     Grid grid;
     
     // width = # columns; height = # rows
+    // todo: merge current & new
     int currentGridWidth;
     int currentGridHeight;
     int newGridWidth;
     int newGridHeight;
     
+    // todo: remove isReadOnly (better alignment)
     boolean isReadOnly;
     BooleanProperty readOnly;
     
@@ -206,7 +213,7 @@ public class GridViewer {
 
 
         for(var n : new Control[]{ widthTF, heightTF, updateBtn, validateBtn }) {
-            n.setPrefSize((stageWidth - 10)/5, toolBarHeight-12);
+            n.setPrefSize((double) (stageWidth - 10)/5, toolBarHeight-12d);
         }
 
         // rows * columns
@@ -351,19 +358,19 @@ public class GridViewer {
                 if(grid.getSelf()[row][col] == 0) hasAZero = true;
                 if(grid.getSelf()[row][col] == -1) {
                     isFilled = false;
-                    System.out.println("[" + stageName + "] Empty cell: (" + row + ", " + col + ")");
+                    LOGGER.warn("[" + stageName + "] Empty cell: (" + row + ", " + col + ")");
                 }
                 else {
                     if(values.contains(grid.getSelf()[row][col])) {
                         allUniques = false;
-                        System.out.println("[" + stageName + "] Duplicate value: (" + row + ", " + col + ")");
+                        LOGGER.warn("[" + stageName + "] Duplicate value: (" + row + ", " + col + ")");
                     }
                     else values.add(grid.getSelf()[row][col]);
                 }
             }
         }
 
-        if(!hasAZero) System.out.println("[" + stageName + "] No cell with zero value");
+        if(!hasAZero) LOGGER.warn("[" + stageName + "] No cell with zero value");
 
         if(hasAZero && allUniques && isFilled) {
             gridProperty.setValue(grid);
@@ -379,10 +386,10 @@ public class GridViewer {
             Platform.runLater(() -> {
                 int row, col;
                 for(var l : gridPane.getChildren()) {
-                    if(l instanceof Label) {
+                    if(l instanceof Label l2) {
                         row = GridPane.getRowIndex(l);
                         col = GridPane.getColumnIndex(l);
-                        ((Label) l).setText(
+                        (l2).setText(
                             (grid.getSelf()[row][col] != 0) ?
                             String.valueOf(grid.getSelf()[row][col]) : ""
                         );

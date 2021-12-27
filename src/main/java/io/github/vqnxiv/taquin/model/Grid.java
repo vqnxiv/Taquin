@@ -1,35 +1,84 @@
 package io.github.vqnxiv.taquin.model;
 
 
+import io.github.vqnxiv.taquin.util.Utils;
+
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 
 public class Grid implements Comparable<Grid> {
     
-    
+
     private enum Direction {
-        LEFT    { public String toString() { return "Left"; } }, 
-        RIGHT   { public String toString() { return "Right"; } }, 
-        UP      { public String toString() { return "Up"; } }, 
-        DOWN    { public String toString() { return "Down"; } }
+        LEFT    ((g -> g.zeroCol > 0)), 
+        RIGHT   ((g -> g.zeroCol < g.self[0].length - 1)), 
+        UP      ((g -> g.zeroRow > 0)),
+        DOWN    ((g -> g.zeroRow < g.self.length - 1));
+        
+        private final Function<Grid, Boolean> check;
+        
+        Direction(Function<Grid, Boolean> c) {
+            check = c;
+        }
+
+        private boolean check(Grid g) {
+            return check.apply(g);
+        }
+        
+        @Override
+        public String toString() {
+            return Utils.constantToReadable(this.name());
+        }
     }
 
     public enum Distance {
-        NONE                { public String toString() { return "none"; } },
-        MANHATTAN           { public String toString() { return "manhattan"; } },
-        HAMMING             { public String toString() { return "hamming"; } },
-        EUCLIDEAN           { public String toString() { return "euclidean"; } },
-        LINEAR_MANHATTAN    { public String toString() { return "linear conflicts"; } }
+        NONE                ((x, y) -> 0),
+        MANHATTAN           ((x, y) -> x.manhattan(y)),
+        HAMMING             ((x, y) -> x.hamming(y)),
+        EUCLIDEAN           ((x, y) -> x.euclidean(y)),
+        LINEAR_MANHATTAN    ((x, y) -> x.linearManhattan(y));
+        
+        private final BiFunction<Grid, Grid, Integer> function;
+        
+        Distance(BiFunction<Grid, Grid, Integer> func) {
+            function = func;
+        }
+        
+        private int calc(Grid g1, Grid g2) {
+            return function.apply(g1, g2);
+        }
+        
+        @Override
+        public String toString() {
+            return Utils.constantToReadable(this.name());
+        }
     }
 
-    // todo: refactor as a comparator?
     public enum EqualPolicy {
-        NONE            { public String toString() { return "None"; } },
-        RANDOM          { public String toString() { return "Random"; } },
-        NEWER_FIRST     { public String toString() { return "Newer"; } },
-        OLDER_FIRST     { public String toString() { return "Older"; } },
-        DEEPER_FIRST    { public String toString() { return "Deeper"; } },
-        HIGHER_FIRST    { public String toString() { return "Higher"; } }
+        NONE            ((x, y) -> 0),
+        RANDOM          ((x, y) -> (ThreadLocalRandom.current().nextBoolean()) ? 1 : -1),
+        NEWER_FIRST     ((x, y) -> (x.key < y.key) ? -1 : 1),
+        OLDER_FIRST     ((x, y) -> (x.key < y.key) ? 1 : -1),
+        HIGHER_FIRST    ((x, y) -> (x.depth <= y.depth) ? -1 : 1),
+        DEEPER_FIRST    ((x, y) -> (x.depth <= y.depth) ? 1 : - 1);
+
+        private final BiFunction<Grid, Grid, Integer> function;
+
+        EqualPolicy(BiFunction<Grid, Grid, Integer> func) {
+            function = func;
+        }
+
+        private int calc(Grid g1, Grid g2) {
+            return function.apply(g1, g2);
+        }
+        
+        @Override
+        public String toString() {
+            return Utils.constantToReadable(this.name());
+        }
     } 
 
     
@@ -59,20 +108,20 @@ public class Grid implements Comparable<Grid> {
 
     // constructor called from SearchSpace/GridViewer creation
     public Grid(int[][] content, EqualPolicy ep) {
-        self = Arrays.stream(content).map(int[]::clone).toArray($ -> content.clone());
+        self = Arrays.stream(content).map(int[]::clone).toArray(t -> content.clone());
 
         parent = null;
         parentDirection = null;
         depth = 0;
         equalPolicy = ep;
         
-        int[] z = findCoordinates(0, true);
+        int[] z = safeFindCoordinates(0, true).orElse(new int[]{-1, -1});
         zeroRow = z[0]; zeroCol = z[1];
     }
 
     // constructor called from neighbor generation
     private Grid(Grid from, Direction d) {
-        self = Arrays.stream(from.self).map(int[]::clone).toArray($ -> from.self.clone());
+        self = Arrays.stream(from.self).map(int[]::clone).toArray(t -> from.self.clone());
 
         parent = from;
         depth = from.depth+1;
@@ -89,38 +138,49 @@ public class Grid implements Comparable<Grid> {
 
         self[zeroRow][zeroCol] = switch (d){
             case LEFT -> self[zeroRow][--zeroCol];
-            case RIGHT -> self[zeroRow][zeroCol] = self[zeroRow][++zeroCol];
-            case UP -> self[zeroRow][zeroCol] = self[--zeroRow][zeroCol];
-            case DOWN -> self[zeroRow][zeroCol] = self[++zeroRow][zeroCol];
+            case RIGHT -> self[zeroRow][++zeroCol];
+            case UP -> self[--zeroRow][zeroCol];
+            case DOWN -> self[++zeroRow][zeroCol];
         };
         self[zeroRow][zeroCol] = 0;
     }
 
 
     // ------
-
-    private int[] findCoordinates(int toFind, boolean throwError) {
+    
+    private int[] unsafeFindCoordinates(int toFind) {
         for (int row = 0; row < self.length; row++)
             for (int col = 0; col < self[0].length; col++)
-                if (self[row][col] == toFind) {
+                if (self[row][col] == toFind)
                     return new int[]{row, col};
-                }
+
+        throw new IllegalArgumentException(toFind + " not found");
+    }
+    
+    private Optional<int[]> safeFindCoordinates(int toFind, boolean throwError) {
+        for (int row = 0; row < self.length; row++)
+            for (int col = 0; col < self[0].length; col++)
+                if (self[row][col] == toFind)
+                    return Optional.of(new int[]{row, col});
 
         if(throwError) throw new IllegalArgumentException(toFind + " not found");
-        else return null;
+        else return Optional.empty();
     }
+    
     
     public boolean hasSameAlphabet(Grid g) {
         if(self.length != g.self.length) {
+            System.out.println("different height");
             return false;
         }
         else if(self[0].length != g.self[0].length) {
+            System.out.println("different width");
             return false;
         }
         
         for(int[] ints : self) {
             for(int i : ints) {
-                if(g.findCoordinates(i, false) == null) {
+                if(g.safeFindCoordinates(i, false).isEmpty()) {
                     return false;
                 }
             }
@@ -194,16 +254,12 @@ public class Grid implements Comparable<Grid> {
 
     // todo: linear conflicts
     public int distanceTo(Grid g, Distance d){
-        
-        return switch(d) {
-            case MANHATTAN -> manhattan(g);
-            case HAMMING -> hamming(g);
-            case EUCLIDEAN -> euclidean(g);
-            case LINEAR_MANHATTAN -> linearManhattan(g);
-            case NONE -> 0;
-        };
+        return d.calc(this, g);
     }
     
+    /* WARNING:
+     * these use unsafeFindCoordinates()
+     */
     private int manhattan(Grid g) {
         int retour = 0;
         
@@ -211,7 +267,7 @@ public class Grid implements Comparable<Grid> {
         for(int row = 0; row < self.length; row++)
             for(int col = 0; col < self[0].length; col++)
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0){
-                    tmp = g.findCoordinates(self[row][col], true);
+                    tmp = g.unsafeFindCoordinates(self[row][col]);
                     retour += (Math.abs(tmp[0] - row) + Math.abs(tmp[1] - col));
                 }
         
@@ -236,7 +292,7 @@ public class Grid implements Comparable<Grid> {
         for(int row = 0; row < self.length; row++)
             for(int col = 0; col < self[0].length; col++)
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0){
-                    tmp = g.findCoordinates(self[row][col], true);
+                    tmp = g.unsafeFindCoordinates(self[row][col]);
                     retour += (int) Math.floor(Math.sqrt(Math.pow(Math.abs(tmp[0] - row), 2) + Math.pow(Math.abs(tmp[1] - col), 2)));
                 }
 
@@ -252,23 +308,9 @@ public class Grid implements Comparable<Grid> {
 
         var retour = new HashSet<Grid>();
         
-        for (Direction d : new Direction[]{Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN}) {
-
-            if (d != parentDirection) {
-                switch (d) {
-                    case LEFT -> {
-                        if (zeroCol > 0) retour.add(new Grid(this, Direction.LEFT));
-                    }
-                    case RIGHT -> {
-                        if (zeroCol < self[0].length - 1) retour.add(new Grid(this, Direction.RIGHT));
-                    }
-                    case UP -> {
-                        if (zeroRow > 0) retour.add(new Grid(this, Direction.UP));
-                    }
-                    case DOWN -> {
-                        if (zeroRow < self.length - 1) retour.add(new Grid(this, Direction.DOWN));
-                    }
-                }
+        for (Direction d : Direction.values()) {
+            if (d != parentDirection && d.check(this)) {
+                retour.add(new Grid(this, d));
             }
         }
         
@@ -305,29 +347,12 @@ public class Grid implements Comparable<Grid> {
 
     @Override
     public int compareTo(Grid target){
-        
         if(heuristicValue == target.getHeuristicValue()) {
-            switch(equalPolicy) {
-                case NONE -> {
-                    return 0;
-                }
-                case RANDOM -> {
-                    Random rnd = new Random();
-                    return (rnd.nextBoolean()) ? -1 : 1;
-                }
-                case NEWER_FIRST -> {
-                    return (key < target.key) ? -1 : 1;
-                }
-                case OLDER_FIRST -> {
-                    return (key < target.key) ? 1 : -1;
-                }
-                case DEEPER_FIRST -> {
-                    return (depth <= target.depth) ? 1 : - 1;
-                }
-                case HIGHER_FIRST -> {
-                    return (depth <= target.depth) ? -1 : 1;
-                }
+            if(this.equals(target)) {
+                return  0;
             }
+            
+            return equalPolicy.calc(this, target);
         } 
         
         return Integer.compare(heuristicValue, target.heuristicValue);

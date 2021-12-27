@@ -9,3 +9,7 @@
 [Java Object Layout](https://github.com/openjdk/jol)
 
 [Log4j2](https://github.com/apache/logging-log4j2)
+
+[Java Extra Module Info](https://github.com/jjohannes/extra-java-module-info)
+
+And their respective dependencies
