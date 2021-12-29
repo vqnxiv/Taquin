@@ -95,7 +95,7 @@ public class SearchRunner {
         }
 
         LOGGER.info("Checking grids content");
-        if(!((Grid) m.get("start").getValue()).hasSameAlphabet((Grid) m.get("end").getValue())) {
+        if(!((Grid) m.get("start").getValue()).checkCompatibility((Grid) m.get("end").getValue())) {
             LOGGER.error("Grids do not share the same alphabet");
             return Optional.empty();
         }

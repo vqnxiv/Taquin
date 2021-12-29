@@ -79,7 +79,8 @@ public class BuilderController {
     private final CollectionWrapper.Builder exploredBuilder;
     private final CollectionWrapper.Builder queuedBuilder;
     
-    private final GridViewer startViewer, endViewer, currentViewer;
+    // todo: map/local?
+    private final GridViewer startViewer, endViewer; //, currentViewer;
     
     
     // ------
@@ -97,9 +98,9 @@ public class BuilderController {
         
         searchRunner = SearchRunner.getRunner();
         
-        startViewer = new GridViewer("Start", false);
-        endViewer = new GridViewer("End", false);
-        currentViewer = new GridViewer("Current", true);
+        startViewer = new GridViewer("Start", true);
+        endViewer = new GridViewer("End", true);
+        //currentViewer = new GridViewer("Current", true);
     }
 
     @FXML public void initialize() {
@@ -405,6 +406,7 @@ public class BuilderController {
         tf.disableProperty().addListener(
             event -> tf.textProperty().unbind()
         );
+        
         return tf;
     }
 
@@ -472,12 +474,24 @@ public class BuilderController {
 
         var b = new Button(p.getName());
         
+        if(p.getName().equalsIgnoreCase("start")) {
+            b.setOnAction(e -> startViewer.setShowing(true));
+            p.bind(startViewer.gridProperty());
+            startViewer.editableProperty().bind(lockLevel.isEqualTo(Lock.NOT_LOCKED));
+        }
+        else if (p.getName().equalsIgnoreCase("end")){
+            b.setOnAction(e -> endViewer.setShowing(true));
+            p.bind(endViewer.gridProperty());
+            endViewer.editableProperty().bind(lockLevel.isEqualTo(Lock.NOT_LOCKED));
+        }
+        
+        /*
         var g = new GridViewer(p.getName(), false);
         p.bindBidirectional(g.gridProperty());
         
         b.setOnAction(event -> g.show());
         g.readOnlyProperty().bind(lockLevel.isNotEqualTo(Lock.NOT_LOCKED));
-        
+        */
         return b;
     }
 }

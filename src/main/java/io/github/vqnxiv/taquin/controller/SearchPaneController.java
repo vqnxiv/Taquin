@@ -47,7 +47,7 @@ public class SearchPaneController {
             builderVBox.getChildren().add(loader.load());
         } catch(IOException e) {
             LOGGER.error("Could not find FXML file '/fxml/primary/builder.fxml'");
-            // e.printStackTrace();
+            e.printStackTrace();
         }
     }
 }
