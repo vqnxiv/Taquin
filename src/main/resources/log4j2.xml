@@ -10,7 +10,7 @@ https://stackoverflow.com/questions/53673727/log4j-define-multiple-loggers
 
     <Properties>
         <Property name="LIGHT_PATTERN">
-            %d{HH:mm:ss} %m%n
+            %d{HH:mm} %m%n
         </Property>
         
         <Property name="COMPLETE_PATTERN">

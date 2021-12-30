@@ -13,15 +13,18 @@ import java.util.function.Function;
 
 /**
  * This class models the game's grids with an int 2d array.
+ * 
+ * @see SearchSpace
+ * @see io.github.vqnxiv.taquin.solver.Search
  */
 public class Grid implements Comparable<Grid> {
     
     /**
      * Enum for a blank tile move's possible directions.
-     * 
+     * <p>
      * As the grid is 2d, there is at most only four possible directions: 
      * LEFT, RIGHT, UP, DOWN.
-     * 
+     * <p>
      * A move is considered valid if moving the blank tiles does not result in 
      * attempting to place it out of the bounds of the 2d array
      */
@@ -66,9 +69,9 @@ public class Grid implements Comparable<Grid> {
 
     /**
      * Enum which is used to compute the distances between two {@code Grid}s.
-     * 
+     * <p>
      * The grids are assumed to be compatible, i.e {@code g1} and {@code g2} such that {@code}
-     * {@code g1.checkCompatibility(g2)} returns {@code true}
+     * {@code g1.checkCompatibility(g2)} returns {@code true}.
      */
     // todo: move all the calc funcs in this enum
     public enum Distance {
@@ -94,9 +97,9 @@ public class Grid implements Comparable<Grid> {
 
         /**
          * The method which is called when calculating the distance.
-         * 
+         * <p>
          * WARNING: no validation is done when attempting to compute the distance.
-         * As such, Exceptions may be thrown (NullPointerExceptions)
+         * As such, Exceptions may be thrown (NullPointerExceptions).
          * 
          * @param g1 a {@code Grid} such that {@code g1.checkCompatibility(g2)} returns {@code true}
          * @param g2 a {@code Grid} such that {@code g2.checkCompatibility(g1)} returns {@code true}
@@ -141,7 +144,8 @@ public class Grid implements Comparable<Grid> {
         }
 
         /**
-         * The method which is called when comparing two grids
+         * The method which should be called when comparing two grids 
+         * with the same heuristic bvalue.
          * 
          * @param g1 {@code Grid}
          * @param g2 {@code Grid}
@@ -172,20 +176,25 @@ public class Grid implements Comparable<Grid> {
     private static final int HASH_VALUE = 31;
 
     /**
-     * The 2d array which represents the grid
+     * The 2d array which represents the grid.
+     * <p>
+     * {@code 0} is used as the 'blank' value for the blank tile which is moved
+     * when a {@code Search} is run.
+     * <p>
+     * Numbers must be positive and unique for the grid to be valid.
      */
     private final int[][] self;
 
     /**
      * The key is the order in which the {@code Grid}s were generated and validated within 
      * a {@code SpaceSearch}.
-     * 
+     * <p>
      * {@code -2} is an illegal placeholder value until the {@code Grid} gets validated
      * by the {@code SpaceSearch} it was generated from)
-     * 
+     * <p>
      * {@code -1} is the value reserved for pre-generated grids such as the start and the
      * end of a {@code SpaceSearch}
-     * 
+     * <p>
      * {@code 0} is the value for the first {@code Grid} generated and validated within a 
      * {@code SpaceSearch}
      */
@@ -194,7 +203,7 @@ public class Grid implements Comparable<Grid> {
     /**
      * The depth is the number of steps between a {@code SpaceSearch}'s start {@code Grid} 
      * and this object.
-     * 
+     * <p>
      * i.e how many times you can call {@code g2 = g1.getParent().getParent().getParent()}
      * until {@code g2.equals(start)} returns {@code true} for that {@code SpaceSearch}
      */
@@ -202,7 +211,7 @@ public class Grid implements Comparable<Grid> {
 
     /**
      * The direction in which you can generate {@code parent}
-     * 
+     * <p>
      * It is the opposite of the direction used when {@code generateNeighbors} was called
      * on {@code parent} (e.g {@code LEFT} -> {@code RIGHT}).
      */
@@ -248,7 +257,7 @@ public class Grid implements Comparable<Grid> {
 
     
     /**
-     * Constructor which is called from the factory method {@code from}
+     * Constructor which is called from the factory method {@code of}.
      * 
      * @param content the array which {@code self} will become a deep copy of
      * @param ep the value for {@code equalPolicy}
@@ -266,10 +275,10 @@ public class Grid implements Comparable<Grid> {
     }
 
     /**
-     * Constructor which is called from neigbor generation
-     * 
-     * the parent grid is the grid on which calling {@code generateNeighbors} 
-     * would call this constructor
+     * Constructor which is called from neigbor generation.
+     * <p>
+     * The parent grid is the grid on which calling {@code generateNeighbors} 
+     * would call this constructor.
      * 
      * @param from the parent {@code Grid} 
      * @param d the {@code Direction} which determined this move from {@code from} to be valid
@@ -300,19 +309,21 @@ public class Grid implements Comparable<Grid> {
     }
 
     /**
-     * Static gactory method which creates a {@code Grid} if the given 2d int array is found to be valid
-     * 
+     * Static factory method which creates a {@code Grid} if the given 2d int array is found to be valid
+     * <p>
      * A valid array/{@code Grid} is considered as such:
-     * - only positive numbers;
-     * - no duplicates;
-     * - must contain one cell with a value of zero (0)
+     * <ul>
+     * <li>only positive numbers</li>
+     * <li>no duplicates</li>
+     * <li>must contain one cell with a value of zero (0)</li>
+     * </ul>
      * 
      * @param array the content of the {@code Grid} to be created
      * @param ep {@code EqualPolicy} of the {@code Grid} to be created
-     * @return {@code Optional#of} the created {@code Grid} if {@code array} was valid;
-     * {@code Optional#empty} otherwise
+     * @return {@code Optional} of the created {@code Grid} if {@code array} was valid;
+     * empty {@code Optional} otherwise
      */
-    public static Optional<Grid> from(int[][] array, EqualPolicy ep) {
+    public static Optional<Grid> of(int[][] array, EqualPolicy ep) {
         record Pair(int row, int col) {
             @Override
             public String toString() {
@@ -367,9 +378,9 @@ public class Grid implements Comparable<Grid> {
      * 
      * @param width the witdth of the grid
      * @param height the height of the grid
-     * @return invalid {@Grid} of dimensions {@code width} x {@code height}
+     * @return invalid {@code Grid} of dimensions {@code width} x {@code height}
      */
-    public static Grid empty(int width, int height) {
+    public static Grid invalidOfSize(int width, int height) {
 
         int[][] t = new int[height][width];
 
@@ -405,7 +416,6 @@ public class Grid implements Comparable<Grid> {
                 if (self[row][col] == toFind)
                     return new int[]{row, col};
 
-        // throw new IllegalArgumentException(toFind + " not found");
         return null;
     }
 
@@ -415,7 +425,7 @@ public class Grid implements Comparable<Grid> {
      * @param toFind the int to find in {@code self}
      * @param throwError whether an Exception should be thrown if {@code toFind} wasn't found
      * @return {@code Optional} of an array of int containing the coordinates of {@code toFind}
-     * if it was found; {@code Optional#empty} otherwise
+     * if it was found; empty {@code Optional} otherwise
      * @throws IllegalArgumentException if {@code toFind} wasn't found 
      * and {@code throwError} is {@code true}
      */
@@ -433,16 +443,22 @@ public class Grid implements Comparable<Grid> {
 
     /**
      * Checks compatibility between this object and another {@code Grid}.
-     * 
+     * <p>
      * Compatibility is defined as such, for all valid grids g1 and g2:
-     * - g1 and g2 must have the same dimensions;
-     * - g1 and g2 must share the same alphabet
-     * (i.e all the int which can be found in g1 are in g2 and the other way around)
-     * 
+     * <ul>
+     * <li>g1 and g2 must have the same dimensions</li>
+     * <li>g1 and g2 must share the same alphabet
+     * (i.e all the ints which can be found in g1 are in g2 and the other way around)</li>
+     * </ul>
      * @param g the {@code Grid} to check this object against
      * @return {@code true} if both grids are compatible; false otherwise
      */
     public boolean checkCompatibility(Grid g) {
+        if(g == null) {
+            LOGGER.error("Grid is null");
+            return false;
+        }
+        
         if(self.length != g.self.length) {
             LOGGER.error("Different height: " + self.length + ", " + g.self.length);
             return false;
@@ -457,11 +473,11 @@ public class Grid implements Comparable<Grid> {
         
         Set<Integer> fromAll = new HashSet<>();
         Set<Integer> toAll = new HashSet<>();
-        
-        for(int row = 0; row < self.length; row++) {
+
+        for(int[] ints : self) {
             for(int col = 0; col < self[0].length; col++) {
-                fromAll.add(self[row][col]);
-                toAll.add(self[row][col]);
+                fromAll.add(ints[col]);
+                toAll.add(ints[col]);
             }
         }
         
@@ -601,7 +617,7 @@ public class Grid implements Comparable<Grid> {
 
     /**
      * The method called to compute the distance between this object and another {@code Grid}
-     * 
+     * <p>
      * WARNING: no validation is done to ensure NPE and other errors won't happen.
      * 
      * @param g {@code Grid} target
@@ -687,13 +703,13 @@ public class Grid implements Comparable<Grid> {
     /**
      * This method generates a {@code Set} of valid neighbor {@code Grid}s 
      * according to {@code Direction} validation
-     * 
+     * <p>
      * a {@code HashSet} is used to simulate randomness instead of always having
      * the neighbors ordered as from {@code Direction#values}
      * 
      * @return {@code} Set of valid neighbors
      */
-    HashSet<Grid> generateNeighbors() {
+    Set<Grid> generateNeighbors() {
 
         var retour = new HashSet<Grid>();
         
@@ -740,13 +756,13 @@ public class Grid implements Comparable<Grid> {
 
     /**
      * {@inheritDoc}
-     * 
+     * <p>
      * Compares two {@code Grid}s with their {@code heuristicValue}. 
-     * 
+     * <p>
      * Calls this object's {@code equalPolicy} if the two grids have the same 
      * {@code heuristic value}
      * 
-     * @param target the {@Grid} this object should be compared to
+     * @param target the {@code Grid} this object should be compared to
      */
     @Override
     public int compareTo(Grid target){

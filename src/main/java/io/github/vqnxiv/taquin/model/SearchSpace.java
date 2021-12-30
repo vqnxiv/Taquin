@@ -26,8 +26,8 @@ public class SearchSpace {
         // todo: immutable Grid
         public Builder() {
             equalPolicy = new SimpleObjectProperty<>(this, "equal policy", Grid.EqualPolicy.NONE);
-            start = new SimpleObjectProperty<>(this, "start", Grid.from(new int[1][1], Grid.EqualPolicy.RANDOM).get());
-            end = new SimpleObjectProperty<>(this, "end", Grid.from(new int[1][1], Grid.EqualPolicy.RANDOM).get());
+            start = new SimpleObjectProperty<>(this, "start", Grid.of(new int[1][1], Grid.EqualPolicy.RANDOM).get());
+            end = new SimpleObjectProperty<>(this, "end", Grid.of(new int[1][1], Grid.EqualPolicy.RANDOM).get());
         }
         
         public Builder explored(CollectionWrapper<?> cw) {
@@ -90,8 +90,8 @@ public class SearchSpace {
 
         // startGrid = new Grid(start.getCopyOfSelf(), ep);
         // goalGrid = new Grid(end.getCopyOfSelf(), ep);
-        startGrid = Grid.from(start.getCopyOfSelf(), ep).orElse(start);
-        goalGrid = Grid.from(end.getCopyOfSelf(), ep).orElse(end);
+        startGrid = Grid.of(start.getCopyOfSelf(), ep).orElse(start);
+        goalGrid = Grid.of(end.getCopyOfSelf(), ep).orElse(end);
 
         startGrid.setKey(0);
         goalGrid.setKey(-1);

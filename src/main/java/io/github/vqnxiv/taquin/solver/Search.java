@@ -95,7 +95,7 @@ public abstract class Search {
         protected abstract Search build();
     }
     
-public class SearchTask<S> extends Task<S> {
+    public class SearchTask<S> extends Task<S> {
         
         private final EnumMap<SearchProperty, AtomicReference<String>> atomicReferences;
 
