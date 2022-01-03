@@ -3,6 +3,8 @@ package io.github.vqnxiv.taquin.util;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -58,5 +60,13 @@ public final class FxUtils {
             }
         }
         return null;
+    }
+    
+    public static TextField createIntFilteredTextField(double maxWidth, int defaultValue) {
+        TextField tf = new TextField();
+        tf.setMaxWidth(maxWidth);
+        tf.setPrefWidth(maxWidth);
+        tf.setTextFormatter(new TextFormatter<>(Utils.intStringConverter, defaultValue, Utils.integerFilter));
+        return tf;
     }
 }

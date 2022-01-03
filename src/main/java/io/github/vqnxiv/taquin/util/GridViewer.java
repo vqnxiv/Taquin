@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.apache.logging.log4j.LogManager;
@@ -49,9 +50,13 @@ public class GridViewer {
             "copy",true, true,
             g -> g.saveToBuffer()
         ),
-        PASTE(
+        PASTE_RESIZE(
+            "paste & resize", true, false,
+            g -> g.pasteFromBuffer(true)
+        ),
+        PASTE_IGNORE_SIZE(
             "paste", true, false,
-            g -> g.pasteFromBuffer()
+            g -> g.pasteFromBuffer(false)
         ),
         SHOW_DETAILS(
             "details", false, true,
@@ -326,8 +331,27 @@ public class GridViewer {
     /**
      * Sets the values of {@code copyPasteBuffer} to this object's {@code gridControl}
      */
-    private void pasteFromBuffer() {
+    private void pasteFromBuffer(boolean resize) {
+        if(copyPasteBuffer == null) {
+            return;
+        }
+        
+        int rows = gridControl.getRowCount();
+        int cols = gridControl.getColumnCount();
+        
         gridControl.setValues(copyPasteBuffer);
+        
+        if(!resize) {
+            gridControl.setDimensions(rows, cols);
+        }
+        else {
+            if(cols == gridControl.getColumnCount()) {
+                stage.setHeight(gridControl.getRowCount() * defaultCellSize);
+            }
+            else {
+                stage.setWidth(gridControl.getColumnCount() * defaultCellSize);
+            }
+        }
     }
 
     /**
@@ -339,48 +363,54 @@ public class GridViewer {
     private void resizeDialog() {
         record Pair(int width, int height){};
         
-        class PairInputDialog extends Dialog<Pair> {
-            /*
-            private PairInputDialog() {
-                HBox hbox = new HBox();
-                hbox.setSpacing(5d);
-                hbox.setMaxWidth(Double.MAX_VALUE);
-                hbox.setMaxHeight(Double.MAX_VALUE);
-                hbox.setAlignment(Pos.CENTER_LEFT);
-                hbox.getChildren().add(createIntTF("width", 50d));
-                hbox.getChildren().add(createIntTF("height", 50d));
-                
-                getDialogPane().getChildren().add(hbox);
-            }
-
-            private TextField createIntTF(double maxWidth, int defaultValue) {
-                TextField tf = new TextField();
-                tf.setMaxWidth(maxWidth);
-                tf.setPrefWidth(maxWidth);
-                tf.setTextFormatter(new TextFormatter<>(Utils.intStringConverter, 0, Utils.integerFilter));
-                tf.setPromptText(prompt);
-                return tf;
-            }
-            */
-        }
+        var dialog = new Dialog<Pair>();
         
-        //var dialog = new Dialog<Pair>();
-        Dialog dialog = new PairInputDialog();
+        var width = FxUtils.createIntFilteredTextField(
+            50d, GridViewer.this.gridControl.getColumnCount()
+        );
+        var height = FxUtils.createIntFilteredTextField(
+            50d, GridViewer.this.gridControl.getRowCount()
+        );
+        
+        HBox hbox = new HBox(width, height);
+        hbox.setSpacing(5d);
+        
+        dialog.getDialogPane().setContent(hbox);
+        dialog.getDialogPane().getButtonTypes().addAll(
+            new ButtonType("Apply", ButtonBar.ButtonData.APPLY)
+        );
         
         dialog.setTitle("Resize");
-        //dialog.setHeaderText("The new dimensions for this grid: " + stage.getTitle());
-        
-        stage.setAlwaysOnTop(false);
-        
-        dialog.setOnCloseRequest(
-            event -> {
-                stage.setAlwaysOnTop(true);
-                //gridControl.setDimensions(dialog.getResult().height(), dialog.getResult().width());
+        dialog.setResultConverter(
+            (btn) -> {
+                if(btn == null || btn.getButtonData() != ButtonBar.ButtonData.APPLY) {
+                    return null;
+                }
+                else {
+                    return new Pair(
+                        (int) (width.getTextFormatter().valueProperty().getValue() != null ?
+                        width.getTextFormatter().valueProperty().get() : 1),
+                        (int) (height.getTextFormatter().valueProperty().getValue() != null ?
+                        height.getTextFormatter().valueProperty().get() : 1)
+                    );
+                }
             }
         );
         
-        dialog.showAndWait();
+        stage.setAlwaysOnTop(false);
         
+        dialog.showAndWait().ifPresent(
+            p -> {
+                if(p.width() == gridControl.getColumnCount()) {
+                    stage.setHeight(gridControl.getRowCount() * defaultCellSize);
+                }
+                else {
+                    stage.setWidth(gridControl.getColumnCount() * defaultCellSize);
+                }
+                
+                gridControl.setDimensions(p.height(), p.width());
+            }
+        );
     }
     
     /**
