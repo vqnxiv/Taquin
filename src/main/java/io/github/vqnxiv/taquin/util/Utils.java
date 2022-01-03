@@ -3,17 +3,24 @@ package io.github.vqnxiv.taquin.util;
 
 import javafx.scene.control.TextFormatter;
 import javafx.util.StringConverter;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 
+/**
+ * Non instantiable general utility class which only contains static final methods.
+ */
 public final class Utils {
+    
     
     private Utils() {}
 
+
+    /**
+     * {@link StringConverter} which converts between {@link String} and {@link Integer}
+     */
     public static final StringConverter<Integer> intStringConverter = new StringConverter<>() {
         @Override
         public String toString(Integer n) {
@@ -26,6 +33,10 @@ public final class Utils {
         }
     };
 
+    /**
+     * {@link StringConverter} which converts returns {@link Class#getSimpleName()} from a {@code .class} object
+     * and {@link Class#forName(String)} from a {@link String}, or {@code null} if {@link ClassNotFoundException}
+     */
     public static final StringConverter<Class<?>> clsStringConverter = new StringConverter<>() {
         @Override
         public String toString(Class clazz) {
@@ -34,10 +45,19 @@ public final class Utils {
 
         @Override
         public Class<?> fromString(String string) {
-            return null;
+            try {
+                return Class.forName(string);
+            } catch(ClassNotFoundException e) {
+                return null;
+            }
         }
     };
 
+    /**
+     * {@link StringConverter} which converts returns {@code Search#name} from a {@code .class} object from
+     * {@link io.github.vqnxiv.taquin.solver.Search} or one of its subclasses,
+     * and {@link Class#forName(String)} from a {@link String}, or {@code null} if {@link ClassNotFoundException}
+     */
     public static final StringConverter<Class<?>> srchClsConv = new StringConverter<>() {
         @Override
         public String toString(Class<?> srchCls) {
@@ -46,10 +66,17 @@ public final class Utils {
 
         @Override
         public Class<?> fromString(String string) {
-            return null;
+            try {
+                return Class.forName(string);
+            } catch(ClassNotFoundException e) {
+                return null;
+            }
         }
     };
-    
+
+    /**
+     * {@link UnaryOperator} which filters out non digit characters from a {@link String}
+     */
     public static final UnaryOperator<TextFormatter.Change> integerFilter = change -> {
         String input = change.getText();
         if (input.matches("[0-9]*")) {
@@ -57,10 +84,16 @@ public final class Utils {
         }
         return null;
     };
-    
-    
-    // CONSTANT_OR_ENUM_NAME -> Constant or enum name
-    public static String constantToReadable(String s) {
+
+
+    /**
+     * Utility method which converts a {@link String} from SCREAMING_SNAKE_CASE to normal case
+     * <p>
+     * e.g CONSTANT_OR_ENUM_NAME -> Constant or enum name
+     * @param s The {@link String} to convert
+     * @return the converted {@link String}
+     */
+    public static String screamingSnakeToReadable(String s) {
 
         if(s == null) throw new NullPointerException();
         if(s.equals("")) return s;
@@ -78,8 +111,14 @@ public final class Utils {
 
         return sb.toString();
     }
-    
-    // genericFieldOrMethodName -> Generic field or method name
+
+    /**
+     * Utility method which converts a {@link String} from camelCase to normal case
+     * <p>
+     * e.g genericFieldOrMethodName -> Generic field or method name
+     * @param s The {@link String} to convert
+     * @return the converted {@link String}
+     */
     public static String camelToReadable(String s) {
         
         if(s == null) throw new NullPointerException();
@@ -98,7 +137,16 @@ public final class Utils {
         
         return sb.toString();
     }
-    
+
+    /**
+     * Calls a static method from a given class.
+     * 
+     * @param clazz The class which contains the method.
+     * @param methodName The name of the static method which should be invoked.
+     * @param <T> The return type of the method.
+     * @return {@link Optional#of(T)} the return value if the method was successfully invoked;
+     * {@link Optional#empty()} otherwise
+     */
     @SuppressWarnings("unchecked")
     public static <T> Optional<T> staticMethodCall(Class<?> clazz, String methodName) {
         try {
@@ -110,8 +158,18 @@ public final class Utils {
         return Optional.empty();
     }
 
-    // List<T> instead of Class<T> so we can cast to a generic type
-    // as we can't get .class from a generic
+    /**
+     * Calls a static method from a given class and 'casts' its return to the type of the given {@link List}.
+     * <p>
+     * This is used when working with a generic return type, e.g {@link Enum#valueOf(Class, String)} or {@code values}.
+     *
+     * @param clazz The class which contains the method.
+     * @param methodName The name of the static method which should be invoked.
+     * @param doNotRemove a {@link List} of the type which the return value should be cast to.
+     * @param <T> The return type of the method.
+     * @return {@link Optional#of(T)} the return value if the method was successfully invoked;
+     * {@link Optional#empty()} otherwise
+     */
     @SuppressWarnings("unchecked")
     public static <T> Optional<T> staticMethodCallAndCast(Class<?> clazz, String methodName, List<T> doNotRemove) {
         try {
@@ -123,6 +181,15 @@ public final class Utils {
         return Optional.empty();
     }
 
+    /**
+     * Calls a static method from a given class.
+     *
+     * @param clazz The class which contains the field.
+     * @param fieldName The name of the static field which should be returned.
+     * @param <T> The type of the field.
+     * @return {@link Optional#of(T)} the field if it was successfully accessed;
+     * {@link Optional#empty()} otherwise
+     */
     @SuppressWarnings("unchecked")
     public static <T> Optional<T> staticFieldGet(Class<?> clazz, String fieldName) {
         try {
@@ -134,6 +201,18 @@ public final class Utils {
         return Optional.empty();
     }
 
+    /**
+     * Calls a static method from a given class and 'casts' its return to the type of the given {@link List}.
+     * <p>
+     * This is used when working with a generic type.
+     *
+     * @param clazz The class which contains the field.
+     * @param fieldName The name of the static field which should be returned.
+     * @param doNotRemove a {@link List} of the type which the field value should be cast to.
+     * @param <T> The type of the field.
+     * @return {@link Optional#of(T)} the field if it was successfully accessed;
+     * {@link Optional#empty()} otherwise
+     */
     @SuppressWarnings("unchecked")
     public static <T> Optional<T> staticFieldGetAndCast(Class<?> clazz, String fieldName, List<T> doNotRemove) {
         try {

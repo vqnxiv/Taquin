@@ -9,9 +9,16 @@ import java.util.List;
 import java.util.Map;
 
 
+/**
+ * Utility interface to simplify the use of builder classes.
+ * <p>
+ * Builders which are to be used in {@link BuilderController} should implement this interface.
+ * 
+ * @see io.github.vqnxiv.taquin.solver.Search.Builder
+ * @see io.github.vqnxiv.taquin.model.SearchSpace.Builder
+ * @see io.github.vqnxiv.taquin.model.CollectionWrapper.Builder
+ */
 public interface IBuilder {
-
-    
     /**
      * Properties that should be handled separately (i.e not dumped in the tab pane)
      * 

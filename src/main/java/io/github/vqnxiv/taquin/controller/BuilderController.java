@@ -40,7 +40,7 @@ public class BuilderController {
         
         @Override
         public String toString() {
-            return Utils.constantToReadable(this.name());
+            return Utils.screamingSnakeToReadable(this.name());
         }
     }
 

@@ -1,15 +1,15 @@
 package io.github.vqnxiv.taquin.util;
 
 
-import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
-import javafx.beans.property.*;
-import javafx.geometry.Pos;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.apache.logging.log4j.LogManager;
@@ -36,19 +36,19 @@ public class GridViewer {
     private enum ContextMenuItem {
         SAVE_GRID(
             "save", true, false,
-            g -> g.pushControlToProperty()
+            GridViewer::pushControlToProperty
         ),
         CANCEL_GRID_CHANGES(
             "undo", true, false,
-            g -> g.pushPropertyToControl()
+            GridViewer::pushPropertyToControl
         ),
         RESIZE_GRID(
-            "resize", true, false, 
-            g -> g.resizeDialog()
+            "resize", true, false,
+            GridViewer::resizeDialog
         ),
         COPY(
             "copy",true, true,
-            g -> g.saveToBuffer()
+            GridViewer::saveToBuffer
         ),
         PASTE_RESIZE(
             "paste & resize", true, false,
@@ -60,7 +60,7 @@ public class GridViewer {
         ),
         SHOW_DETAILS(
             "details", false, true,
-            g -> g.pushControlToProperty()
+            GridViewer::pushControlToProperty
         )
         ;
 
@@ -168,7 +168,6 @@ public class GridViewer {
      * or to a {@code Search} current grid property.
      * <p>
      * This side of the binding only updates the property on stage close.
-     * TODO: add to right click options
      */
     private final ObjectProperty<Grid> gridProperty;
 
@@ -233,7 +232,7 @@ public class GridViewer {
      * and add onClose action, which is updating {@code gridProperty} if {@code editableProperty}
      * checks {@code true}.
      * 
-     * @param name
+     * @param name the name for this stage
      */
     private void initializeStage(String name) {
         stage.setTitle(name);
@@ -241,19 +240,15 @@ public class GridViewer {
         stage.initStyle(StageStyle.UTILITY);
         
         stage.widthProperty().addListener(
-            (obs, oldVal, newVal) -> {
-                stage.setHeight(
-                    stage.getWidth() * ((double) gridControl.getRowCount() / gridControl.getColumnCount())
-                );
-            }
+            (obs, oldVal, newVal) -> stage.setHeight(
+                stage.getWidth() * ((double) gridControl.getRowCount() / gridControl.getColumnCount())
+            )
         );
         
         stage.heightProperty().addListener(
-            (obs, oldVal, newVal) -> {
-                stage.setWidth(
-                    stage.getHeight() * ((double) gridControl.getColumnCount() / gridControl.getRowCount())
-                );
-            } 
+            (obs, oldVal, newVal) -> stage.setWidth(
+                stage.getHeight() * ((double) gridControl.getColumnCount() / gridControl.getRowCount())
+            ) 
         );
         
         var anchorPane = new AnchorPane();
@@ -361,7 +356,7 @@ public class GridViewer {
      * {@code setDimensions} with the value from {@code resultProperty} 
      */
     private void resizeDialog() {
-        record Pair(int width, int height){};
+        record Pair(int width, int height){}
         
         var dialog = new Dialog<Pair>();
         
@@ -382,7 +377,7 @@ public class GridViewer {
         
         dialog.setTitle("Resize");
         dialog.setResultConverter(
-            (btn) -> {
+            btn -> {
                 if(btn == null || btn.getButtonData() != ButtonBar.ButtonData.APPLY) {
                     return null;
                 }

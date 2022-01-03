@@ -63,7 +63,7 @@ public class Grid implements Comparable<Grid> {
          */
         @Override
         public String toString() {
-            return Utils.constantToReadable(this.name());
+            return Utils.screamingSnakeToReadable(this.name());
         }
     }
 
@@ -114,7 +114,7 @@ public class Grid implements Comparable<Grid> {
          */
         @Override
         public String toString() {
-            return Utils.constantToReadable(this.name());
+            return Utils.screamingSnakeToReadable(this.name());
         }
     }
 
@@ -161,7 +161,7 @@ public class Grid implements Comparable<Grid> {
          */
         @Override
         public String toString() {
-            return Utils.constantToReadable(this.name());
+            return Utils.screamingSnakeToReadable(this.name());
         }
     } 
 

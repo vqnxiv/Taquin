@@ -216,7 +216,7 @@ public abstract class Search {
 
         @Override
         public String toString() {
-            return Utils.constantToReadable(this.name());
+            return Utils.screamingSnakeToReadable(this.name());
         }
     }
     
@@ -252,7 +252,7 @@ public abstract class Search {
         
         @Override
         public String toString() {
-            return Utils.constantToReadable(this.name());
+            return Utils.screamingSnakeToReadable(this.name());
         }
     }
     
@@ -294,7 +294,7 @@ public abstract class Search {
 
         @Override
         public String toString() {
-            return Utils.constantToReadable(this.name());
+            return Utils.screamingSnakeToReadable(this.name());
         }
     }
 
