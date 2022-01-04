@@ -55,7 +55,7 @@ extraJavaModuleInfo {
     automaticModule("reflections-0.10.2.jar", "")
     
 
-    // keep if JOL and reflections
+    // keep if both JOL and reflections
     automaticModule("javassist-3.28.0-GA.jar", "javassist")
     automaticModule("jsr305-3.0.2.jar", "jsr305")
     

@@ -26,13 +26,13 @@ public abstract class Search {
         private SearchSpace space;
         private final EnumMap<SearchLimit, Long> limits;
 
-        protected final  ObjectProperty<Grid.Distance> heuristic;
-        protected final  BooleanProperty filterExplored;
-        protected final  BooleanProperty filterQueued;
-        protected final  BooleanProperty linkExplored;
-        protected final  BooleanProperty checkForQueuedEnd;
-        protected final  StringProperty name;
-        protected final  BooleanProperty monitorMemory;
+        protected final ObjectProperty<Grid.Distance> heuristic;
+        protected final BooleanProperty filterExplored;
+        protected final BooleanProperty filterQueued;
+        protected final BooleanProperty linkExplored;
+        protected final BooleanProperty checkForQueuedEnd;
+        protected final StringProperty name;
+        protected final BooleanProperty monitorMemory;
         
         // used when converting from a search type to another
         protected Builder(Builder<?> toCopy) {

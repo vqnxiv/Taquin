@@ -144,7 +144,7 @@ public final class Utils {
      * @param clazz The class which contains the method.
      * @param methodName The name of the static method which should be invoked.
      * @param <T> The return type of the method.
-     * @return {@link Optional#of(T)} the return value if the method was successfully invoked;
+     * @return {@link Optional#of(Object)} the return value if the method was successfully invoked;
      * {@link Optional#empty()} otherwise
      */
     @SuppressWarnings("unchecked")
@@ -167,7 +167,7 @@ public final class Utils {
      * @param methodName The name of the static method which should be invoked.
      * @param doNotRemove a {@link List} of the type which the return value should be cast to.
      * @param <T> The return type of the method.
-     * @return {@link Optional#of(T)} the return value if the method was successfully invoked;
+     * @return {@link Optional#of(Object)} the return value if the method was successfully invoked;
      * {@link Optional#empty()} otherwise
      */
     @SuppressWarnings("unchecked")
@@ -187,7 +187,7 @@ public final class Utils {
      * @param clazz The class which contains the field.
      * @param fieldName The name of the static field which should be returned.
      * @param <T> The type of the field.
-     * @return {@link Optional#of(T)} the field if it was successfully accessed;
+     * @return {@link Optional#of(Object)} the field if it was successfully accessed;
      * {@link Optional#empty()} otherwise
      */
     @SuppressWarnings("unchecked")
@@ -210,7 +210,7 @@ public final class Utils {
      * @param fieldName The name of the static field which should be returned.
      * @param doNotRemove a {@link List} of the type which the field value should be cast to.
      * @param <T> The type of the field.
-     * @return {@link Optional#of(T)} the field if it was successfully accessed;
+     * @return {@link Optional#of(Object)} the field if it was successfully accessed;
      * {@link Optional#empty()} otherwise
      */
     @SuppressWarnings("unchecked")

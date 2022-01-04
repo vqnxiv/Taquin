@@ -1,7 +1,7 @@
 package io.github.vqnxiv.taquin.logger;
 
 
-import io.github.vqnxiv.taquin.controller.LogController;
+import javafx.scene.control.TextArea;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
@@ -24,7 +24,8 @@ import java.util.LinkedList;
 )
 public class MainAppender extends AbstractFxAppender {
     
-    private static LogController logController;
+    // private static LogController logController;
+    private static TextArea logOuput;
     
     private final LinkedList<LogEvent> events = new LinkedList<>();
     
@@ -54,20 +55,24 @@ public class MainAppender extends AbstractFxAppender {
     }
 
     
-    public static void setLogController(LogController logController) {
-        MainAppender.logController = logController;
+    //public static void setLogController(LogController logController) {
+        //MainAppender.logController = logController;
+    //}
+
+    public static void setLogOutput(TextArea logOutput) {
+        MainAppender.logOuput = logOutput;
     }
     
     @Override
     public void append(LogEvent event) {
         events.add(event.toImmutable());
 
-        if(logController == null) {
+        if(logOuput == null) {
             return;
         }
         
         while(!events.isEmpty()) {
-            enqueueForGui(events.poll(), logController.getOutput());
+            enqueueForGui(events.poll(), logOuput);
         }
         
         //readLock.lock();

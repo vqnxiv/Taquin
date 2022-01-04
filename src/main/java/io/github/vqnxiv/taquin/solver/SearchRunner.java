@@ -23,24 +23,14 @@ public class SearchRunner {
 
     private static final int MAXIMUM_CONCURRENT_SEARCHES = 1;
     
-    private static final SearchRunner runner;
-    
-    static {
-        runner = new SearchRunner();
-    }
-    
     private final ExecutorService executorService;
     private Search lastRunningSearch;
     
     private final StringProperty lastSearchInfo;    
     private final List<Search> searches;
     
-    public static SearchRunner getRunner() {
-        return runner;
-    }
     
-    
-    private SearchRunner() {
+    public SearchRunner() {
         LOGGER.info("Creating search runner");
 
         executorService = Executors.newFixedThreadPool(

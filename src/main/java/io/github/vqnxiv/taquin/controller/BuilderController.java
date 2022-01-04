@@ -85,7 +85,7 @@ public class BuilderController {
     
     // ------
     
-    public BuilderController() {
+    public BuilderController(SearchRunner searchRunner) {
         LOGGER.info("Creating builder controller");
         
         lockLevel = new SimpleObjectProperty<>(Lock.NOT_LOCKED);
@@ -96,7 +96,7 @@ public class BuilderController {
         exploredBuilder = new CollectionWrapper.Builder("explored", LinkedHashSet.class);
         queuedBuilder   = new CollectionWrapper.Builder("queued", PriorityQueue.class);
         
-        searchRunner = SearchRunner.getRunner();
+        this.searchRunner = searchRunner;
         
         startViewer = new GridViewer("Start", true);
         endViewer = new GridViewer("End", true);

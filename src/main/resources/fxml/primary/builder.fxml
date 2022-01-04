@@ -1,14 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -24,14 +19,6 @@
         <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
         </padding>
-
-        <!--
-        <TextField fx:id="searchNameTF" prefWidth="110.0" promptText="name" />
-        <ChoiceBox fx:id="exploredClassCB" prefWidth="110.0" />
-        <ChoiceBox fx:id="queuedClassCB" prefWidth="110.0" />
-        <ChoiceBox fx:id="searchAlgCB" onAction="#onSearchAlgActivated" prefWidth="110.0" />
-        <ChoiceBox fx:id="heuristicCB" prefWidth="110.0" />
-        -->
     </HBox>
 
     <!-- main bar, part 2 -->
@@ -39,17 +26,6 @@
         <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
         </padding>
-
-        <!--
-        <Button fx:id="startGridButton" mnemonicParsing="false" onAction="#onStartGridActivated" prefWidth="60.0" text="start" />
-        <Button fx:id="endGridButton" mnemonicParsing="false" onAction="#onEndGridActivated" prefWidth="60.0" text="end" />
-        <Button fx:id="runSearchButton" mnemonicParsing="false" onAction="#onRunSearchActivated" prefWidth="60.0" text="Run" />
-        <Button fx:id="pauseSearchButton" mnemonicParsing="false" onAction="#onPauseSearchActivated" prefWidth="60.0" text="Pause" />
-        <Button fx:id="stopSearchButton" mnemonicParsing="false" onAction="#onStopSearchActivated" prefWidth="60.0" text="Stop" />
-        <Button fx:id="stepsSearchButton" mnemonicParsing="false" onAction="#onStepsSearchActivated" prefWidth="60.0" text="Steps" />
-        <TextField fx:id="stepsNumberTF" prefWidth="60.0" />
-        <Button fx:id="currentGridButton" mnemonicParsing="false" onAction="#onCurrentGridActivated" prefWidth="60.0" text="Current" />
-        -->
     </HBox>
 
     <!-- progress -->
@@ -86,142 +62,14 @@
             <Label text="Depth" GridPane.columnIndex="3" />
             <Label text="Explored" GridPane.columnIndex="4" GridPane.columnSpan="2" />
             <Label text="Queued" GridPane.columnIndex="6" GridPane.columnSpan="2" />
-            
-            <!--
-            <Label text="State" />
-            <Label text="not ready" GridPane.rowIndex="1" />
-            <Label text="Time" GridPane.columnIndex="1" />
-            <Label text="0ms" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Label text="Current" GridPane.columnIndex="2" />
-            <Label text="0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-            <Label text="Depth" GridPane.columnIndex="3" />
-            <Label text="0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-            <Label text="Explored" GridPane.columnIndex="4" GridPane.columnSpan="2" />
-            <Label text="0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-            <Label text="0b" GridPane.columnIndex="5" GridPane.rowIndex="1" />
-            <Label text="Queued" GridPane.columnIndex="6" GridPane.columnSpan="2" />
-            <Label text="0" GridPane.columnIndex="6" GridPane.rowIndex="1" />
-            <Label text="0b" GridPane.columnIndex="7" GridPane.rowIndex="1" />
-            -->
         </GridPane>
 
     </TitledPane>
 
     <!-- advanced params -->
     <TitledPane animated="false" expanded="false" text="Parameters">
-        
         <TabPane fx:id="parameterTabPane" tabClosingPolicy="UNAVAILABLE">
-            
-            <!--
-            <Tab text="Collection">
-                <GridPane vgap="2.0">
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                    </padding>
-
-                    <columnConstraints>
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                    </columnConstraints>
-
-                    <rowConstraints>
-                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                    </rowConstraints>
-
-                    <Label text="Closed collection" />
-                    <ChoiceBox fx:id="exploredClassCB" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="120.0" GridPane.rowIndex="1" />
-                    <Label text="Increased capacity" GridPane.columnIndex="1" />
-                    <CheckBox fx:id="increasedSizeCheck" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                    <Label text="Explored capacity" GridPane.columnIndex="2" />
-                    <TextField fx:id="exploredCapacityTF" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="120.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                    <Label text="Queued capacity" GridPane.columnIndex="3" />
-                    <TextField fx:id="queuedCapacityTF" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="120.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                </GridPane>
-            </Tab>
-            
-            <Tab text="Search Main">
-                <GridPane vgap="2.0">
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                    </padding>
-                    
-                    <rowConstraints>
-                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                    </rowConstraints>
-                    
-                    <columnConstraints>
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                    </columnConstraints>
-                    
-                    <children>
-                        <Label text="Filter explored" />
-                        <CheckBox fx:id="filterExploredCheck" mnemonicParsing="false" GridPane.rowIndex="1" />
-                        <Label text="Filter queued" GridPane.columnIndex="1" />
-                        <CheckBox fx:id="filterQueuedCheck" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                        <Label text="Equal policy" GridPane.columnIndex="2" />
-                        <ChoiceBox fx:id="equalPolicyCB" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="85.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                        <Label text="Throttle" GridPane.columnIndex="3" />
-                        <TextField fx:id="throttleTF" maxWidth="85.0" promptText="ms" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                        <Label text="Link existing neighbors" GridPane.columnIndex="4" />
-                        <CheckBox fx:id="linkExistingCheck" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                    </children>
-                </GridPane>
-            </Tab>
-
-            <Tab text="Search Extra">
-                <GridPane fx:id="searchParameters" vgap="2.0">
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                    </padding>
-                </GridPane>
-            </Tab>
-
-            <Tab text="Limits">
-                <GridPane vgap="2.0">
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                    </padding>
-
-                    <columnConstraints>
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
-                    </columnConstraints>
-
-                    <rowConstraints>
-                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                        <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
-                    </rowConstraints>
-
-                    <Label text="Time" />
-                    <TextField fx:id="maxTimeTF" maxWidth="85.0" promptText="ms" GridPane.rowIndex="1" />
-                    <Label text="Memory" GridPane.columnIndex="1" />
-                    <TextField fx:id="maxMemoryTF" maxWidth="85.0" promptText="byte" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                    <Label text="Depth" GridPane.columnIndex="2" />
-                    <TextField fx:id="maxDepthTF" maxWidth="85.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                    <Label text="Explored" GridPane.columnIndex="3" />
-                    <TextField fx:id="maxExploredTF" maxWidth="85.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                    <Label text="Generated" GridPane.columnIndex="4" />
-                    <TextField fx:id="maxGeneratedTF" maxWidth="85.0" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                    <Label text="Check goal queued" GridPane.columnIndex="5" />
-                    <CheckBox fx:id="goalQueuedCheck" mnemonicParsing="false" GridPane.columnIndex="5" GridPane.rowIndex="1" />
-                </GridPane>
-            </Tab>
-            -->
-            
         </TabPane>
-
     </TitledPane>
 
     <!-- log -->
