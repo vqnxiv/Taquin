@@ -27,9 +27,9 @@
 
    <Separator/>
 
-   <!-- console + searches -->
+   <!-- log + searches -->
    <SplitPane dividerPositions="0.29" VBox.vgrow="ALWAYS">
-      <!-- console -->
+      <!-- log -->
       <TextArea fx:id="logOutput" editable="false" wrapText="true"/>
 
       <!-- searches -->

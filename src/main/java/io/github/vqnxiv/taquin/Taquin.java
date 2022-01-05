@@ -17,9 +17,13 @@ import java.io.IOException;
 
 public class Taquin extends Application {
 
-
-    // https://sematext.com/blog/log4j2-tutorial/
-    // https://github.com/MSPaintIDE/MSPaintIDE/tree/master/src/main/java/com/uddernetworks/mspaint/logging
+    /**
+     * Async loggers.
+     */
+    static {
+        System.setProperty("Log4jContextSelector",
+            "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
+    }
 
 
     public static final int PRIMARY_MIN_WIDTH = 533;
@@ -33,8 +37,10 @@ public class Taquin extends Application {
 
     private MainController mainController;
 
-    // todo: logger
-    private static final Logger LOGGER = LogManager.getLogger();
+    /**
+     * Root logger.
+     */
+    private static final Logger LOGGER = LogManager.getLogger(Taquin.class);
 
 
     public static void main(String[] args) {

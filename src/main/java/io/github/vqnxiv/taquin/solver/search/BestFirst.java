@@ -86,14 +86,18 @@ public class BestFirst extends Search {
     protected void step() {
         
         Grid newCurrent = searchSpace.getQueued().pollFirst();
+        log("Exploring new current: " + newCurrent.getKey());
 
         searchSpace.setCurrent(newCurrent);
         searchSpace.getExplored().add(newCurrent);
 
+        log("Generating neighbors");
         var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
 
+        log("Computing heuristics");
         for(Grid g : toAdd) computeHeuristic(g);
 
+        log("Queuing " + toAdd.size() + " generated neighbors");
         if(!toAdd.isEmpty()) {
             if(searchSpace.getQueued().usesNaturalOrdering()) {
                 searchSpace.getQueued().addAll(toAdd);

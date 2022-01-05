@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!--
-https://howtodoinjava.com/log4j2/multiple-appenders/
-https://www.baeldung.com/log4j2-appenders-layouts-filters
-https://stackoverflow.com/questions/53673727/log4j-define-multiple-loggers
--->
 
 <Configuration status="WARN" packages="io.github.vqnxiv.taquin.logger">
 
@@ -16,25 +11,33 @@ https://stackoverflow.com/questions/53673727/log4j-define-multiple-loggers
         <Property name="COMPLETE_PATTERN">
             %d{HH:mm:ss.SSS} [%p] %t - %C: %m%n
         </Property>
+        
+        <Property name="SEARCH_PATTERN">
+            %n
+        </Property>
     </Properties>
     
     <Appenders>
-        <!--
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="${PATTERN}"/>
+            <PatternLayout pattern="${COMPLETE_PATTERN}"/>
         </Console>
-        -->
         
         <AppAppender name="AppLog">
             <PatternLayout pattern="${LIGHT_PATTERN}"/>
         </AppAppender>
+        
+        <SearchAppender name="SearchLog">
+            <PatternLayout pattern="${SEARCH_PATTERN}"/>
+        </SearchAppender>
     </Appenders>
     
     <Loggers>
+        <Logger name="searchLogger" level="INFO" additivity="false">
+            <AppenderRef ref="SearchLog"/>
+        </Logger>
+        
         <Root level="INFO">
-            <!--
             <AppenderRef ref="Console"/>
-            -->
             <AppenderRef ref="AppLog"/>
         </Root>
     </Loggers>

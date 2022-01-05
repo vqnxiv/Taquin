@@ -11,7 +11,9 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.vqnxiv.taquin.controller.BuilderController">
+<?import javafx.scene.control.TextArea?>
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="io.github.vqnxiv.taquin.controller.BuilderController">
 
     
     <!-- main bar, part 1 -->
@@ -74,8 +76,7 @@
 
     <!-- log -->
     <TitledPane animated="false" expanded="false" text="Log">
-        <ScrollPane>
-        </ScrollPane>
+        <TextArea fx:id="logOutput" editable="false" wrapText="true"/>
     </TitledPane>
 
 </VBox>

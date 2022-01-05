@@ -8,7 +8,6 @@ import io.github.vqnxiv.taquin.solver.Search;
 import io.github.vqnxiv.taquin.solver.SearchRunner;
 import io.github.vqnxiv.taquin.solver.search.Astar;
 import io.github.vqnxiv.taquin.util.FxUtils;
-import io.github.vqnxiv.taquin.util.GridViewer;
 import io.github.vqnxiv.taquin.util.IBuilder;
 import io.github.vqnxiv.taquin.util.Utils;
 
@@ -48,8 +47,11 @@ public class BuilderController {
         NOT_LOCKED, MODIFICATION_LOCKED, FULLY_LOCKED
     }
 
-    
-    private static final Logger LOGGER = LogManager.getLogger();
+
+    /**
+     * Root logger.
+     */
+    private static final Logger LOGGER = LogManager.getLogger(BuilderController.class);
 
 
     @FXML
@@ -63,6 +65,9 @@ public class BuilderController {
 
     @FXML
     private GridPane progressPane;
+    
+    @FXML
+    private TextArea logOutput;
 
     
     // ------
@@ -86,7 +91,7 @@ public class BuilderController {
     // ------
     
     public BuilderController(SearchRunner searchRunner) {
-        LOGGER.info("Creating builder controller");
+        LOGGER.debug("Creating builder controller");
         
         lockLevel = new SimpleObjectProperty<>(Lock.NOT_LOCKED);
         lockLevel.set(Lock.NOT_LOCKED);
@@ -109,6 +114,15 @@ public class BuilderController {
         setupBase();
         setupProgressPane();
         setupTabPane();
+    }
+    
+    
+    public TextArea getLogOutput() {
+        return logOutput;
+    }
+    
+    public boolean hasSearchWithID(long id) {
+        return search != null && search.getID() == id;
     }
     
     
@@ -208,7 +222,7 @@ public class BuilderController {
     }
     
     private boolean canAttemptRun() {
-        LOGGER.info("Checking if search can run");
+        LOGGER.debug("Checking if search can run");
         if(lockLevel.get() == Lock.MODIFICATION_LOCKED) {
             return true;
         }
@@ -220,7 +234,7 @@ public class BuilderController {
         
         if(opt.isPresent()) {
             search = opt.get();
-            LOGGER.info("Locking controller for modifications");
+            LOGGER.debug("Locking controller for modifications");
             lockLevel.set(Lock.MODIFICATION_LOCKED);
             bindProgressPane();
             return true;

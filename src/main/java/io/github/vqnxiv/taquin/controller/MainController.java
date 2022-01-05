@@ -2,7 +2,9 @@ package io.github.vqnxiv.taquin.controller;
 
 
 import io.github.vqnxiv.taquin.Taquin;
+import io.github.vqnxiv.taquin.logger.AbstractFxAppender;
 import io.github.vqnxiv.taquin.logger.MainAppender;
+import io.github.vqnxiv.taquin.solver.Search;
 import io.github.vqnxiv.taquin.solver.SearchRunner;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
@@ -11,6 +13,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,6 +21,9 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 
 /**
@@ -57,6 +63,7 @@ public class MainController {
         private HeapMonitorService() {
             memoryMXBean = ManagementFactory.getMemoryMXBean();
             maxHeap = memoryMXBean.getHeapMemoryUsage().getMax() / 1048576;
+            setRestartOnFailure(true);
         }
 
         /**
@@ -86,10 +93,12 @@ public class MainController {
             };
         }
     }
-    
-    
-    private static final Logger LOGGER = LogManager.getLogger();
 
+    
+    /**
+     * Root logger.
+     */
+    private static final Logger LOGGER = LogManager.getLogger(MainController.class);
 
     /**
      * {@link TextArea} in which app log events are displayed. {@link MainAppender}
@@ -119,11 +128,7 @@ public class MainController {
      * {@link ScheduledService} which regularly checks the heap memory usage.
      */
     private final HeapMonitorService heapService;
-
-    /**
-     * {@link FXMLLoader} which is used when creating {@link BuilderController} in {@link #onAddBuilderActivated()}.
-     */
-    private FXMLLoader loader;
+    
 
     /**
      * {@link SearchRunner} which is dependency-injected in the {@link BuilderController}.
@@ -132,13 +137,21 @@ public class MainController {
     private final SearchRunner searchRunner;
 
     /**
+     * {@link Map} which is used as a convenient way to link a {@link BuilderController}
+     * and its {@link VBox} main node
+     */
+    private final Map<BuilderController, VBox> builderMap;
+    
+    
+    /**
      * Constructor which initializes {@link #searchRunner} and {@link #heapService}.
      */
     public MainController() {
         searchRunner = new SearchRunner();
-
+        builderMap = new HashMap<>();
+        
         heapService = new HeapMonitorService();
-        heapService.setRestartOnFailure(true);
+        heapService.setPeriod(Duration.millis(100d));
         heapService.setOnSucceeded(
             e -> heapUsage.setText(
                 String.format("Heap: %4d / %4d MB", heapService.getValue(), heapService.maxHeap)
@@ -150,27 +163,61 @@ public class MainController {
      * JavaFX method.
      */
     public void initialize() {
-        MainAppender.setLogOutput(logOutput);
-        onAddBuilderActivated();
+        AbstractFxAppender.injectMainController(this);
         searchInfo.textProperty().bind(searchRunner.lastSearchInfo());
-        LOGGER.info("Successfully loaded GUI"); // keep this one here as it serves to tell the appender we good
+        LOGGER.info("Successfully loaded GUI");
+        onAddBuilderActivated();
         heapService.start();
+    }
+    
+
+    /**
+     * Getter for {@link #logOutput}.
+     * 
+     * @return a {@link TextArea} in which logs are displayed.
+     */
+    public TextArea getMainLogOutput() {
+        return logOutput;
     }
 
     /**
-     * Creates a new {@link BuilderController} and adds it to {@link #builderVBox}.
+     * Retrieves the corresponding {@link BuilderController} {@link TextArea} 
+     * for search logs ({@link io.github.vqnxiv.taquin.logger.SearchAppender})
+     * from a {@link Search#getID()}.
+     * 
+     * @param id The id of the {@link Search}.
+     * @return {@link Optional#of(Object)} the {@link TextArea} if a {@link Search} 
+     * with such an id exists; {@link Optional#empty()} otherwise.
+     */
+    public Optional<TextArea> getBuilderLogOutputFromSearchID(long id) {
+        for(var builder : builderMap.keySet()) {
+            if(builder.hasSearchWithID(id)) {
+                return Optional.of(builder.getLogOutput());
+            }
+        }
+        
+        return Optional.empty();
+    }
+    
+    
+    /**
+     * Creates a new {@link VBox} and adds it to {@link #builderVBox}. 
+     * Also adds it and its {@link BuilderController} in {@link #builderMap}.
      */
     @FXML
     private void onAddBuilderActivated() {
-        LOGGER.info("Adding new build controller");
+        LOGGER.debug("Adding new build controller");
+        
+        FXMLLoader loader = new FXMLLoader(Taquin.class.getResource("/fxml/primary/builder.fxml"));
 
-        loader = new FXMLLoader(Taquin.class.getResource("/fxml/primary/builder.fxml"));
         loader.setControllerFactory(
             param -> new BuilderController(searchRunner)
         );
 
         try {
-            builderVBox.getChildren().add(loader.load());
+            VBox vb = loader.load();
+            builderVBox.getChildren().add(vb);
+            builderMap.put(loader.getController(), vb);
         } catch(IOException e) {
             LOGGER.error("Could not find FXML file '/fxml/primary/builder.fxml'");
             e.printStackTrace();

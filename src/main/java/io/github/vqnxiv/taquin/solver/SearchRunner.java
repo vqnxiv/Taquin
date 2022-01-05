@@ -19,7 +19,10 @@ import java.util.concurrent.Executors;
 
 public class SearchRunner {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    /**
+     * Root logger.
+     */
+    private static final Logger LOGGER = LogManager.getLogger(SearchRunner.class);
 
     private static final int MAXIMUM_CONCURRENT_SEARCHES = 1;
     
@@ -31,7 +34,7 @@ public class SearchRunner {
     
     
     public SearchRunner() {
-        LOGGER.info("Creating search runner");
+        LOGGER.debug("Creating search runner");
 
         executorService = Executors.newFixedThreadPool(
             MAXIMUM_CONCURRENT_SEARCHES, 
@@ -73,7 +76,7 @@ public class SearchRunner {
     public Optional<Search> createSearch(Search.Builder<?> searchBuilder, SearchSpace.Builder spaceBuilder) {
         LOGGER.info("Creating search");
         
-        LOGGER.info("Checking grids");
+        LOGGER.debug("Checking grids");
         var m = spaceBuilder.getNamedProperties();
         if(m.get("start").getValue() == null) {
             LOGGER.error("Start grid is null");
@@ -84,14 +87,14 @@ public class SearchRunner {
             return Optional.empty();
         }
 
-        LOGGER.info("Checking grids content");
+        LOGGER.debug("Checking grids content");
         if(!((Grid) m.get("start").getValue()).checkCompatibility((Grid) m.get("end").getValue())) {
             LOGGER.error("Grids do not share the same alphabet");
             return Optional.empty();
         }
         
         var s = searchBuilder.searchSpace(spaceBuilder.build()).build();
-        LOGGER.info("Grid successfully created: " + s.getName());
+        LOGGER.info("Search successfully created: " + s.getName());
         searches.add(s);
         return Optional.of(s);
     }
@@ -133,7 +136,7 @@ public class SearchRunner {
         }
         
         lastSearchInfo.bind(Bindings.concat(s.getName(), ": ", s.getCurrentStateProperty()));
-        LOGGER.info("Submitting search run: " + s.getName() + " (" + n + ")");
+        LOGGER.debug("Submitting search run: " + s.getName() + " (" + n + ")");
         executorService.submit(s.newSearchTask(n, 0));
     }
     

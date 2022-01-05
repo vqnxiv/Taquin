@@ -42,12 +42,13 @@ dependencies {
 
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.8.2')
     testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.8.2')
-
+    
     implementation 'org.openjdk.jol:jol-core:0.16'
     implementation 'org.reflections:reflections:0.10.2'
     implementation 'org.jfxtras:jmetro:11.6.15'
     implementation 'org.apache.logging.log4j:log4j-api:2.16.0'
     implementation 'org.apache.logging.log4j:log4j-core:2.16.0'
+    implementation 'com.lmax:disruptor:3.4.4'
 }
 
 extraJavaModuleInfo {

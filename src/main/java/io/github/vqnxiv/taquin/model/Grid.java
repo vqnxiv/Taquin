@@ -163,12 +163,13 @@ public class Grid implements Comparable<Grid> {
         public String toString() {
             return Utils.screamingSnakeToReadable(this.name());
         }
-    } 
-
+    }
     
-    // ------
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    /**
+     * Root logger.
+     */
+    private static final Logger LOGGER = LogManager.getLogger(Grid.class);
 
     /**
      * placeholder hash value

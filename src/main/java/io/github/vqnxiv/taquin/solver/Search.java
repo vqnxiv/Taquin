@@ -1,6 +1,7 @@
 package io.github.vqnxiv.taquin.solver;
 
 
+import io.github.vqnxiv.taquin.Taquin;
 import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
@@ -10,8 +11,14 @@ import io.github.vqnxiv.taquin.util.Utils;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.concurrent.Task;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.openjdk.jol.info.GraphLayout;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -125,14 +132,14 @@ public abstract class Search {
                 return;
             }
             
-            elapsedTime += System.currentTimeMillis() - startTime;
+            elapsedTime += System.nanoTime() - startTime;
             try {
                 Thread.sleep(throttle);
             } catch(InterruptedException e) {
                 // e.printStackTrace();
                 Search.this.stop();
             }
-            startTime = System.currentTimeMillis();
+            startTime = System.nanoTime();
         }
         
         
@@ -147,12 +154,13 @@ public abstract class Search {
 
         @Override
         protected S call() throws Exception {
-
+            
             if(currentSearchState == SearchState.READY || currentSearchState == SearchState.PAUSED) {
 
                 currentSearchState = SearchState.RUNNING;
-                startTime = System.currentTimeMillis();
-
+                startTime = System.nanoTime();
+                log("Starting search");
+                
                 for(int i = 0; i < ((iterations > 0) ? iterations : iterations + 1); i += (iterations > 0) ? 1 : 0) {
                     if(checkConditions()) {
                         step();
@@ -162,22 +170,28 @@ public abstract class Search {
                     else break;
                 }
 
-                elapsedTime += System.currentTimeMillis() - startTime;
-                if(checkConditions()) pause();
+                elapsedTime += System.nanoTime() - startTime;
+                if(checkConditions()) {
+                    pause();
+                    log("Search paused");
+                }
+                else {
+                    log(Search.this.getState().toString());
+                }
                 //monitorMemory = true;
                 updateAll();
 
-                /*
+                
                 if(checkIfEndWasQueued && currentSearchState == SearchState.ENDED_FAILURE_LIMIT) {
                     int n;
                     if((n = searchSpace.getQueued().indexOf(searchSpace.getGoal())) > -1) {
-                        System.out.println("end queued at " + n);
+                        log("End queued at index " + n);
                     }
                     else {
-                        System.out.println("end not queued");
+                        log("End not queued");
                     }
                 }
-                */
+                
             }
 
             return (S) currentSearchState;
@@ -260,11 +274,7 @@ public abstract class Search {
         CURRENT_STATE
             (x -> x.currentSearchState),
         ELAPSED_TIME
-            (x ->
-                (x.currentSearchState == SearchState.RUNNING)
-                ? (System.currentTimeMillis() - x.startTime) + x.elapsedTime
-                : (x.elapsedTime)
-            ),
+            (x -> x.getElapsedTime() / 1_000_000),
         CURRENT_KEY
             (x -> x.searchSpace.getCurrent().getKey()),
         CURRENT_DEPTH
@@ -297,9 +307,57 @@ public abstract class Search {
             return Utils.screamingSnakeToReadable(this.name());
         }
     }
+    
+    public static class SearchLogMarker implements Marker {
+
+        @Override
+        public Marker addParents(Marker... markers) {
+            return null;
+        }
+
+        @Override
+        public String getName() {
+            return null;
+        }
+
+        @Override
+        public Marker[] getParents() {
+            return new Marker[0];
+        }
+
+        @Override
+        public boolean hasParents() {
+            return false;
+        }
+
+        @Override
+        public boolean isInstanceOf(Marker m) {
+            return false;
+        }
+
+        @Override
+        public boolean isInstanceOf(String name) {
+            return false;
+        }
+
+        @Override
+        public boolean remove(Marker marker) {
+            return false;
+        }
+
+        @Override
+        public Marker setParents(Marker... markers) {
+            return null;
+        }
+    }
 
     
     // ------
+
+    /**
+     * Search logger.
+     */
+    private static final Logger LOGGER = LogManager.getLogger("searchLogger");
     
     private static int SEARCH_ID_COUNT;
     
@@ -320,6 +378,9 @@ public abstract class Search {
     // todo: use instant
     private long startTime;
     private long elapsedTime = 0;
+    
+
+    private boolean log = true;
    
     private final boolean checkIfEndWasQueued;
     
@@ -376,6 +437,13 @@ public abstract class Search {
     
     // ------
 
+    
+    private long getElapsedTime() {
+        return (currentSearchState == SearchState.RUNNING)
+            ? (System.nanoTime() - startTime) + elapsedTime
+            : elapsedTime;
+    }
+    
     protected SearchState getState() { 
         return currentSearchState; 
     }
@@ -384,8 +452,23 @@ public abstract class Search {
         currentSearchState = SearchState.READY; 
     }
     
+    protected void log(String message) {
+        if(!log) {
+            return;
+        }
+        
+        LOGGER.info(
+            new MarkerManager.Log4jMarker(Integer.toString(id)), 
+            Long.toString(getElapsedTime()) + '\t' + +'\t' + message
+        );
+    }
+    
     public String getName() {
         return name;
+    }
+    
+    public long getID() {
+        return id;
     }
     
     public EnumMap<SearchProperty, StringProperty> getProperties() {
@@ -399,6 +482,7 @@ public abstract class Search {
     // ------
     
     private boolean checkConditions(){
+        log("Checking conditions");
 
         if(currentSearchState == SearchState.PAUSED || currentSearchState == SearchState.ENDED_FAILURE_USER_FORCED) {
             return false;

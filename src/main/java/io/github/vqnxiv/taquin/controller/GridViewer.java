@@ -1,7 +1,8 @@
-package io.github.vqnxiv.taquin.util;
+package io.github.vqnxiv.taquin.controller;
 
 
 import io.github.vqnxiv.taquin.model.Grid;
+import io.github.vqnxiv.taquin.util.FxUtils;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -34,30 +35,64 @@ public class GridViewer {
      * Each value of the enum corresponds to a specific {@code MenuItem}.
      */
     private enum ContextMenuItem {
+        /**
+         * Attempts to set the the value {@link #gridProperty} to that of 
+         * {@link GridControl#collectValues(int)}.
+         */
         SAVE_GRID(
             "save", true, false,
             GridViewer::pushControlToProperty
         ),
+        /**
+         * Cancels changes made to {@link #gridControl} by calling {@link GridControl#setValues(int[][])}
+         * with {@link #gridProperty} (#{@link Grid#getCopyOfSelf()}).
+         */
         CANCEL_GRID_CHANGES(
             "undo", true, false,
             GridViewer::pushPropertyToControl
         ),
+        /**
+         * Calls {@link #resizeDialog()} which brings up a {@link Dialog} that asks the user
+         * for the new dimensions and then calls {@link GridControl#setDimensions(int, int)}
+         * if the given input was valid.
+         */
         RESIZE_GRID(
             "resize", true, false,
             GridViewer::resizeDialog
         ),
+        /**
+         * Calls {@link #saveToBuffer()}.
+         */
         COPY(
             "copy",true, true,
             GridViewer::saveToBuffer
         ),
+        /**
+         * Calls {@link #pasteFromBuffer(boolean)} with {@code true}.
+         */
         PASTE_RESIZE(
             "paste & resize", true, false,
             g -> g.pasteFromBuffer(true)
         ),
+        /**
+         * Calls {@link #pasteFromBuffer(boolean)} with {@code false}.
+         */
         PASTE_IGNORE_SIZE(
             "paste", true, false,
             g -> g.pasteFromBuffer(false)
         ),
+        /**
+         * Displays information from {@link #gridProperty}'s {@link ObjectProperty#getValue()}.
+         * <p>
+         * Such as:
+         * <ul>
+         *     <li>{@link Grid#getKey()}</li>
+         *     <li>{@link Grid#getDepth()}</li>
+         *     <li>{@link Grid#getParent()}</li>
+         *     <li>{@link Grid#getHeuristicValue()}</li>
+         *     <li>{@link Grid#getChildren()}</li>
+         * </ul>
+         */
         SHOW_DETAILS(
             "details", false, true,
             GridViewer::pushControlToProperty
@@ -140,10 +175,12 @@ public class GridViewer {
             return itemName.substring(0,1).toUpperCase() + itemName.substring(1).toLowerCase();
         }
     }
+
     
-
-    private static final Logger LOGGER = LogManager.getLogger();
-
+    /**
+     * Root logger.
+     */
+    private static final Logger LOGGER = LogManager.getLogger(GridViewer.class);
     
     /**
      * A 2D array which is used to send a value between {@code GridViewer}s
@@ -209,7 +246,7 @@ public class GridViewer {
     public GridViewer(String name, boolean editable) {
         stage = new Stage();
         gridProperty = new SimpleObjectProperty<>(Grid.invalidOfSize(3, 3));
-        gridControl = new GridControl(name, editable, 4, 3);
+        gridControl = new GridControl(name, editable, 3, 3);
         editableProperty = new SimpleBooleanProperty(editable);
         contextMenu = new ContextMenu();
         

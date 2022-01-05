@@ -82,23 +82,29 @@ public class DepthFirst extends Search {
 
     @Override
     protected void step(){
+        
         Grid newCurrent = searchSpace.getQueued().pollLast();
-
+        log("Exploring new current: " + newCurrent.getKey());
+        
         searchSpace.setCurrent(newCurrent);
         searchSpace.getExplored().add(newCurrent);
 
+        log("Generating neighbors");
         var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
 
         if(heuristic != Grid.Distance.NONE) {
+            log("Computing heuristics");
             for(Grid g : toAdd) computeHeuristic(g);
             toAdd.sort(Collections.reverseOrder());
         }
 
+        log("Checking for goal");
         if(checkNewStatesForGoal) 
             for(Grid g : toAdd) 
                 if(searchSpace.isGoal(g)) 
                     searchSpace.setCurrent(g);
 
+        log("Queuing " + toAdd.size() + " generated neighbors");
         searchSpace.getQueued().addAll(toAdd);
     }
     

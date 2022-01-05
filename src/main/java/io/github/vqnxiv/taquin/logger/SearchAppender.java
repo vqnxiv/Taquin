@@ -1,7 +1,8 @@
 package io.github.vqnxiv.taquin.logger;
 
 
-import io.github.vqnxiv.taquin.controller.MainController;
+import io.github.vqnxiv.taquin.controller.BuilderController;
+import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
@@ -13,53 +14,46 @@ import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 
 import java.io.Serializable;
-import java.util.LinkedList;
 
 
 /**
- * The main log appender for the app log.
- * 
+ * Log appender for search log.
+ *
  * @see AbstractFxAppender
+ * @see io.github.vqnxiv.taquin.solver.Search
  */
 @Plugin(
-    name = "AppAppender",
+    name = "SearchAppender",
     category = "Core",
     elementType = "appender",
     printObject = true
 )
-public class MainAppender extends AbstractFxAppender {
-
-    /**
-     * A buffer for events that are logged before {@link #mainController}
-     * or {@link MainController#getMainLogOutput()} are initialized.
-     */
-    private final LinkedList<LogEvent> events = new LinkedList<>();
-
+public class SearchAppender extends AbstractFxAppender {
     
     /**
      * Factory method.
      * <p>
      * {@inheritDoc}
-     * 
+     *
      * @param name name
      * @param layout layout
      * @param filter filter
-     * @return new {@link MainAppender}
+     * @return new {@link SearchAppender}
      */
     @PluginFactory
-    public static MainAppender createAppender(
+    public static SearchAppender createAppender(
         @PluginAttribute("name") String name,
         @PluginElement("Layout") Layout<? extends Serializable> layout,
         @PluginElement("Filter") final Filter filter
     ) {
         if (name == null) {
-            LOGGER.error("No name provided for MainAppender");
+            LOGGER.error("No name provided for SearchAppender");
             return null;
         }
         if (layout == null) {
             layout = PatternLayout.createDefaultLayout();
         }
-        return new MainAppender(name, filter, layout, true, new Property[]{});
+        return new SearchAppender(name, filter, layout, true, new Property[]{});
     }
 
     /**
@@ -73,27 +67,30 @@ public class MainAppender extends AbstractFxAppender {
      * @param ignoreExceptions boolean
      * @param properties array
      */
-    protected MainAppender(String name, Filter filter, Layout<? extends Serializable> layout, 
-                           boolean ignoreExceptions, Property[] properties) {
+    protected SearchAppender(String name, Filter filter, Layout<? extends Serializable> layout, 
+                             boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
     }
 
 
     /**
-     * Appends a log event from the main app log to {@link MainController#getMainLogOutput()}.
-     * 
+     * Appends a log event from a search log to the {@link BuilderController#getLogOutput()} 
+     * from the corresponding {@link io.github.vqnxiv.taquin.solver.Search}.
+     * <p>
+     * The {@link io.github.vqnxiv.taquin.solver.Search} from which the event was fired is retrieved
+     * from the event's {@link Marker} ({@link Marker#getName()}).
+     *
      * @param event {@link LogEvent} to be appended.
      */
     @Override
     public void append(LogEvent event) {
-        events.add(event.toImmutable());
+        event = event.toImmutable();
 
-        if(mainController == null || mainController.getMainLogOutput() == null) {
-            return;
-        }
+        long id = Long.parseLong(event.getMarker().getName());
         
-        while(!events.isEmpty()) {
-            enqueueForGui(events.poll(), mainController.getMainLogOutput());
-        }
+        LogEvent finalEvent = event;
+        mainController.getBuilderLogOutputFromSearchID(id).ifPresent(
+            output -> enqueueForGui(finalEvent, output)
+        );
     }
 }

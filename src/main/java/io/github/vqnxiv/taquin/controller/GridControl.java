@@ -1,6 +1,8 @@
-package io.github.vqnxiv.taquin.util;
+package io.github.vqnxiv.taquin.controller;
 
 
+import io.github.vqnxiv.taquin.util.FxUtils;
+import io.github.vqnxiv.taquin.util.Utils;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
