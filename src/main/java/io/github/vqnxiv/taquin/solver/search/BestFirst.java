@@ -62,7 +62,7 @@ public class BestFirst extends Search {
     
     public static final String SEARCH_SHORT_NAME = "GBFS";
 
-    private final boolean useMerge;
+    private boolean useMerge;
 
     
     // ------
@@ -70,13 +70,19 @@ public class BestFirst extends Search {
     private BestFirst(Builder builder) {
         super(builder);
         
-        useMerge = builder.useMerge.get() || (!searchSpace.getQueued().usesNaturalOrdering() && !searchSpace.getQueued().isSortable());
+        useMerge = builder.useMerge.get();
         setReady();
     }
 
 
     // ------
 
+    @Override
+    protected void setProperties() {
+        useMerge = useMerge || (!searchSpace.getQueued().usesNaturalOrdering() && !searchSpace.getQueued().isSortable());
+
+    }
+    
     @Override
     protected void computeHeuristic(Grid g) {
         g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic));
@@ -106,9 +112,9 @@ public class BestFirst extends Search {
                 searchSpace.getQueued().mergeWith(toAdd);
             }
             else {
-                Collections.sort(toAdd);
+                Collections.sort(toAdd, heuristicComparator);
                 searchSpace.getQueued().addAll(toAdd);
-                searchSpace.getQueued().sort();
+                searchSpace.getQueued().sort(heuristicComparator);
             }
         }
     }

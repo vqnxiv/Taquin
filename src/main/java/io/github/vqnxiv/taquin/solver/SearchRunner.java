@@ -1,6 +1,7 @@
 package io.github.vqnxiv.taquin.solver;
 
 
+import io.github.vqnxiv.taquin.model.CollectionWrapper;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
 import javafx.beans.binding.Bindings;
@@ -73,7 +74,8 @@ public class SearchRunner {
         return searches.remove(s);
     }
     
-    public Optional<Search> createSearch(Search.Builder<?> searchBuilder, SearchSpace.Builder spaceBuilder) {
+    public Optional<Search> createSearchAndSpace(Search.Builder<?> searchBuilder, SearchSpace.Builder spaceBuilder,
+    CollectionWrapper.Builder queuedBuilder, CollectionWrapper.Builder exploredBuilder) {
         LOGGER.info("Creating search");
         
         LOGGER.debug("Checking grids");
@@ -93,8 +95,19 @@ public class SearchRunner {
             return Optional.empty();
         }
         
-        var s = searchBuilder.searchSpace(spaceBuilder.build()).build();
+        var s = searchBuilder.build();
         LOGGER.info("Search successfully created: " + s.getName());
+        
+        exploredBuilder.comparator(s.getHeuristicComparator());
+        queuedBuilder.comparator(s.getHeuristicComparator());
+        
+        s.setSearchSpace(
+            spaceBuilder
+                .queued(queuedBuilder.build())
+                .explored(exploredBuilder.build())
+                .build()
+        );
+        
         searches.add(s);
         return Optional.of(s);
     }
@@ -137,7 +150,7 @@ public class SearchRunner {
         
         lastSearchInfo.bind(Bindings.concat(s.getName(), ": ", s.getCurrentStateProperty()));
         LOGGER.debug("Submitting search run: " + s.getName() + " (" + n + ")");
-        executorService.submit(s.newSearchTask(n, 0));
+        executorService.submit(s.newSearchTask(n, 0).get());
     }
     
 }

@@ -75,6 +75,9 @@ public class BreadthFirst extends Search {
     // ------
 
     @Override
+    protected void setProperties() { }
+
+    @Override
     protected void computeHeuristic(Grid g) {
         g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic));
     }
@@ -94,7 +97,7 @@ public class BreadthFirst extends Search {
         if(heuristic != Grid.Distance.NONE) {
             log("Computing heuristics");
             for(Grid g : toAdd) computeHeuristic(g);
-            Collections.sort(toAdd);
+            Collections.sort(toAdd, heuristicComparator);
         }
 
         log("Checking for goal");

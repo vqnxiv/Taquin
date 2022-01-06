@@ -337,7 +337,7 @@ public class GridViewer {
      */
     private void pushControlToProperty() {
         if(gridControl.isEditable()) {
-            var opt = Grid.of(gridControl.collectValues(-1), Grid.EqualPolicy.RANDOM);
+            var opt = Grid.of(gridControl.collectValues(-1));
             if(opt.isPresent()) {
                 gridProperty.setValue(opt.get());
                 LOGGER.info("Successfully set grid for " + stage.getTitle());

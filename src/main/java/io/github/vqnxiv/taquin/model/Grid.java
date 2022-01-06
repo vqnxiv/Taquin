@@ -29,10 +29,34 @@ public class Grid implements Comparable<Grid> {
      * attempting to place it out of the bounds of the 2d array
      */
     private enum Direction {
-        LEFT    ((g -> g.zeroCol > 0)), 
-        RIGHT   ((g -> g.zeroCol < g.self[0].length - 1)), 
-        UP      ((g -> g.zeroRow > 0)),
-        DOWN    ((g -> g.zeroRow < g.self.length - 1));
+        /**
+         * Left based movement, i.e decreasing by one a pair of coordinates column index.
+         */
+        LEFT(
+            (g -> g.zeroCol > 0),
+            (x, y) -> (new int[]{x, --y})
+        ),
+        /**
+         * Right based movement, i.e increasing by one a pair of coordinates column index.
+         */
+        RIGHT(
+            (g -> g.zeroCol < g.self[0].length - 1),
+            (x, y) -> (new int[]{x, ++y})
+        ),
+        /**
+         * Upward based movement, i.e decreasing by one a of pair coordinates row index.
+         */
+        UP(
+            (g -> g.zeroRow > 0),
+            (x, y) -> (new int[]{--x, y})
+        ),
+        /**
+         * Downward based movement, i.e increasing by one a pair of coordinates row index.
+         */
+        DOWN(
+            (g -> g.zeroRow < g.self.length - 1),
+            (x, y) -> (new int[]{++x, y})
+        );
 
         /**
          * The function which determines whether the move is valid.
@@ -40,22 +64,40 @@ public class Grid implements Comparable<Grid> {
         private final Function<Grid, Boolean> check;
 
         /**
+         * Function which translates a pair of coordinates according 
+         * to the move's definition.
+         */
+        private final BiFunction<Integer, Integer, int[]> move;
+
+        /**
          * Enum constructor
          * 
          * @param c validation function
          */
-        Direction(Function<Grid, Boolean> c) {
+        Direction(Function<Grid, Boolean> c, BiFunction<Integer, Integer, int[]> m) {
             check = c;
+            move = m;
         }
 
         /**
-         * The method which is called when proceeding to validation
+         * The method which is called when proceeding to validation.
          * 
          * @param g the {@code Grid} to check
          * @return {@code true} if the move is valid, {@code false} otherwise
          */
         private boolean check(Grid g) {
             return check.apply(g);
+        }
+
+        /**
+         * The method which is called when translating coordinates.
+         * 
+         * @param row The first element of the coordinates.
+         * @param col The second element.
+         * @return An int array of length 2 which contains the translated [row, col].
+         */
+        private int[] move(int row, int col) {
+            return move.apply(row, col);
         }
 
         /**
@@ -73,25 +115,49 @@ public class Grid implements Comparable<Grid> {
      * The grids are assumed to be compatible, i.e {@code g1} and {@code g2} such that {@code}
      * {@code g1.checkCompatibility(g2)} returns {@code true}.
      */
-    // todo: move all the calc funcs in this enum
     public enum Distance {
-        NONE                ((x, y) -> 0),
-        MANHATTAN           ((x, y) -> x.manhattan(y)),
-        HAMMING             ((x, y) -> x.hamming(y)),
-        EUCLIDEAN           ((x, y) -> x.euclidean(y)),
-        LINEAR_MANHATTAN    ((x, y) -> x.linearManhattan(y));
+        /**
+         * No computation.
+         */
+        NONE(
+            (x, y) -> 0f
+        ),
+        /**
+         * Manhattan distance. {@link #manhattan(Grid)}
+         */
+        MANHATTAN(
+            (x, y) -> x.manhattan(y)
+        ),
+        /**
+         * Hamming distance. {@link #hamming(Grid)}
+         */
+        HAMMING(
+            (x, y) -> x.hamming(y)
+        ),
+        /**
+         * Euclidean distance. {@link #euclidean(Grid)}
+         */
+        EUCLIDEAN0(
+            (x, y) -> x.euclidean(y)
+        ),
+        /**
+         * Linear conflits and manhattan distance. {@link #linearManhattan(Grid)}
+         */
+        LINEAR_MANHATTAN(
+            (x, y) -> x.linearManhattan(y)
+        );
 
         /**
          * Function which is used to compute the distance
          */
-        private final BiFunction<Grid, Grid, Integer> function;
+        private final BiFunction<Grid, Grid, Float> function;
 
         /**
          * Enum contstuctor
          * 
          * @param func the function called by {@code calc}
          */
-        Distance(BiFunction<Grid, Grid, Integer> func) {
+        Distance(BiFunction<Grid, Grid, Float> func) {
             function = func;
         }
 
@@ -105,7 +171,7 @@ public class Grid implements Comparable<Grid> {
          * @param g2 a {@code Grid} such that {@code g2.checkCompatibility(g1)} returns {@code true}
          * @return the distance as an int
          */
-        private int calc(Grid g1, Grid g2) {
+        private float calc(Grid g1, Grid g2) {
             return function.apply(g1, g2);
         }
 
@@ -119,18 +185,36 @@ public class Grid implements Comparable<Grid> {
     }
 
     /**
-     * Enum used to decide between two {@code Grid}s which have the same {@code heuristicValue}.
+     * Enum used to decide between two {@link Grid}s which have the same {@link #heuristicValue}.
      */
     public enum EqualPolicy {
+        /**
+         * Neutral comparison.
+         */
         NONE            ((x, y) -> 0),
+        /**
+         * At random.
+         */
         RANDOM          ((x, y) -> (ThreadLocalRandom.current().nextBoolean()) ? 1 : -1),
+        /**
+         * The more recent {@link Grid} as determined by {@link #key}.
+         */
         NEWER_FIRST     ((x, y) -> (x.key < y.key) ? -1 : 1),
+        /**
+         * The older {@link Grid} as determined by {@link #key}.
+         */
         OLDER_FIRST     ((x, y) -> (x.key < y.key) ? 1 : -1),
+        /**
+         * The higher {@link Grid} as determined by {@link #depth}.
+         */
         HIGHER_FIRST    ((x, y) -> (x.depth <= y.depth) ? -1 : 1),
+        /**
+         * The deeper {@link Grid} as determined by {@link #depth}.
+         */
         DEEPER_FIRST    ((x, y) -> (x.depth <= y.depth) ? 1 : - 1);
 
         /**
-         * The function which is called by {@code calc}
+         * The function which is called by {@link #calc}
          */
         private final BiFunction<Grid, Grid, Integer> function;
 
@@ -145,14 +229,14 @@ public class Grid implements Comparable<Grid> {
 
         /**
          * The method which should be called when comparing two grids 
-         * with the same heuristic bvalue.
+         * with the same heuristic value.
          * 
-         * @param g1 {@code Grid}
-         * @param g2 {@code Grid}
-         * @return {@code 1} if {@code g1} is determined to be greather than {@code g2}; 
+         * @param g1 {@link Grid}
+         * @param g2 {@link Grid}
+         * @return {@code 1} if {@code g1} is determined to be greater than {@code g2}; 
          * {@code -1} otherwise
          */
-        private int calc(Grid g1, Grid g2) {
+        public int calc(Grid g1, Grid g2) {
             return function.apply(g1, g2);
         }
 
@@ -180,7 +264,7 @@ public class Grid implements Comparable<Grid> {
      * The 2d array which represents the grid.
      * <p>
      * {@code 0} is used as the 'blank' value for the blank tile which is moved
-     * when a {@code Search} is run.
+     * when a {@link io.github.vqnxiv.taquin.solver.Search} is run.
      * <p>
      * Numbers must be positive and unique for the grid to be valid.
      */
@@ -188,13 +272,13 @@ public class Grid implements Comparable<Grid> {
 
     /**
      * The key is the order in which the {@code Grid}s were generated and validated within 
-     * a {@code SpaceSearch}.
+     * a {@link SearchSpace}.
      * <p>
-     * {@code -2} is an illegal placeholder value until the {@code Grid} gets validated
-     * by the {@code SpaceSearch} it was generated from)
+     * {@code -2} is an illegal placeholder value until the {@link Grid} gets validated
+     * by the {@link SearchSpace} it was generated from).
      * <p>
      * {@code -1} is the value reserved for pre-generated grids such as the start and the
-     * end of a {@code SpaceSearch}
+     * end of a {@link SearchSpace}.
      * <p>
      * {@code 0} is the value for the first {@code Grid} generated and validated within a 
      * {@code SpaceSearch}
@@ -202,74 +286,75 @@ public class Grid implements Comparable<Grid> {
     private int key = -2;
 
     /**
-     * The depth is the number of steps between a {@code SpaceSearch}'s start {@code Grid} 
+     * The depth is the number of steps between a {@link SearchSpace}'s start {@link Grid} 
      * and this object.
      * <p>
      * i.e how many times you can call {@code g2 = g1.getParent().getParent().getParent()}
-     * until {@code g2.equals(start)} returns {@code true} for that {@code SpaceSearch}
+     * until {@code g2.equals(start)} returns {@code true} for that {@link SearchSpace}.
      */
     private final int depth;
 
     /**
-     * The direction in which you can generate {@code parent}
+     * The direction in which you can generate {@link #parent}.
      * <p>
-     * It is the opposite of the direction used when {@code generateNeighbors} was called
-     * on {@code parent} (e.g {@code LEFT} -> {@code RIGHT}).
+     * It is the opposite of the direction used when {@link #generateNeighbors()} was called
+     * on {@link #parent} (e.g {@link Direction#LEFT} -> {@link Direction#RIGHT}).
      */
     private final Direction parentDirection;
 
     /**
-     * The {@code Grid} this object was generated from ({@code generateNeighbors})
+     * The {@link Grid} this object was generated from ({@link #generateNeighbors()}).
      */
     private final Grid parent;
 
     /**
-     * The grids generated from calling {@code generateNeighbors} on this object
-     * which were valided by the {@code SpaceSearch} this object belongs to
+     * The grids generated from calling {@link #generateNeighbors()} on this object
+     * which were valided by the {@link SearchSpace} this object belongs to.
      */
-    private Grid[] hasGenerated;
+    private List<Grid> hasGenerated;
 
     /**
-     * The grids generated from calling {@code generateNeighbors} on this object
-     * but were not valided by the {@code SpaceSearch} this object belongs to
+     * The grids generated from calling {@link SearchSpace} on this object
+     * but were not valided by the {@link SearchSpace} this object belongs to
      */
-    private Grid[] existingNeighbors;
+    private List<Grid> existingNeighbors;
 
     /**
-     * The heuristic value for this object, as calculated by a {@code Search} {@code Distance}
+     * The heuristic value for this object, as calculated by a {@link io.github.vqnxiv.taquin.solver.Search}'s
+     * {@link Distance}.
      */
-    private int heuristicValue;
+    private float heuristicValue = Float.MAX_VALUE;
 
     /**
-     * Equal policy value used when calling {@code compareTo} on this object and
-     * specifying as argument another {@code Grid} with the same {@code heuristicValue}
+     * Distance values for this object. Used for faster distance calculation for children grids.
      */
-    private final EqualPolicy equalPolicy;
+    private final EnumMap<Distance, Float> distanceMap;
 
     /**
      * The row index of the cell with a value of zero (considered the blank tile)
      */
-    private int zeroRow;
+    private final int zeroRow;
 
     /**
      * The column index of the cell with a value of zero (considered the blank tile)
      */
-    private int zeroCol;
+    private final int zeroCol;
 
     
     /**
      * Constructor which is called from the factory method {@code of}.
      * 
      * @param content the array which {@code self} will become a deep copy of
-     * @param ep the value for {@code equalPolicy}
      */
-    private Grid(int[][] content, EqualPolicy ep) {
+    private Grid(int[][] content) {
         self = Arrays.stream(content).map(int[]::clone).toArray(t -> content.clone());
 
-        parent = null;
+        // so we don't have to deal with NPE?
+        parent = this;
         parentDirection = null;
         depth = 0;
-        equalPolicy = ep;
+        
+        distanceMap = new EnumMap<>(Distance.class);
         
         int[] z = safeFindCoordinates(0, true).orElse(new int[]{-1, -1});
         zeroRow = z[0]; zeroCol = z[1];
@@ -289,7 +374,6 @@ public class Grid implements Comparable<Grid> {
 
         parent = from;
         depth = from.depth+1;
-        equalPolicy = from.equalPolicy;
 
         parentDirection = switch(d) {
             case RIGHT -> Direction.LEFT;
@@ -298,14 +382,12 @@ public class Grid implements Comparable<Grid> {
             case DOWN -> Direction.UP;
         };
         
-        zeroRow = from.zeroRow; zeroCol = from.zeroCol;
+        distanceMap = new EnumMap<>(Distance.class);
 
-        self[zeroRow][zeroCol] = switch (d){
-            case LEFT -> self[zeroRow][--zeroCol];
-            case RIGHT -> self[zeroRow][++zeroCol];
-            case UP -> self[--zeroRow][zeroCol];
-            case DOWN -> self[++zeroRow][zeroCol];
-        };
+        int[] newZero = d.move(from.zeroRow, from.zeroCol);
+        zeroRow = newZero[0]; zeroCol = newZero[1];
+
+        self[from.zeroRow][from.zeroCol] = self[zeroRow][zeroCol];
         self[zeroRow][zeroCol] = 0;
     }
 
@@ -320,11 +402,10 @@ public class Grid implements Comparable<Grid> {
      * </ul>
      * 
      * @param array the content of the {@code Grid} to be created
-     * @param ep {@code EqualPolicy} of the {@code Grid} to be created
      * @return {@code Optional} of the created {@code Grid} if {@code array} was valid;
      * empty {@code Optional} otherwise
      */
-    public static Optional<Grid> of(int[][] array, EqualPolicy ep) {
+    public static Optional<Grid> of(int[][] array) {
         record Pair(int row, int col) {
             @Override
             public String toString() {
@@ -366,7 +447,7 @@ public class Grid implements Comparable<Grid> {
         }
 
         if(hasAZero && duplicate.isEmpty() && empty.isEmpty()) {
-            return Optional.of(new Grid(array, ep));
+            return Optional.of(new Grid(array));
         }
         else {
             return Optional.empty();
@@ -392,7 +473,7 @@ public class Grid implements Comparable<Grid> {
         }
 
         t[0][0] = 0;
-        var g = new Grid(t, EqualPolicy.RANDOM);
+        var g = new Grid(t);
         g.self[0][0] = -1;
 
         return g;
@@ -520,56 +601,60 @@ public class Grid implements Comparable<Grid> {
     }
 
     /**
-     * Getter for this object's {@code heuristicValue}
+     * Getter for this object's {@link #heuristicValue}
      *
-     * @return {@code heuristicValue}
+     * @return {@link #heuristicValue}
      */
-    public int getHeuristicValue() { 
+    public float getHeuristicValue() { 
         return heuristicValue; 
     }
 
+    public float getHeuristicValue(Distance d) {
+        return distanceMap.get(d);
+    }
+
     /**
-     * Getter for this object's {@code depth}
+     * Getter for this object's {@link #depth}.
      *
-     * @return {@code depth}
+     * @return {@link #depth}
      */
     public int getDepth() { 
         return depth; 
     }
 
     /**
-     * Getter for this object's parent {@code Grid}
+     * Getter for this object's parent {@link Grid}.
      *
-     * @return {@code Grid} from which this object was generated
+     * @return {@link Grid} from which this object was generated
      */
     public Grid getParent() { 
         return parent; 
     }
 
     /**
-     * Getter for this object's children {@code Grid}
+     * Getter for this object's children {@link Grid}.
      *
-     * @return array of {@code Grid} which were created from calling {@code generateNeighbors}
+     * @return Optional of a list of {@link Grid} which were created from calling {@link #generateNeighbors()}
      * on this object
      */
-    public Grid[] getChildren() { 
-        return hasGenerated; 
+    public Optional<List<Grid>> getChildren() { 
+        return Optional.ofNullable(hasGenerated); 
     }
 
     /**
-     * Getter for this object's other neighbors {@code Grid}
+     * Getter for this object's other neighbors {@link Grid}.
      *
-     * @return array of {@code Grid} which would be valid results from calling {@code generateNeighbors}
-     * on this object, but were later removed before being added to the {@code SpaceSearch} containing 
+     * @return Optional of a list of {@link Grid}} which would be valid results from calling {@link #generateNeighbors()}
+     * on this object, but were later removed before being added to the {@link SearchSpace} containing 
      * this object
      */
-    public Grid[] getPreExistingNeighbors() { 
-        return existingNeighbors; 
+    public Optional<List<Grid>> getPreExistingNeighbors() { 
+        return Optional.ofNullable(existingNeighbors); 
     }
 
 
     /**
-     * Sets a new value for this object's {@code key}
+     * Sets a new value for this object's {@link #key}.
      * 
      * @param k new key value
      */
@@ -578,11 +663,11 @@ public class Grid implements Comparable<Grid> {
     }
 
     /**
-     * Sets a new value for this object's {@code heuristicValue}
+     * Sets a new value for this object's {@link #heuristicValue}.
      * 
      * @param v new heuristic value
      */
-    public void setHeuristicValue(int v) { 
+    public void setHeuristicValue(float v) { 
         heuristicValue = v; 
     }
 
@@ -596,14 +681,16 @@ public class Grid implements Comparable<Grid> {
      */
     void addNeighbor(Grid g, boolean children) {
         if(children){
-            if(hasGenerated == null) hasGenerated = new Grid[0];
-            hasGenerated = Arrays.copyOf(hasGenerated, hasGenerated.length+1);
-            hasGenerated[hasGenerated.length-1] = g;
+            if(hasGenerated == null) {
+                hasGenerated = new ArrayList<>();
+            }
+            hasGenerated.add(g);
         }
         else{
-            if(existingNeighbors == null) existingNeighbors = new Grid[0];
-            existingNeighbors = Arrays.copyOf(existingNeighbors, existingNeighbors.length+1);
-            existingNeighbors[existingNeighbors.length-1] = g;
+            if(existingNeighbors == null) {
+                existingNeighbors = new ArrayList<>();
+            }
+            existingNeighbors.add(g);
         }
     }
 
@@ -611,33 +698,67 @@ public class Grid implements Comparable<Grid> {
      * Method which resets this object's neighbors.
      */
     public void resetNeighbors() {
-        hasGenerated = new Grid[]{};
-        existingNeighbors = new Grid[]{};
+        if(hasGenerated != null) {
+            hasGenerated.clear();
+        }
+        if(existingNeighbors != null) {
+            existingNeighbors.clear();
+        }
     }
     
 
     /**
-     * The method called to compute the distance between this object and another {@code Grid}
+     * The method called to compute the distance between this object and another {@link Grid}.
      * <p>
      * WARNING: no validation is done to ensure NPE and other errors won't happen.
      * 
      * @param g {@code Grid} target
-     * @param d Which {@code Distance} to use
-     * @return {@code int} value of the distance
+     * @param d Which {@link Distance} to use
+     * @return value of the distance
      */
     public int distanceTo(Grid g, Distance d){
-        return d.calc(this, g);
+        float i = d.calc(this, g);
+        distanceMap.put(d, i);
+        return (int) i;
     }
 
     /**
+     * The manhattan distance between a grid and another is the sum of the
+     * manhattan distances of all the misplaced tiles.
+     * <p>
+     * The manhattan distance of a misplaced tile is the number of move
+     * the tile would require in order to be in its correct place.
+     * In other words, {@code (target x - current x) + (target y - current y}.
+     * <p>
+     * f the parent grid posseses a value for the manhattan distance,
+     * then we simply get said value which is decreased by the manhattan distance
+     * of the tile (with its coordinates in the parent grid aka {@link #zeroRow}, {@link #zeroCol}) 
+     * that was exchanged with the blank tile; then we add the manhattan distance 
+     * of the same tile but with its current coordinates (the parent's {@link #zeroRow}, {@link #zeroCol})
+     * <p>
+     * No checking is done to ensure the distance for this grid and its parent
+     * are computed against the same target grid.
      * 
-     * @param g target
-     * @return int
+     * @param g Target.
+     * @return Manhattan distance between this grid and g.
      */
-    private int manhattan(Grid g) {
+    private float manhattan(Grid g) {
+        int[] tmp;
+        
+        if(parent.distanceMap.get(Distance.MANHATTAN) != null) {
+            float i = parent.distanceMap.get(Distance.MANHATTAN);
+            
+            tmp = g.unsafeFindCoordinates(parent.self[zeroRow][zeroCol]);
+            i -= (Math.abs(tmp[0] - zeroRow) + Math.abs(tmp[1] - zeroCol));
+            
+            tmp = g.unsafeFindCoordinates(self[parent.zeroRow][parent.zeroCol]);
+            i += (Math.abs(tmp[0] - parent.zeroRow) + Math.abs(tmp[1] - parent.zeroCol));
+            
+            return i;
+        }
+        
         int retour = 0;
         
-        int[] tmp;
         for(int row = 0; row < self.length; row++) {
             for(int col = 0; col < self[0].length; col++) {
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0) {
@@ -651,12 +772,29 @@ public class Grid implements Comparable<Grid> {
     }
 
     /**
-     *
-     * @param g target
-     * @return int
+     * Hamming distance aka 'tiles out of place'. It is an integer value equal to the
+     * number of tiles which do no match the tiles from the target grid (excluding the blank tile).
+     * <p>
+     * If the parent grid posseses a value for the hamming distance,
+     * then we simply check if the tile that was moved into the blank tile
+     * is now in its correct position compareed to the target grid {@code g}.
+     * If it is, then the parent's value minus 1 is returned; otherwise, 
+     * simply the parent's value.
+     * <p>
+     * No checking is done to ensure the distance for this grid and its parent
+     * are computed against the same target grid.
+     * 
+     * @param g Target.
+     * @return Hamming distance between this grid and g.
      */
-    private int hamming(Grid g) {
-        int retour = 0;
+    private float hamming(Grid g) {
+        if(parent.distanceMap.get(Distance.HAMMING) != null) {
+            float i = parent.distanceMap.get(Distance.HAMMING);
+            return (self[parent.zeroRow][parent.zeroCol] == g.self[parent.zeroRow][parent.zeroCol]) ?
+                i - 1 : i;
+        }
+        
+        float retour = 0;
         
         for(int row = 0; row < self.length; row++) {
             for(int col = 0; col < self[0].length; col++) {
@@ -670,19 +808,27 @@ public class Grid implements Comparable<Grid> {
     }
 
     /**
-     *
-     * @param g target
-     * @return int
+     * Computes the sum of the euclidean distances between misplaced tiles 
+     * (excluding the blank tile) and their respective goal positions, 
+     * with the euclidean distance as defined in a R^2 plane with cartesian coordinates.
+     * 
+     * @param g Target.
+     * @return Euclidean distance between this grid and g.
      */
-    private int euclidean(Grid g) {
-        int retour = 0;
+    private float euclidean(Grid g) {
+        float retour = 0;
 
         int[] tmp;
         for(int row = 0; row < self.length; row++) {
             for(int col = 0; col < self[0].length; col++) {
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0) {
                     tmp = g.unsafeFindCoordinates(self[row][col]);
-                    retour += (int) Math.floor(Math.sqrt(Math.pow(Math.abs(tmp[0] - row), 2) + Math.pow(Math.abs(tmp[1] - col), 2)));
+                    retour += Math.floor(
+                        Math.sqrt(
+                            Math.pow(Math.abs(tmp[0] - row), 2) 
+                            + Math.pow(Math.abs(tmp[1] - col), 2)
+                        )
+                    );
                 }
             }
         }
@@ -692,23 +838,23 @@ public class Grid implements Comparable<Grid> {
 
     /**
      *
-     * @param g target
-     * @return int
+     * @param g Target.
+     * @return float
      */
     // todo: linear conflicts
-    private int linearManhattan(Grid g) {
+    private float linearManhattan(Grid g) {
         return 0;
     }
 
     
     /**
-     * This method generates a {@code Set} of valid neighbor {@code Grid}s 
-     * according to {@code Direction} validation
+     * This method generates a {@link Set} of valid neighbor {@link Grid}s 
+     * according to {@link Direction} validation ({@link Direction#check(Grid)}).
      * <p>
-     * a {@code HashSet} is used to simulate randomness instead of always having
-     * the neighbors ordered as from {@code Direction#values}
+     * a {@link HashSet} is used to simulate randomness instead of always having
+     * the neighbors ordered as from {@link Direction#values()}.
      * 
-     * @return {@code} Set of valid neighbors
+     * @return {@link Set} of valid neighbors
      */
     Set<Grid> generateNeighbors() {
 
@@ -741,41 +887,18 @@ public class Grid implements Comparable<Grid> {
      */
     @Override
     public int hashCode() {
-        int result = 1;        
-        int tmp = 1;
-        
-        for(var t : self) {
-            for(var i : t) {
-                tmp = HASH_VALUE * tmp + i;
-            }
-            result = HASH_VALUE * result + tmp;
-            tmp = 1;
-        }
-        
-        return result;
+        return Arrays.deepHashCode(self);
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Compares two {@code Grid}s with their {@code heuristicValue}. 
-     * <p>
-     * Calls this object's {@code equalPolicy} if the two grids have the same 
-     * {@code heuristic value}
+     * Compares two grid by their {@link #self} field.
      * 
-     * @param target the {@code Grid} this object should be compared to
+     * @param target
+     * @return {@link Utils#intArrayDeepCompare(Object[], Object[])}.
      */
     @Override
-    public int compareTo(Grid target){
-        if(heuristicValue == target.getHeuristicValue()) {
-            if(this.equals(target)) {
-                return  0;
-            }
-            
-            return equalPolicy.calc(this, target);
-        } 
-        
-        return Integer.compare(heuristicValue, target.heuristicValue);
+    public int compareTo(Grid target) {
+        return Utils.intArrayDeepCompare(self, target.self);
     }
 
     /**
@@ -793,7 +916,8 @@ public class Grid implements Comparable<Grid> {
         return sb.toString();
         */
         
-        return "{Grid " + key + " (" + ((parent != null) ? parent.key : -2) + "): " + depth + " " + Arrays.deepToString(self) + "}";
+        // return "{Grid " + key + " (" + ((parent != null) ? parent.key : -2) + "): " + depth + " " + Arrays.deepToString(self) + "}";
+        return "{Grid " + key + " (" + heuristicValue + "): " + depth + " " + Arrays.deepToString(self) + "}";
         //return "[Grid] " + key + " (" + ((parent != null) ? parent.key : -2) + "):";
     }
 

@@ -30,10 +30,10 @@ public abstract class Search {
     public abstract static class Builder<B extends Builder<B>> implements IBuilder {
         
         // todo integerProperties for limits? then put back into a map when creating
-        private SearchSpace space;
         private final EnumMap<SearchLimit, Long> limits;
 
         protected final ObjectProperty<Grid.Distance> heuristic;
+        protected final ObjectProperty<Grid.EqualPolicy> equalPolicy;
         protected final BooleanProperty filterExplored;
         protected final BooleanProperty filterQueued;
         protected final BooleanProperty linkExplored;
@@ -47,7 +47,8 @@ public abstract class Search {
             if(toCopy == null) {
                 limits = new EnumMap<>(SearchLimit.class);
                 for (var l : SearchLimit.values()) limits.put(l, 0L);
-                
+
+                equalPolicy = new SimpleObjectProperty<>(this, "equal policy", Grid.EqualPolicy.NONE);
                 heuristic = new SimpleObjectProperty<>(this, "heuristic", Grid.Distance.NONE);
                 filterExplored = new SimpleBooleanProperty(this, "filter explored", true);
                 filterQueued = new SimpleBooleanProperty(this, "filter queued", true);
@@ -59,6 +60,7 @@ public abstract class Search {
             else {
                 limits = toCopy.limits;
                 heuristic = toCopy.heuristic;
+                equalPolicy = toCopy.equalPolicy;
                 filterExplored = toCopy.filterExplored;
                 filterQueued = toCopy.filterQueued;
                 linkExplored = toCopy.linkExplored;
@@ -68,14 +70,14 @@ public abstract class Search {
             }
         }
         
-        public B searchSpace(SearchSpace s) {
-            space = s;
-            return self();
-        }
         
         public B limit(SearchLimit l, long n) {
             limits.put(l, n);
             return self();
+        }
+
+        public Grid.Distance getHeuristic() {
+            return heuristic.get();
         }
 
         @Override
@@ -89,7 +91,7 @@ public abstract class Search {
         @Override
         public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
             return new EnumMap<>(Map.of(
-                BuilderController.TabPaneItem.SEARCH_MAIN, List.of(filterExplored, filterQueued, linkExplored),
+                BuilderController.TabPaneItem.SEARCH_MAIN, List.of(filterExplored, filterQueued, linkExplored, equalPolicy),
                 BuilderController.TabPaneItem.LIMITS, List.of(checkForQueuedEnd),
                 BuilderController.TabPaneItem.MISCELLANEOUS, List.of(monitorMemory)
             ));
@@ -366,9 +368,28 @@ public abstract class Search {
     
     private SearchState currentSearchState = SearchState.NOT_READY;
     
-    protected final SearchSpace searchSpace;
+    protected SearchSpace searchSpace;
     protected final Grid.Distance heuristic;
+    protected final Grid.EqualPolicy equalPolicy;
     private final EnumMap<SearchLimit, Long> limitsMap;
+    
+    protected final Comparator<Grid> heuristicComparator = new Comparator<Grid>() {
+        @Override
+        public int compare(Grid g1, Grid g2) {
+            if(g1.getHeuristicValue() == g2.getHeuristicValue()) {
+                if(g1.equals(g2)) {
+                    return  0;
+                }
+
+                return equalPolicy.calc(g1, g2);
+            }
+
+            return Float.compare(g1.getHeuristicValue(), g2.getHeuristicValue());
+        }
+    };
+    
+    protected final Comparator<Grid> reverseHeuristicComparator = 
+        (g1, g2) -> - heuristicComparator.compare(g1, g2);
     
     protected final boolean filterExplored;
     protected final boolean filterQueued;
@@ -390,8 +411,8 @@ public abstract class Search {
     // ------
     
     protected Search(Builder<?> builder) {
-        searchSpace = builder.space;
         heuristic = builder.heuristic.get();
+        equalPolicy = builder.equalPolicy.get();
         
         builder.limits.entrySet().removeIf(e -> e.getValue() == 0);
         limitsMap = builder.limits;
@@ -407,10 +428,6 @@ public abstract class Search {
         name = (builder.name.get().equals("")) ? Integer.toString(id) : builder.name.get();
         
         properties = createProperties(builder.monitorMemory.get());
-        
-        // needed?
-        if(heuristic != Grid.Distance.NONE)
-            searchSpace.getStart().setHeuristicValue(searchSpace.getStart().distanceTo(searchSpace.getGoal(), heuristic));
     }
 
     private EnumMap<SearchProperty, StringProperty> createProperties(boolean monitorMemory) {
@@ -436,7 +453,15 @@ public abstract class Search {
     
     
     // ------
+    
+    public void setSearchSpace(SearchSpace space) {
+        searchSpace = space;
+        setProperties();
+    }
 
+    public SearchSpace getSearchSpace() {
+        return searchSpace;
+    }
     
     private long getElapsedTime() {
         return (currentSearchState == SearchState.RUNNING)
@@ -459,7 +484,7 @@ public abstract class Search {
         
         LOGGER.info(
             new MarkerManager.Log4jMarker(Integer.toString(id)), 
-            Long.toString(getElapsedTime()) + '\t' + +'\t' + message
+            Long.toString(getElapsedTime()) + '\t' +'\t' + message
         );
     }
     
@@ -469,6 +494,10 @@ public abstract class Search {
     
     public long getID() {
         return id;
+    }
+    
+    public Comparator<Grid> getHeuristicComparator() {
+        return heuristicComparator;
     }
     
     public EnumMap<SearchProperty, StringProperty> getProperties() {
@@ -528,12 +557,17 @@ public abstract class Search {
     }
     
     
-    public SearchTask<SearchState> newSearchTask(int n, int o) {
-        return new SearchTask<>(n, o);
+    public Optional<SearchTask<SearchState>> newSearchTask(int n, int o) {
+        if(searchSpace == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new SearchTask<>(n, o));
     }
     
 
     // ------
+    
+    protected abstract void setProperties();
     
     protected abstract void computeHeuristic(Grid g);
 

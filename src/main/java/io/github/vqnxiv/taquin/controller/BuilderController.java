@@ -228,12 +228,14 @@ public class BuilderController {
         }
 
         LOGGER.warn("Search is not initialized");
-        var opt = searchRunner.createSearch(searchBuilder, 
-            spaceBuilder.explored(exploredBuilder.build()).queued(queuedBuilder.build())
+        var opt = searchRunner.createSearchAndSpace(
+            searchBuilder, spaceBuilder, queuedBuilder, exploredBuilder
         );
+        
         
         if(opt.isPresent()) {
             search = opt.get();
+            space = search.getSearchSpace();
             LOGGER.debug("Locking controller for modifications");
             lockLevel.set(Lock.MODIFICATION_LOCKED);
             bindProgressPane();

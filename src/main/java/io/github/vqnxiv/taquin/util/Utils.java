@@ -4,6 +4,7 @@ package io.github.vqnxiv.taquin.util;
 import javafx.scene.control.TextFormatter;
 import javafx.util.StringConverter;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -222,5 +223,68 @@ public final class Utils {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Small utility method to compare two nested int arrays of the same dimensions.
+     * <p>
+     * This method does no verification and should not be called if the arrays do not
+     * have the same dimensions or are not {@code int[]} at their most nested level.
+     * 
+     * @param t1 The first array to compare, as in {@code t1.compareTo(t2)}.
+     * @param t2 The second array to compare, as in {@code t1.compareTo(t2)}.
+     * @return int value of the comparison.
+     * @throws UnsupportedOperationException if either condition breaks.
+     */
+    public static int intArrayDeepCompare(Object[] t1, Object[] t2) throws UnsupportedOperationException {
+        if(t1 == t2) {
+            return 0;
+        }
+
+        if(t1 == null || t2 == null) {
+            return (t1 == null) ? -1 : 1;
+        }
+        
+        int minLength = Math.min(t1.length, t2.length);
+        
+        for(int i = 0; i < minLength; i++) {
+            Object e1 = t1[i];
+            Object e2 = t2[i];
+            
+            if(e1 != e2) {
+                if(e1 == null || e2 == null) {
+                    return (e1 == null) ? -1 : 1;
+                }
+                
+                int v = intOrArrayCompare(e1, e2);
+                if(v != 0) {
+                    return v;
+                }
+            }
+        }
+        
+        return t1.length - t2.length;
+    }
+
+    /**
+     * Helper method for {@link #intArrayDeepCompare(Object[], Object[])}.
+     * 
+     * @param a The first object to compare.
+     * @param b The second object to compare.
+     * @return {@link Arrays#compare(int[], int[])} if {@code a} and {@code b}
+     * are {@code int[]}; {@link #intArrayDeepCompare(Object[], Object[])}
+     * if {@code a} and {@code b} are {@code Object[]}. 
+     * @throws UnsupportedOperationException otherwise.
+     */
+    private static int intOrArrayCompare(Object a, Object b) {
+        if(a instanceof int[] intA && b instanceof int[] intB) {
+            return Arrays.compare(intA, intB);
+        }
+        else if (a instanceof Object[] objA && b instanceof Object[] objB) {
+            return intArrayDeepCompare(objA, objB);
+        }
+        else {
+            throw new UnsupportedOperationException("Object from different classes.");
+        }
     }
 }

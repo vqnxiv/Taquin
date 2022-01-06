@@ -16,6 +16,7 @@ public class CollectionWrapper<E extends Comparable<E>> {
         private final ObjectProperty<Class<?>> subClass;
         private final BooleanProperty initialCapacity;
         private final IntegerProperty userInitialCapacity;
+        private Comparator<?> comparator;
         
         public Builder(String s, Class<?> c) {
             subClass = new SimpleObjectProperty<>(this, s + " class", c);
@@ -25,6 +26,11 @@ public class CollectionWrapper<E extends Comparable<E>> {
         
         public CollectionWrapper<?> build() {
             return new CollectionWrapper<>(this);
+        }
+        
+        public Builder comparator(Comparator<?> comparator) {
+            this.comparator = comparator;
+            return this;
         }
 
         @Override
@@ -81,9 +87,12 @@ public class CollectionWrapper<E extends Comparable<E>> {
         
         boolean initialized = false;
         
+        initialized = initializeWithComparator(builder.subClass.get(), builder.comparator);
+        
         if(builder.initialCapacity.get()) {
             initialized = initializeWithCapacity(builder.subClass.get(), builder.userInitialCapacity.get());
         }
+        
         
         if(!initialized) {
             initialized = initialize(builder.subClass.get());
@@ -95,7 +104,23 @@ public class CollectionWrapper<E extends Comparable<E>> {
         
         setProperties();
     }
+    
+    @SuppressWarnings("unchecked")
+    private boolean initializeWithComparator(Class<?> subClass, Comparator<?> comparator) {
+        for(Class<?> c : withNaturalOrder) {
+            if(subClass.equals(c)) {
+                try {
+                    self = (Collection<E>) subClass.getDeclaredConstructor(Comparator.class).newInstance(comparator);
+                } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        }
 
+        return false;
+    }
+    
     @SuppressWarnings("unchecked")
     private boolean initializeWithCapacity(Class<?> subClass, int capacity) {
         for(Class<?> c : withInitialCapacity) {
@@ -226,6 +251,10 @@ public class CollectionWrapper<E extends Comparable<E>> {
         Collections.sort((List<E>) self); 
     }
     
+    public void sort(Comparator<? super E> c) {
+        Collections.sort((List<E>) self, c);
+    }
+    
     public void mergeWith(Queue<E> toAdd) {
         var tmp = new LinkedList<>(self);
         self.clear();
@@ -239,6 +268,21 @@ public class CollectionWrapper<E extends Comparable<E>> {
         }
         
         // mutually exclusive
+        if(!toAdd.isEmpty()) self.addAll(toAdd);
+        else if(!tmp.isEmpty()) self.addAll(tmp);
+    }
+
+    public void mergeWith(Queue<E> toAdd, Comparator<? super E> c) {
+        var tmp = new LinkedList<>(self);
+        self.clear();
+
+        while(!toAdd.isEmpty() && !tmp.isEmpty()) {
+            self.add(
+                (c.compare(toAdd.peek(), tmp.peekFirst()) > 0) ?
+                    tmp.pollFirst() : toAdd.poll()
+            );
+        }
+        
         if(!toAdd.isEmpty()) self.addAll(toAdd);
         else if(!tmp.isEmpty()) self.addAll(tmp);
     }

@@ -8,10 +8,8 @@ import io.github.vqnxiv.taquin.solver.Search;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 
 
 public class Astar extends Search {
@@ -30,6 +28,7 @@ public class Astar extends Search {
                 heuristic.set(Grid.Distance.MANHATTAN);
         }
         
+
         @Override
         public boolean isHeuristicRequired() {
             return true;
@@ -63,7 +62,7 @@ public class Astar extends Search {
 
     public static final String SEARCH_SHORT_NAME = "A*";
     
-    private final boolean useMerge;
+    private boolean useMerge;
 
     
     // ------
@@ -71,12 +70,19 @@ public class Astar extends Search {
     private Astar(Builder builder) {
         super(builder);
 
-        useMerge = builder.useMerge.get() || (!searchSpace.getQueued().usesNaturalOrdering() && !searchSpace.getQueued().isSortable());
+        builder.useMerge.get();
+            
         setReady();
     }
 
 
     // ------
+    
+    @Override
+    protected void setProperties() {
+        useMerge = useMerge || (!searchSpace.getQueued().usesNaturalOrdering() && !searchSpace.getQueued().isSortable());
+
+    }
 
     @Override
     protected void computeHeuristic(Grid g) {
@@ -100,15 +106,16 @@ public class Astar extends Search {
         
         log("Queuing " + toAdd.size() + " generated neighbors");
         if(!toAdd.isEmpty()) {
-            if(searchSpace.getQueued().usesNaturalOrdering()) 
+            if(searchSpace.getQueued().usesNaturalOrdering()) {
                 searchSpace.getQueued().addAll(toAdd);
+            }
             else if(useMerge) {
                 searchSpace.getQueued().mergeWith(toAdd);
             }
             else {
-                Collections.sort(toAdd);
+                Collections.sort(toAdd, heuristicComparator);
                 searchSpace.getQueued().addAll(toAdd);
-                searchSpace.getQueued().sort();
+                searchSpace.getQueued().sort(heuristicComparator);
             }
         }
     }

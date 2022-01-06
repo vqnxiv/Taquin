@@ -76,6 +76,9 @@ public class DepthFirst extends Search {
     // ------
 
     @Override
+    protected void setProperties() { }
+
+    @Override
     protected void computeHeuristic(Grid g) {
         g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic));
     }
@@ -95,7 +98,7 @@ public class DepthFirst extends Search {
         if(heuristic != Grid.Distance.NONE) {
             log("Computing heuristics");
             for(Grid g : toAdd) computeHeuristic(g);
-            toAdd.sort(Collections.reverseOrder());
+            toAdd.sort(reverseHeuristicComparator);
         }
 
         log("Checking for goal");

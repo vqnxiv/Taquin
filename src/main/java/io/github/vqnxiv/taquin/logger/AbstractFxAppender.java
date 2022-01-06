@@ -31,6 +31,7 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      */
     private record Pair(String text, TextArea output) {}
 
+    
     /**
      * {@link MainController} from which the {@link Pair#output} are retrieved.
      */
@@ -42,7 +43,7 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      * <p>
      * For example, logging a search fires 4 to 6 events per explored state,
      * aka {@code step()} calls. So for a small search of 1.500 explored states,
-     * which should be coompleted in about 30ms to 100ms depending on the collections
+     * which should be completed in about 30ms to 100ms depending on the collections
      * and warmup, this ranges from 60 (4 events, 100ms) to 300 (6 events, 30ms)
      * {@link Platform#runLater(Runnable)} calls <u>per ms</u>.
      */
@@ -54,6 +55,7 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      */
     private final Queue<Pair> eventBuffer;
 
+    
     /**
      * Constructor.
      * <p>
@@ -101,7 +103,7 @@ public abstract class AbstractFxAppender extends AbstractAppender {
             getLayout().toByteArray() returns an empty string when logging from search
             and .getMessage().getFormattedMessage() removes parts of the pattern
             so we keep the layout way for the root logger
-             */
+            */
             String s = new String(getLayout().toByteArray(event));
             
             if(s.isBlank()) {
