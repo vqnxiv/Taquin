@@ -340,7 +340,7 @@ public class GridViewer {
             var opt = Grid.of(gridControl.collectValues(-1));
             if(opt.isPresent()) {
                 gridProperty.setValue(opt.get());
-                LOGGER.info("Successfully set grid for " + stage.getTitle());
+                LOGGER.info("Successfully set grid for {}", stage.getTitle());
             }
         }
     }

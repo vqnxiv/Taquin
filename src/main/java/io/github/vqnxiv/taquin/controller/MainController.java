@@ -83,7 +83,7 @@ public class MainController {
                     if((double) currentHeap / maxHeap >= warningValue) {
                         if(belowWarningValue) {
                             belowWarningValue = false;
-                            LOGGER.warn((int) (warningValue * 100) + "% heap usage: the app may be slowed down");
+                            LOGGER.warn("{}% heap usage: the app may be slowed down", (int) (warningValue * 100) );
                         }
                     } else {
                         belowWarningValue = true;
@@ -226,11 +226,17 @@ public class MainController {
     
 
 
-    public void onAboutButtonActivated() { }
+    public void onAboutButtonActivated() {
+        return;
+    }
 
-    public void onHelpButtonActivated() { }
+    public void onHelpButtonActivated() { 
+        return;
+    }
 
-    public void onSettingsButtonActivated() { }
+    public void onSettingsButtonActivated() { 
+        return;
+    }
 
 
     /**

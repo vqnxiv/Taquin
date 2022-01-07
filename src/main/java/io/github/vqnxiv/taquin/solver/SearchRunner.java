@@ -55,11 +55,9 @@ public class SearchRunner {
     public void shutdown(boolean stopSearch) {
         if(lastRunningSearch != null && lastRunningSearch.getState() == Search.SearchState.RUNNING) {
             if(stopSearch) {
-                LOGGER.info("Stopping running search: " + lastRunningSearch.getName());
-                lastRunningSearch.stop();
+                stopSearch(lastRunningSearch);
             } else {
-                LOGGER.info("Pausing running search: " + lastRunningSearch.getName());
-                lastRunningSearch.pause();
+                pauseSearch(lastRunningSearch);
             }
         }
         
@@ -69,13 +67,15 @@ public class SearchRunner {
     
     
     public boolean deleteSearch(Search s) {
-        LOGGER.info("Deleting search: " + s.getName());
+        LOGGER.info("Deleting search: {}", s.getName());
 
         return searches.remove(s);
     }
     
-    public Optional<Search> createSearchAndSpace(Search.Builder<?> searchBuilder, SearchSpace.Builder spaceBuilder,
-    CollectionWrapper.Builder queuedBuilder, CollectionWrapper.Builder exploredBuilder) {
+    public Optional<Search> createSearchAndSpace(
+        Search.Builder<?> searchBuilder, SearchSpace.Builder spaceBuilder,
+        CollectionWrapper.Builder queuedBuilder, CollectionWrapper.Builder exploredBuilder
+    ) {
         LOGGER.info("Creating search");
         
         LOGGER.debug("Checking grids");
@@ -96,7 +96,7 @@ public class SearchRunner {
         }
         
         var s = searchBuilder.build();
-        LOGGER.info("Search successfully created: " + s.getName());
+        LOGGER.info("Search successfully created: {}", s.getName());
         
         exploredBuilder.comparator(s.getHeuristicComparator());
         queuedBuilder.comparator(s.getHeuristicComparator());
@@ -113,10 +113,10 @@ public class SearchRunner {
     }
     
     public void pauseSearch(Search s) {
-        LOGGER.info("Pausing search: " + s.getName());
+        LOGGER.info("Pausing search: {}", s.getName());
         
         if(!s.equals(lastRunningSearch)) {
-            LOGGER.error("Search is not currently running: " + s.getName());
+            LOGGER.error("Search is not currently running: {}", s.getName());
             return;
         }
 
@@ -124,10 +124,10 @@ public class SearchRunner {
     }
     
     public void stopSearch(Search s) {
-        LOGGER.info("Stopping search: " + s.getName());
+        LOGGER.info("Stopping search: {}", s.getName());
 
         if(!s.equals(lastRunningSearch)) {
-            LOGGER.error("Search is not currently running: " + s.getName());
+            LOGGER.error("Search is not currently running: {}", s.getName());
             return;
         }
         
@@ -137,20 +137,28 @@ public class SearchRunner {
     
     // todo: accessible throttle + iterations from builder controller
     public void runSearch(Search s, int n) {
-        LOGGER.info("Attempting to run search: " + s.getName());
+        LOGGER.info("Attempting to run search: {}", s.getName());
         
         if(lastRunningSearch == null || lastRunningSearch.getState() != Search.SearchState.RUNNING) {
             lastRunningSearch = s;
         }
 
         if(!s.equals(lastRunningSearch)) {
-            LOGGER.error("A search is already running: " + lastRunningSearch.getName());
+            LOGGER.error("A search is already running: {}", lastRunningSearch.getName());
             return;
         }
         
         lastSearchInfo.bind(Bindings.concat(s.getName(), ": ", s.getCurrentStateProperty()));
-        LOGGER.debug("Submitting search run: " + s.getName() + " (" + n + ")");
-        executorService.submit(s.newSearchTask(n, 0).get());
+        LOGGER.debug("Submitting search run: {} ({})", s.getName(), n);
+        
+        s.newSearchTask(n, 0).ifPresent(
+            t -> {
+                t.setOnSucceeded(
+                    e -> LOGGER.info("Search run completed: {}", s.getName())
+                );
+                executorService.submit(t);
+            }
+        );
     }
     
 }

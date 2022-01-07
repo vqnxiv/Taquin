@@ -12,12 +12,17 @@ import java.util.function.Function;
 
 
 /**
- * This class models the game's grids with an int 2d array.
+ * This class models the game's grids with an 2d int array.
  * 
  * @see SearchSpace
  * @see io.github.vqnxiv.taquin.solver.Search
  */
 public class Grid implements Comparable<Grid> {
+
+    /**
+     * {@link Record} to store a tile's coordinates.
+     */
+    private record Coordinates(int row, int column) {}
     
     /**
      * Enum for a blank tile move's possible directions.
@@ -137,7 +142,7 @@ public class Grid implements Comparable<Grid> {
         /**
          * Euclidean distance. {@link #euclidean(Grid)}
          */
-        EUCLIDEAN0(
+        EUCLIDEAN(
             (x, y) -> x.euclidean(y)
         ),
         /**
@@ -254,11 +259,6 @@ public class Grid implements Comparable<Grid> {
      * Root logger.
      */
     private static final Logger LOGGER = LogManager.getLogger(Grid.class);
-
-    /**
-     * placeholder hash value
-     */
-    private static final int HASH_VALUE = 31;
 
     /**
      * The 2d array which represents the grid.
@@ -399,6 +399,8 @@ public class Grid implements Comparable<Grid> {
      * <li>only positive numbers</li>
      * <li>no duplicates</li>
      * <li>must contain one cell with a value of zero (0)</li>
+     * <li>all the rows must have the same length</li>
+     * <li>all the columns must have the same length</li>
      * </ul>
      * 
      * @param array the content of the {@code Grid} to be created
@@ -421,6 +423,14 @@ public class Grid implements Comparable<Grid> {
         var empty = new HashSet<Pair>();
 
         for(int row = 0; row < array.length; row++) {
+            if(array[row].length != array[0].length)  {
+                LOGGER.error(
+                    "Column with non valid length: {} (expected {})",
+                    array[row].length, array[0].length
+                    );
+                break;
+            }
+            
             for (int col = 0; col < array[0].length; col++) {
                 if(array[row][col] == 0) {
                     hasAZero = true;
@@ -439,11 +449,11 @@ public class Grid implements Comparable<Grid> {
         }
 
         if(!duplicate.isEmpty()) {
-            LOGGER.error("Duplicate cells: " + duplicate);
+            LOGGER.error("Duplicate cells: {}", duplicate);
         }
         
         if(!empty.isEmpty()) {
-            LOGGER.error("Empty cells: " + empty);
+            LOGGER.error("Empty cells: {}", empty);
         }
 
         if(hasAZero && duplicate.isEmpty() && empty.isEmpty()) {
@@ -484,13 +494,13 @@ public class Grid implements Comparable<Grid> {
      * Finds the coordinates of a number in {@code self}.
      * 
      * The method offers no protection against the absence of {@code toFind} and returns
-     * {@code null} if it wasn't found.
+     * an empty array if it wasn't found.
      * 
      * {@see safeFindCoordinates}
      * 
      * @param toFind the int to find in {@code self}
      * @return an array with a length of 2 containing the coordinates of {@code toFind}
-     * if it was found; {@code null} otherwise
+     * if it was found; an empty array otherwise.
      */
     private int[] unsafeFindCoordinates(int toFind) {
         for (int row = 0; row < self.length; row++)
@@ -498,7 +508,8 @@ public class Grid implements Comparable<Grid> {
                 if (self[row][col] == toFind)
                     return new int[]{row, col};
 
-        return null;
+        System.out.println(toFind + " not found");
+        return new int[]{};
     }
 
     /**
@@ -516,7 +527,7 @@ public class Grid implements Comparable<Grid> {
             for (int col = 0; col < self[0].length; col++)
                 if (self[row][col] == toFind)
                     return Optional.of(new int[]{row, col});
-
+        
         if(throwError) {
             throw new IllegalArgumentException(toFind + " not found");
         }
@@ -542,12 +553,12 @@ public class Grid implements Comparable<Grid> {
         }
         
         if(self.length != g.self.length) {
-            LOGGER.error("Different height: " + self.length + ", " + g.self.length);
+            LOGGER.error("Different height: {}, {}", self.length, g.self.length);
             return false;
         }
         
         if(self[0].length != g.self[0].length) {
-            LOGGER.error("Different width: " + self[0].length + ", " + g.self[0].length);
+            LOGGER.error("Different width: {}, {}", self[0].length, g.self[0].length);
             return false;
         }
         
@@ -569,12 +580,12 @@ public class Grid implements Comparable<Grid> {
         toAll.removeAll(tmp);
         
         if(!fromAll.isEmpty()) {
-            LOGGER.error("Missing numbers: " + fromAll);
+            LOGGER.error("Missing numbers: {}", fromAll);
             ret = false;
         }
         
         if(!toAll.isEmpty()) {
-            LOGGER.error("Missing numbers: " + toAll);
+            LOGGER.error("Missing numbers: {}", toAll);
             ret = false;
         }
         
@@ -670,7 +681,7 @@ public class Grid implements Comparable<Grid> {
     public void setHeuristicValue(float v) { 
         heuristicValue = v; 
     }
-
+    
     /**
      * Adds a neighbor to this object.
      * 
@@ -705,6 +716,28 @@ public class Grid implements Comparable<Grid> {
             existingNeighbors.clear();
         }
     }
+
+    /**
+     * This method generates a {@link Set} of valid neighbor {@link Grid}s 
+     * according to {@link Direction} validation ({@link Direction#check(Grid)}).
+     * <p>
+     * a {@link HashSet} is used to simulate randomness instead of always having
+     * the neighbors ordered as from {@link Direction#values()}.
+     *
+     * @return {@link Set} of valid neighbors
+     */
+    Set<Grid> generateNeighbors() {
+
+        var retour = new HashSet<Grid>();
+
+        for (Direction d : Direction.values()) {
+            if (d != parentDirection && d.check(this)) {
+                retour.add(new Grid(this, d));
+            }
+        }
+
+        return retour;
+    }
     
 
     /**
@@ -716,11 +749,22 @@ public class Grid implements Comparable<Grid> {
      * @param d Which {@link Distance} to use
      * @return value of the distance
      */
-    public int distanceTo(Grid g, Distance d){
+    public float distanceTo(Grid g, Distance d){
         float i = d.calc(this, g);
         distanceMap.put(d, i);
-        return (int) i;
+        return i;
     }
+    
+    /*
+      A brief note on all the lazy distance calculations from the parent grid:
+      the tile that was moved is now (in this grid) where the blank tile was
+      in the parent grid.
+      I.e its coordinates in this grid are (parent.zeroRow, parent.zeroCol),
+      and its coordinates in the parent grid are (this.zeroRow, this.zeroCol).
+      
+      We also do not need to check whether it is the blank tile, as it can not
+      be the blank tile.
+    */
 
     /**
      * The manhattan distance between a grid and another is the sum of the
@@ -728,13 +772,15 @@ public class Grid implements Comparable<Grid> {
      * <p>
      * The manhattan distance of a misplaced tile is the number of move
      * the tile would require in order to be in its correct place.
-     * In other words, {@code (target x - current x) + (target y - current y}.
+         * In other words, {@code (target x - current x) + (target y - current y}.
      * <p>
-     * f the parent grid posseses a value for the manhattan distance,
+     * If the parent grid posseses a value for the manhattan distance,
      * then we simply get said value which is decreased by the manhattan distance
-     * of the tile (with its coordinates in the parent grid aka {@link #zeroRow}, {@link #zeroCol}) 
-     * that was exchanged with the blank tile; then we add the manhattan distance 
-     * of the same tile but with its current coordinates (the parent's {@link #zeroRow}, {@link #zeroCol})
+     * of the tile (with its coordinates in the parent grid aka {@link #zeroRow}, 
+     * {@link #zeroCol}) that was exchanged with the blank tile; then we add the 
+     * manhattan distance of the same tile but with its current coordinates (the 
+     * parent's {@link #zeroRow}, {@link #zeroCol}), unless it is now correctly placed, 
+     * in which case the decreased parent's distance is directly returned.
      * <p>
      * No checking is done to ensure the distance for this grid and its parent
      * are computed against the same target grid.
@@ -743,32 +789,35 @@ public class Grid implements Comparable<Grid> {
      * @return Manhattan distance between this grid and g.
      */
     private float manhattan(Grid g) {
+        float ret = 0f;
         int[] tmp;
         
         if(parent.distanceMap.get(Distance.MANHATTAN) != null) {
-            float i = parent.distanceMap.get(Distance.MANHATTAN);
+            ret = parent.distanceMap.get(Distance.MANHATTAN);
             
+            // removes the manhattan distance of the moved tile
             tmp = g.unsafeFindCoordinates(parent.self[zeroRow][zeroCol]);
-            i -= (Math.abs(tmp[0] - zeroRow) + Math.abs(tmp[1] - zeroCol));
+            ret -= (Math.abs(tmp[0] - zeroRow) + Math.abs(tmp[1] - zeroCol));
             
-            tmp = g.unsafeFindCoordinates(self[parent.zeroRow][parent.zeroCol]);
-            i += (Math.abs(tmp[0] - parent.zeroRow) + Math.abs(tmp[1] - parent.zeroCol));
-            
-            return i;
+            // if it is still not correctly placed
+            if(self[parent.zeroRow][parent.zeroCol] != g.self[parent.zeroRow][parent.zeroCol]) {
+                // computes its new distance
+                tmp = g.unsafeFindCoordinates(self[parent.zeroRow][parent.zeroCol]);
+                ret += (Math.abs(tmp[0] - parent.zeroRow) + Math.abs(tmp[1] - parent.zeroCol));
+            }
+            return ret;
         }
-        
-        int retour = 0;
         
         for(int row = 0; row < self.length; row++) {
             for(int col = 0; col < self[0].length; col++) {
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0) {
                     tmp = g.unsafeFindCoordinates(self[row][col]);
-                    retour += (Math.abs(tmp[0] - row) + Math.abs(tmp[1] - col));
+                    ret += (Math.abs(tmp[0] - row) + Math.abs(tmp[1] - col));
                 }
             }
         }
         
-        return retour;
+        return ret;
     }
 
     /**
@@ -777,9 +826,13 @@ public class Grid implements Comparable<Grid> {
      * <p>
      * If the parent grid posseses a value for the hamming distance,
      * then we simply check if the tile that was moved into the blank tile
-     * is now in its correct position compareed to the target grid {@code g}.
-     * If it is, then the parent's value minus 1 is returned; otherwise, 
-     * simply the parent's value.
+     * is now in its correct position compared to the target grid {@code g}.
+     * This leaves 3 possible cases:
+     * <ul>
+     *     <li>it was moved <u>into</u> its correct place -> parent's value minus 1</li>
+     *     <li>it was moved <u>out of</u> its correct place -> parent's value plus 1</li>
+     *     <li>neither -> paren'ts value</li>
+     * </ul>
      * <p>
      * No checking is done to ensure the distance for this grid and its parent
      * are computed against the same target grid.
@@ -788,85 +841,340 @@ public class Grid implements Comparable<Grid> {
      * @return Hamming distance between this grid and g.
      */
     private float hamming(Grid g) {
-        if(parent.distanceMap.get(Distance.HAMMING) != null) {
-            float i = parent.distanceMap.get(Distance.HAMMING);
-            return (self[parent.zeroRow][parent.zeroCol] == g.self[parent.zeroRow][parent.zeroCol]) ?
-                i - 1 : i;
-        }
+        float ret = 0f;
         
-        float retour = 0;
+        if(parent.distanceMap.get(Distance.HAMMING) != null) {
+            ret = parent.distanceMap.get(Distance.HAMMING);
+            
+            // if the tile that was moved into the blank space is now correctly placed
+            if(self[parent.zeroRow][parent.zeroCol] == g.self[parent.zeroRow][parent.zeroCol]) {
+                return ret - 1;
+            }
+            // if it was correctly placed but moved out of it
+            else if(parent.self[zeroRow][zeroCol] == g.self[zeroRow][zeroCol]) {
+                return ret + 1;
+            }
+            // if it wasn't correctly placed and still isn't
+            else {
+                return ret;
+            }
+        }
         
         for(int row = 0; row < self.length; row++) {
             for(int col = 0; col < self[0].length; col++) {
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0) {
-                    retour++;
+                    ret++;
                 }
             }
         }
 
-        return retour;
+        return ret;
     }
 
     /**
      * Computes the sum of the euclidean distances between misplaced tiles 
      * (excluding the blank tile) and their respective goal positions, 
      * with the euclidean distance as defined in a R^2 plane with cartesian coordinates.
+     * <p>
+     * Here again we can calculate the grid's distance to the target by removing
+     * the moved tile's distance and adding its new distance if it is incorrectly
+     * placed, much like it is done in {@link #manhattan(Grid)}.
      * 
      * @param g Target.
      * @return Euclidean distance between this grid and g.
      */
     private float euclidean(Grid g) {
-        float retour = 0;
-
+        float ret = 0f;
         int[] tmp;
+        
+        if(parent.distanceMap.get(Distance.EUCLIDEAN) != null) {
+            ret = parent.distanceMap.get(Distance.EUCLIDEAN);
+
+            // removes the euclidean distance of the moved tile
+            tmp = g.unsafeFindCoordinates(parent.self[zeroRow][zeroCol]);
+            ret -= (Math.abs(tmp[0] - zeroRow) + Math.abs(tmp[1] - zeroCol));
+
+            // if it is still not correctly placed
+            if(self[parent.zeroRow][parent.zeroCol] != g.self[parent.zeroRow][parent.zeroCol]) {
+                // computes its new distance
+                tmp = g.unsafeFindCoordinates(self[parent.zeroRow][parent.zeroCol]);
+                ret += Math.floor(
+                    Math.sqrt(
+                        Math.pow(Math.abs(tmp[0] - parent.zeroRow), 2) +
+                        Math.pow(Math.abs(tmp[1] - parent.zeroCol), 2)
+                    )
+                );
+            }
+            return ret;
+        }
+        
         for(int row = 0; row < self.length; row++) {
             for(int col = 0; col < self[0].length; col++) {
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0) {
                     tmp = g.unsafeFindCoordinates(self[row][col]);
-                    retour += Math.floor(
+                    ret += Math.floor(
                         Math.sqrt(
-                            Math.pow(Math.abs(tmp[0] - row), 2) 
-                            + Math.pow(Math.abs(tmp[1] - col), 2)
+                            Math.pow(Math.abs(tmp[0] - row), 2) +
+                            Math.pow(Math.abs(tmp[1] - col), 2)
                         )
                     );
                 }
             }
         }
 
-        return retour;
+        return ret;
     }
-
-    /**
-     *
-     * @param g Target.
-     * @return float
-     */
-    // todo: linear conflicts
-    private float linearManhattan(Grid g) {
-        return 0;
-    }
-
     
     /**
-     * This method generates a {@link Set} of valid neighbor {@link Grid}s 
-     * according to {@link Direction} validation ({@link Direction#check(Grid)}).
+     * Private {@link Record} used to count linear conflicts in {@link #linearManhattan(Grid)} 
+     * and {@link #totalConflicts(Conflict[][], Coordinates[][], boolean)}.
      * <p>
-     * a {@link HashSet} is used to simulate randomness instead of always having
-     * the neighbors ordered as from {@link Direction#values()}.
-     * 
-     * @return {@link Set} of valid neighbors
+     * As conflicts go by pair of two ({@code a is in conflict with b 
+     * <=> b is in conflict with a}), any reference to {@link #conflictsWith}
+     * in a method can cause a {@link StackOverflowError}. As such, 
+     * {@link Conflict#equals(Object)}, {@link Conflict#hashCode()}, 
+     * {@link Conflict#compareTo(Conflict)}, {@link Conflict#toString()} and any others
+     * should only manipulate {@link Conflict} instances by their {@link #coords} field.
      */
-    Set<Grid> generateNeighbors() {
+    private record Conflict(Coordinates coords, List<Conflict> conflictsWith)
+        implements Comparable<Conflict> {
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
 
-        var retour = new HashSet<Grid>();
+            sb.append("(").append(Conflict.this.coords.row())
+                .append(", ").append(Conflict.this.coords.column()).append(") [");
+
+            for(var c : Conflict.this.conflictsWith) {
+                sb.append("(").append(c.coords.row())
+                    .append(", ").append(c.coords.column()).append("), ");
+            }
+
+            sb.append("]");
+
+            return sb.toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if(this == o) return true;
+            if(o == null || getClass() != o.getClass()) return false;
+
+            Conflict conflict = (Conflict) o;
+
+            return coords.equals(conflict.coords);
+        }
+
+        @Override
+        public int hashCode() {
+            return coords.hashCode();
+        }
+
+        @Override
+        public int compareTo(Conflict o) {
+            return Integer.compare(Conflict.this.conflictsWith.size(), o.conflictsWith.size());
+        }
+    }
+    
+    /**
+     * Linear conflicts heuristic. If two tiles which share their goal row/column also
+     * happen to be in that same row/column and are inverted (i.e for the tiles to get
+     * to their respective goal positions, one would have to 'pass over' the other),
+     * then there is a linear conflict between these two tiles. 
+     * <p>
+     * The total number of conflicts is multiplied by 2 because one of the two tiles in
+     * conflict has to leave the row/column and enter it again, which adds two moves.
+     * <p>
+     * This heuristic is added on top of a more generalistic heuristic, i.e the Manhattan distance.
+     * <p>
+     * For more information, see <u>Hansson, Mayer, Yung</u>
+     * <i>Criticizing Solutions to Relaxed Models Yields Powerful Admissible Heuristics</i> (1992).
+     * <p>
+     * For lazy calculation of the linear conflicts, it can be noted that moving along a row
+     * does not change any row based conflicts; in fact it only impacts the conflicts
+     * in the previous column of the blank tile (which gained a normal tile) or the new one 
+     * (which lost a normal tile). The same goes for moving along a column and the rows of the 
+     * blank tile. So we would only need to check for the conflicts in these rows/columns, and 
+     * add it to the conflicts of the other rows/columns.
+     * <p>
+     * Unfortunately, due to how complex calculating the conflicts is compared to the other heuristics,
+     * it is not so easily reversible and that meansit would be required to keep an extra field 
+     * (2d array or 2 arrays) which contains the number of conflicts of each row and column.
+     * 
+     * @param g Target.
+     * @return {@code 2 *} the number of linear conflicts {@code +} {@link #manhattan(Grid)}.
+     */
+    /*
+     Idk maybe its worth it /shrug. either way i left out a commented draft of a lazy calc
+    */
+    private float linearManhattan(Grid g) {
+
+        /*
+         by calling distanceTo instead of the enum or the private method,
+         we also implicitly store the value in the enumMap so it will allow
+         for lazy calc for this grid's children grids.
+         
+         Also this is called for for lazy calc of the conflicts if the parent
+         grid has a linear conflicts heuristic value.
+        */
+        float ret = distanceTo(g, Distance.MANHATTAN);
+
+        // coordinates in g.self of every tile from self
+        Coordinates[][] goalCoords = new Coordinates[self.length][self[0].length];
         
-        for (Direction d : Direction.values()) {
-            if (d != parentDirection && d.check(this)) {
-                retour.add(new Grid(this, d));
+        Conflict[][] rowConflicts = new Conflict[self.length][self[0].length];
+        // colConflicts is transposed so it's easier to iterate over it
+        Conflict[][] colConflicts = new Conflict[self[0].length][self.length];
+        
+        /*
+        if(parent.distanceMap.get(Distance.LINEAR_MANHATTAN) != null) {
+            //ret = parent.distanceMap.get(Distance.LINEAR_MANHATTAN);
+            
+            // should not be null as distanceTo(g, MANHATTAN) is the first call in this method
+            // and we only get in this block if this method was called on the parent grid.
+            float tmp2 = parent.distanceMap.get(Distance.LINEAR_MANHATTAN) - 
+                parent.distanceMap.get(Distance.MANHATTAN);
+            
+            // if we moved from a row to another
+            if(parentDirection == Direction.UP || parentDirection == Direction.DOWN) {
+                for(int row = 0; row < self.length; row++) {
+                    for(int col = 0; col < self[0].length; col++) {
+                        // we only check columns
+                        if(col == zeroCol || col == parent.zeroCol) {
+                            var t = g.unsafeFindCoordinates(self[row][col]);
+                            goalCoords[row][col] = new Coordinates(t[0], t[1]);
+                        }
+                    }
+                }
+                // and so here we would count potential conflicts, remove nulls and then call totalConflicts().
+                // shouldn't have to worry about nulls and index out of bounds as everything is handled
+                // by conflicts and coordinates objects + it uses for(var x : y) loops.
+            }
+            else {
+                // and here do the same but we only check if (row = zeroRow || row = parent.zeroRow)
+            }
+            
+            return ret;
+        }
+        */
+        
+        for(int row = 0; row < self.length; row++) {
+            for(int col = 0; col < self[0].length; col++) {
+                var t = g.unsafeFindCoordinates(self[row][col]);
+                goalCoords[row][col] = new Coordinates(t[0], t[1]);
             }
         }
         
-        return retour;
+        // counts potential conflicts
+        for(int row = 0; row < self.length; row++) {
+            for(int col = 0; col < self[0].length; col++) {
+                // as always, ignore the blank tile
+                if(self[row][col] != 0) {
+                    // row based conflicts
+                    if(goalCoords[row][col].row() == row) {
+                        rowConflicts[row][col] = new Conflict(new Coordinates(row, col), new ArrayList<>());
+                    }
+                    // column based conflicts
+                    if(goalCoords[row][col].column() == col) {
+                        colConflicts[col][row] = new Conflict(new Coordinates(row, col), new ArrayList<>());
+                    }
+                }
+            }
+        }
+
+        // removes all the null elements (i.e tiles which had no conflicts)
+        rowConflicts = Arrays.stream(rowConflicts)
+            .map(
+                t -> Arrays.stream(t)
+                    .filter(Objects::nonNull)
+                    .toArray(Conflict[]::new)
+            )
+            .toArray(Conflict[][]::new);
+
+        colConflicts = Arrays.stream(colConflicts)
+            .map(
+                t -> Arrays.stream(t)
+                    .filter(Objects::nonNull)
+                    .toArray(Conflict[]::new)
+            )
+            .toArray(Conflict[][]::new);
+        
+        /*
+         idiot check: ret = this.MANHATTAN(g)
+         so doing ret += totalConflicts() twice and then return 2 * ret
+         returns 2 * MANHATTAN as well
+        */
+        ret += 2 * totalConflicts(rowConflicts, goalCoords, true);
+        ret += 2 * totalConflicts(colConflicts, goalCoords, false);
+        
+        return ret;
+    }
+
+
+    /**
+     * Helper method for {@link #linearManhattan(Grid)} which counts the total
+     * of actual conflicts (either row or column based, not both) in a given
+     * {@link Conflict} 2d array against a given goal array of {@link Coordinates}.
+     * 
+     * @param conflicts The conflicts to count.
+     * @param goal The goal to check against for conflicts.
+     * @param isRowConflict Whether {@code conflicts} should be treated as row based conflicts.
+     * @return Total number of conflicts in {@code conflicts}.
+     */
+    private float totalConflicts(Conflict[][] conflicts, Coordinates[][] goal, boolean isRowConflict) {
+        float totalConflicts = 0;
+        LinkedList<Conflict> currentConflicts = new LinkedList<>();
+
+        // for each row or col
+        for(var tab : conflicts) {
+            
+            for(int el1 = 0; el1 < tab.length; el1++) {
+                var clf1 = tab[el1];
+                var coords1 = goal[clf1.coords().row()][clf1.coords().column()];
+                // if it's a row based conflict, we get the column to check against other columns
+                // and the other way around
+                int goalPos1 = (isRowConflict) ? coords1.column() : coords1.row();
+
+                // we check all the elements to the right
+                for(int el2 = el1; el2 < tab.length; el2++) {
+                    var clf2 = tab[el2];
+                    var coords2 = goal[clf2.coords().row()][clf2.coords().column()];
+                    int goalPos2 = (isRowConflict) ? coords2.column() : coords2.row();
+
+                    // if an element on the right has a lower goal position, then there is a conflict
+                    if(goalPos1 > goalPos2) {
+                        tab[el1].conflictsWith().add(tab[el2]);
+                        tab[el2].conflictsWith().add(tab[el1]);
+                    }
+                }
+            }
+            
+            currentConflicts.clear();
+            currentConflicts.addAll(Arrays.stream(tab).toList());
+            // sorted from least conflicts to most conflicts
+            Collections.sort(currentConflicts);
+            
+            currentConflicts.removeIf(c -> c.conflictsWith().isEmpty());
+            
+            // while there's still conflicts in the list
+            while(!currentConflicts.isEmpty()) {
+
+                // remove the most conflicting conflict and removes it from other conflicts
+                var c = currentConflicts.pollLast();
+                for(var c2 : currentConflicts) {
+                    c2.conflictsWith().remove(c);
+
+                }
+
+                // + 1 total conflict
+                totalConflicts += 1;
+
+                // remove conflicts that no longer conflict
+                currentConflicts.removeIf(c3 -> c3.conflictsWith().isEmpty());
+            }
+        }
+        
+        return totalConflicts;
     }
 
     
@@ -893,7 +1201,7 @@ public class Grid implements Comparable<Grid> {
     /**
      * Compares two grid by their {@link #self} field.
      * 
-     * @param target
+     * @param target The grid this object should be compared to.
      * @return {@link Utils#intArrayDeepCompare(Object[], Object[])}.
      */
     @Override
@@ -906,19 +1214,7 @@ public class Grid implements Comparable<Grid> {
      */
     @Override
     public String toString(){
-        
-        /*
-        StringBuilder sb = new StringBuilder();
-        sb.append(key).append(": ");
-        for(var t : self)
-            sb.append('\n').append(Arrays.toString(t));
-        
-        return sb.toString();
-        */
-        
-        // return "{Grid " + key + " (" + ((parent != null) ? parent.key : -2) + "): " + depth + " " + Arrays.deepToString(self) + "}";
         return "{Grid " + key + " (" + heuristicValue + "): " + depth + " " + Arrays.deepToString(self) + "}";
-        //return "[Grid] " + key + " (" + ((parent != null) ? parent.key : -2) + "):";
     }
 
 }

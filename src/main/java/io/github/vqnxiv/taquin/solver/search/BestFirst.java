@@ -18,7 +18,7 @@ public class BestFirst extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
 
-        private BooleanProperty useMerge;
+        private final BooleanProperty useMerge;
 
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
@@ -112,7 +112,7 @@ public class BestFirst extends Search {
                 searchSpace.getQueued().mergeWith(toAdd);
             }
             else {
-                Collections.sort(toAdd, heuristicComparator);
+                toAdd.sort(heuristicComparator);
                 searchSpace.getQueued().addAll(toAdd);
                 searchSpace.getQueued().sort(heuristicComparator);
             }

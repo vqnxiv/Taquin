@@ -16,9 +16,9 @@ public class IterativeDeepening extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
 
-        private BooleanProperty checkNewStatesForGoal;
-        private IntegerProperty initialDepthLimit;
-        private IntegerProperty limitIncrement;
+        private final BooleanProperty checkNewStatesForGoal;
+        private final IntegerProperty initialDepthLimit;
+        private final IntegerProperty limitIncrement;
 
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);

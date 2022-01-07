@@ -17,7 +17,7 @@ public class Astar extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
         
-        private BooleanProperty useMerge;
+        private final BooleanProperty useMerge;
         
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
@@ -86,7 +86,7 @@ public class Astar extends Search {
 
     @Override
     protected void computeHeuristic(Grid g) {
-        g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic) + g.getDepth());
+        g.setHeuristicValue((float) g.distanceTo(searchSpace.getGoal(), heuristic) + g.getDepth());
     }
 
     @Override
@@ -104,7 +104,7 @@ public class Astar extends Search {
         log("Computing heuristics");
         for(Grid g : toAdd) computeHeuristic(g);
         
-        log("Queuing " + toAdd.size() + " generated neighbors");
+        log("Queuing {}" + toAdd.size() + " generated neighbors");
         if(!toAdd.isEmpty()) {
             if(searchSpace.getQueued().usesNaturalOrdering()) {
                 searchSpace.getQueued().addAll(toAdd);
@@ -113,7 +113,7 @@ public class Astar extends Search {
                 searchSpace.getQueued().mergeWith(toAdd);
             }
             else {
-                Collections.sort(toAdd, heuristicComparator);
+                toAdd.sort(heuristicComparator);
                 searchSpace.getQueued().addAll(toAdd);
                 searchSpace.getQueued().sort(heuristicComparator);
             }

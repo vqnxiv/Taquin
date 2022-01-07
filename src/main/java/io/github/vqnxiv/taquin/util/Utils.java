@@ -226,10 +226,18 @@ public final class Utils {
     }
 
     /**
-     * Small utility method to compare two nested int arrays of the same dimensions.
+     * Utility method to compare two nested int arrays of the same dimensions.
      * <p>
      * This method does no verification and should not be called if the arrays do not
      * have the same dimensions or are not {@code int[]} at their most nested level.
+     * <p>
+     * The actual objective of this method is that it must return {@code 0} if two 
+     * arrays are such that {@code tab1.equalsTo(tab2) == true} and that
+     * the results are transitive: if the method determines that {@code tab1 < tab2} 
+     * and {@code tab2 < tab 3}, then it must return {@code tab1 < tab3}.
+     * <p>
+     * While it needs not return consistent results across runtimes, it must remain
+     * consistent through a single runtime.
      * 
      * @param t1 The first array to compare, as in {@code t1.compareTo(t2)}.
      * @param t2 The second array to compare, as in {@code t1.compareTo(t2)}.
@@ -268,6 +276,9 @@ public final class Utils {
 
     /**
      * Helper method for {@link #intArrayDeepCompare(Object[], Object[])}.
+     * <p>
+     * Either calls {@link Arrays#compare(int[], int[])} or {@link #intArrayDeepCompare(Object[], Object[])}
+     * depending on the class of the {@code a} and {@code b}.
      * 
      * @param a The first object to compare.
      * @param b The second object to compare.

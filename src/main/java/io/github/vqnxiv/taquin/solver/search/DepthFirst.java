@@ -19,7 +19,7 @@ public class DepthFirst extends Search {
     
     public static class Builder extends Search.Builder<Builder> {
 
-        private BooleanProperty checkNewStatesForGoal;
+        private final BooleanProperty checkNewStatesForGoal;
         
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);

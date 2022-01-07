@@ -18,7 +18,7 @@ public class BreadthFirst extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
 
-        private BooleanProperty checkNewStatesForGoal;
+        private final BooleanProperty checkNewStatesForGoal;
         
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
@@ -97,7 +97,7 @@ public class BreadthFirst extends Search {
         if(heuristic != Grid.Distance.NONE) {
             log("Computing heuristics");
             for(Grid g : toAdd) computeHeuristic(g);
-            Collections.sort(toAdd, heuristicComparator);
+            toAdd.sort(heuristicComparator);
         }
 
         log("Checking for goal");
