@@ -1,11 +1,9 @@
 package io.github.vqnxiv.taquin.solver;
 
 
-import io.github.vqnxiv.taquin.Taquin;
 import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
-
 import io.github.vqnxiv.taquin.util.IBuilder;
 import io.github.vqnxiv.taquin.util.Utils;
 import javafx.application.Platform;
@@ -17,8 +15,6 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.openjdk.jol.info.GraphLayout;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -372,22 +368,19 @@ public abstract class Search {
     protected final Grid.Distance heuristic;
     protected final Grid.EqualPolicy equalPolicy;
     private final EnumMap<SearchLimit, Long> limitsMap;
-    
-    protected final Comparator<Grid> heuristicComparator = new Comparator<Grid>() {
-        @Override
-        public int compare(Grid g1, Grid g2) {
-            if(g1.getHeuristicValue() == g2.getHeuristicValue()) {
-                if(g1.equals(g2)) {
-                    return  0;
-                }
 
-                return equalPolicy.calc(g1, g2);
+    protected final Comparator<Grid> heuristicComparator = (g1, g2) -> {
+        if(g1.getHeuristicValue() == g2.getHeuristicValue()) {
+            if(g1.equals(g2)) {
+                return  0;
             }
 
-            return Float.compare(g1.getHeuristicValue(), g2.getHeuristicValue());
+            return Search.this.equalPolicy.calc(g1, g2);
         }
+
+        return Float.compare(g1.getHeuristicValue(), g2.getHeuristicValue());
     };
-    
+
     protected final Comparator<Grid> reverseHeuristicComparator = 
         (g1, g2) -> - heuristicComparator.compare(g1, g2);
     
@@ -449,7 +442,7 @@ public abstract class Search {
         }
 
         return propsMap;
-    };
+    }
     
     
     // ------
@@ -484,7 +477,8 @@ public abstract class Search {
         
         LOGGER.info(
             new MarkerManager.Log4jMarker(Integer.toString(id)), 
-            Long.toString(getElapsedTime()) + '\t' +'\t' + message
+            // Long.toString(getElapsedTime()) + '\t' +'\t' + message
+            "{} \t \t {}", getElapsedTime(), message
         );
     }
     
@@ -587,7 +581,7 @@ public abstract class Search {
 
     @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        return (id ^ (id >>> 32));
     }
 
     @Override
