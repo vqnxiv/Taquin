@@ -1,7 +1,6 @@
 package io.github.vqnxiv.taquin.model;
 
 
-import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.util.IBuilder;
 import javafx.beans.property.*;
 import java.lang.reflect.InvocationTargetException;
@@ -39,9 +38,9 @@ public class CollectionWrapper<E extends Comparable<E>> {
         }
 
         @Override
-        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+        public EnumMap<Category, List<Property<?>>> getBatchProperties() {
             return new EnumMap<>(Map.of(
-                BuilderController.TabPaneItem.COLLECTION, 
+                IBuilder.Category.COLLECTION, 
                 List.of(initialCapacity, userInitialCapacity)
             ));
         }

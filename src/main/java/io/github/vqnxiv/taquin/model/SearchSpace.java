@@ -1,7 +1,6 @@
 package io.github.vqnxiv.taquin.model;
 
 
-import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.util.IBuilder;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
@@ -119,8 +118,8 @@ public class SearchSpace {
          * @return Empty {@link Map}.
          */
         @Override
-        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
-            return new EnumMap<>(BuilderController.TabPaneItem.class);
+        public EnumMap<Category, List<Property<?>>> getBatchProperties() {
+            return new EnumMap<>(Category.class);
         }
     }
 
@@ -301,7 +300,8 @@ public class SearchSpace {
     }
 
     /**
-     * Gets the neighbors of {@link #currentGrid}.
+     * Gets the neighbors of {@link #currentGrid}, except for the parent grid {@link #currentGrid}
+     * was generated from. (see {@link Grid#generateNeighbors()} for details)
      * <p>
      * Do note that {@code linkExisting} is potentially a more costly operation than simply filtering out
      * already existing neighbors, as the {@link Grid} which is used to check whether the neighbor

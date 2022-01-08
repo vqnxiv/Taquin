@@ -34,15 +34,6 @@ import java.util.*;
 
 public class BuilderController {
 
-    public enum TabPaneItem {
-        COLLECTION, SEARCH_MAIN, SEARCH_EXTRA, LIMITS, MISCELLANEOUS;
-        
-        @Override
-        public String toString() {
-            return Utils.screamingSnakeToReadable(this.name());
-        }
-    }
-
     private enum Lock {
         NOT_LOCKED, MODIFICATION_LOCKED, FULLY_LOCKED
     }
@@ -84,6 +75,8 @@ public class BuilderController {
     private final CollectionWrapper.Builder exploredBuilder;
     private final CollectionWrapper.Builder queuedBuilder;
     
+    private final Map<String, Control> miscValues;
+    
     // todo: map/local?
     private final GridViewer startViewer, endViewer; //, currentViewer;
     
@@ -96,7 +89,7 @@ public class BuilderController {
         lockLevel = new SimpleObjectProperty<>(Lock.NOT_LOCKED);
         lockLevel.set(Lock.NOT_LOCKED);
         
-        searchBuilder   = new Astar.Builder(null);
+        searchBuilder   = new Astar.Builder();
         spaceBuilder    = new SearchSpace.Builder();
         exploredBuilder = new CollectionWrapper.Builder("explored", LinkedHashSet.class);
         queuedBuilder   = new CollectionWrapper.Builder("queued", PriorityQueue.class);
@@ -106,6 +99,8 @@ public class BuilderController {
         startViewer = new GridViewer("Start", true);
         endViewer = new GridViewer("End", true);
         //currentViewer = new GridViewer("Current", true);
+        
+        miscValues = new HashMap<>();
     }
 
     @FXML public void initialize() {
@@ -121,7 +116,7 @@ public class BuilderController {
         return logOutput;
     }
     
-    public boolean hasSearchWithID(long id) {
+    public boolean hasSearchWithID(int id) {
         return search != null && search.getID() == id;
     }
     
@@ -161,6 +156,10 @@ public class BuilderController {
             var c = (props.get(s) != null) ?
                 controlFromProperty(props.get(s)) : handleSpecial(s);
             hbox.getChildren().add(c);
+            
+            if(s.equals("steps number")) {
+                miscValues.put("steps", c);    
+            }
         }
     }
     
@@ -177,7 +176,7 @@ public class BuilderController {
             case "run" ->
                 createRunnerButton(s, false, 
                     event ->  {
-                        if(canAttemptRun()) searchRunner.runSearch(search, 0);
+                        if(canAttemptRun()) submitRun(false);
                     }
                 );
             case "pause" ->
@@ -194,12 +193,13 @@ public class BuilderController {
             case "steps" ->
                 createRunnerButton(s, false,
                     event ->  {
-                        if(canAttemptRun()) searchRunner.runSearch(search, 1);
+                        if(canAttemptRun()) submitRun(true);
                     }
                 );
             case "steps number" -> {
                 var tf = new TextField();
                 tf.setMaxWidth(85.0);
+                tf.setTextFormatter(new TextFormatter<>(Utils.intStringConverter, 0, Utils.integerFilter));
                 yield tf;
             }
             default -> new Label(s);
@@ -245,6 +245,27 @@ public class BuilderController {
         LOGGER.error("Cannot run search: search could not be created");
         return false;
     }
+    
+    private void submitRun(boolean isSteps) {
+        int iter = 0;
+        int throttle = 0;
+        boolean log = ((CheckBox) miscValues.get("log search")).isSelected();
+        boolean memory = ((CheckBox) miscValues.get("monitor memory")).isSelected();
+        
+        if(isSteps) {
+            var i = (Integer) ((TextField) miscValues.get("steps")).getTextFormatter().getValue();
+            if(i != null) {
+                iter = i;
+            }
+        }
+
+        var i = (Integer) ((TextField) miscValues.get("throttle")).getTextFormatter().getValue();
+        if(i != null) {
+            throttle = i;
+        }
+        
+        searchRunner.runSearch(search, iter, throttle, log, memory);
+    }
 
     private void onSearchAlgActivated(ChoiceBox<Class<?>> cb) {
 
@@ -252,8 +273,8 @@ public class BuilderController {
         var c = cb.getValue().getDeclaredClasses()[0];
 
         try {
-            searchBuilder = (Search.Builder<?>) c.getDeclaredConstructors()[0].newInstance(searchBuilder);
-        } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
+            searchBuilder = (Search.Builder<?>) c.getDeclaredConstructor(Search.Builder.class).newInstance(searchBuilder);
+        } catch (InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             LOGGER.error("Could not create builder " + e.getMessage());
         }
 
@@ -284,10 +305,6 @@ public class BuilderController {
         var values = Search.SearchProperty.values();
         
         for(int i = 0; i < values.length; i++) {
-            if(props.get(values[i]) == null) {
-                continue;
-            }
-            
             var l = new Label("");
             l.textProperty().bind(props.get(values[i]));
             progressPane.add(l, i , 1);
@@ -301,18 +318,18 @@ public class BuilderController {
 
         var m = getPropertyMap();
 
-        for(var p : TabPaneItem.values()) {
+        for(var p : IBuilder.Category.values()) {
             var tab = createTab(p, m.get(p));
             parameterTabPane.getTabs().add(tab);
         }
     }
     
-    private EnumMap<TabPaneItem, List<Property<?>>> getPropertyMap() {
+    private EnumMap<IBuilder.Category, List<Property<?>>> getPropertyMap() {
         LOGGER.debug("Fetching batch properties");
 
-        var map = new EnumMap<TabPaneItem, List<Property<?>>>(TabPaneItem.class);
+        var map = new EnumMap<IBuilder.Category, List<Property<?>>>(IBuilder.Category.class);
         
-        for(var p : TabPaneItem.values()) {
+        for(var p : IBuilder.Category.values()) {
             map.put(p, new ArrayList<>());
         }
         
@@ -325,7 +342,7 @@ public class BuilderController {
         return map;
     }
 
-    private Tab createTab(TabPaneItem p, List<Property<?>> items) {
+    private Tab createTab(IBuilder.Category p, List<Property<?>> items) {
         LOGGER.debug("Creating parameter tab: " + p.toString());
 
         Tab tab = new Tab();
@@ -336,7 +353,12 @@ public class BuilderController {
         for(var prop : items) {
             int i = items.indexOf(prop);
             gridpane.add(new Label(prop.getName()), i, 0);
-            gridpane.add(controlFromProperty(prop), i, 1);
+            var c = controlFromProperty(prop);
+            gridpane.add(c, i, 1);
+
+            if(p == IBuilder.Category.MISCELLANEOUS) {
+                miscValues.put(prop.getName(), c);
+            }
         }
 
         tab.setContent(gridpane);

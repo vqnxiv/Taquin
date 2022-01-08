@@ -1,17 +1,16 @@
 package io.github.vqnxiv.taquin.solver.search;
 
 
-import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
+import io.github.vqnxiv.taquin.util.IBuilder;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
-import java.util.Collections;
+
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 
 public class DepthFirst extends Search {
@@ -19,12 +18,23 @@ public class DepthFirst extends Search {
     
     public static class Builder extends Search.Builder<Builder> {
 
-        private final BooleanProperty checkNewStatesForGoal;
+        private final BooleanProperty checkNewStatesForGoal =
+            new SimpleBooleanProperty(this, "check new states for goal", false);
         
+        /**
+         * Base no args constructor.
+         */
+        public Builder() {
+            super();
+        }
+
+        /**
+         * Copy constructor. Used when converting from a subclass to another.
+         *
+         * @param toCopy The builder to copy.
+         */
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
-            
-            checkNewStatesForGoal = new SimpleBooleanProperty(this, "check new states for goal", false);
         }
         
         @Override
@@ -33,11 +43,11 @@ public class DepthFirst extends Search {
         }
 
         @Override
-        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+        public EnumMap<Category, List<Property<?>>> getBatchProperties() {
 
             var m = super.getBatchProperties();
             m.put(
-                BuilderController.TabPaneItem.SEARCH_EXTRA,
+                IBuilder.Category.SEARCH_EXTRA,
                 List.of(checkNewStatesForGoal)
             );
 
@@ -69,14 +79,13 @@ public class DepthFirst extends Search {
         super(builder);
         
         checkNewStatesForGoal = builder.checkNewStatesForGoal.get();
-        setReady();
     }
 
 
     // ------
 
     @Override
-    protected void setProperties() { }
+    protected void setSpaceDependentParameters() { }
 
     @Override
     protected void computeHeuristic(Grid g) {
@@ -93,7 +102,7 @@ public class DepthFirst extends Search {
         searchSpace.getExplored().add(newCurrent);
 
         log("Generating neighbors");
-        var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
+        var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkExistingNeighbors);
 
         if(heuristic != Grid.Distance.NONE) {
             log("Computing heuristics");

@@ -686,8 +686,17 @@ public class Grid implements Comparable<Grid> {
     }
 
     /**
-     * This method generates a {@link Set} of valid neighbor {@link Grid}s 
-     * according to {@link Direction} validation ({@link Direction#check(Grid)}).
+     * This method generates a {@link Set} of valid neighbor {@link Grid}s according to 
+     * {@link Direction} validation ({@link Direction#check(Grid)}), except the parent grid.
+     * <p>
+     * Automatically filtering out the parent grid is done to ensure a search does not 'loop over
+     * the same two states' forever. While this is likely not an issue in informed searches, this
+     * can easily lead to two grids enqueueing each other over and over in the case of a non 
+     * informed search.
+     * <p>
+     * For example, a DFS search where calling this method on this grid's parent would return a set
+     * where this grid would be the last element and calling it on this grid would return a set 
+     * where the last element is this grid's parent.
      * <p>
      * a {@link HashSet} is used to simulate randomness instead of always having
      * the neighbors ordered as from {@link Direction#values()}.

@@ -136,7 +136,7 @@ public class SearchRunner {
     
     
     // todo: accessible throttle + iterations from builder controller
-    public void runSearch(Search s, int n) {
+    public void runSearch(Search s, int iter, int throttle, boolean log, boolean mem) {
         LOGGER.info("Attempting to run search: {}", s.getName());
         
         if(lastRunningSearch == null || lastRunningSearch.getState() != Search.SearchState.RUNNING) {
@@ -149,9 +149,9 @@ public class SearchRunner {
         }
         
         lastSearchInfo.bind(Bindings.concat(s.getName(), ": ", s.getCurrentStateProperty()));
-        LOGGER.debug("Submitting search run: {} ({})", s.getName(), n);
+        LOGGER.debug("Submitting search run: {}", s.getName());
         
-        s.newSearchTask(n, 0).ifPresent(
+        s.newSearchTask(iter, throttle, log, mem).ifPresent(
             t -> {
                 t.setOnSucceeded(
                     e -> LOGGER.info("Search run completed: {}", s.getName())

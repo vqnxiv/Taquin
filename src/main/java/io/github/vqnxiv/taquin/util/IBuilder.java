@@ -19,18 +19,55 @@ import java.util.Map;
  * @see io.github.vqnxiv.taquin.model.CollectionWrapper.Builder
  */
 public interface IBuilder {
+
     /**
-     * Properties that should be handled separately (i.e not dumped in the tab pane)
+     * Enum which is used to classify the different kinds of {@link Property} which
+     * can be returned from {@link #getBatchProperties()}.
+     */
+    enum Category {
+        /**
+         * Options for {@link io.github.vqnxiv.taquin.model.CollectionWrapper} creation.
+         */
+        COLLECTION,
+        /**
+         * Main options for {@link io.github.vqnxiv.taquin.solver.Search} creation.
+         * This is mainly for the properties in {@link io.github.vqnxiv.taquin.solver.Search.Builder}.
+         */
+        SEARCH_MAIN,
+        /**
+         * Extra options for {@link io.github.vqnxiv.taquin.solver.Search} creation.
+         * This is mainly for the properties in the builder class of 
+         * {@link io.github.vqnxiv.taquin.solver.Search} subclasses.
+         */
+        SEARCH_EXTRA,
+        /**
+         * Options for {@link io.github.vqnxiv.taquin.solver.Search.SearchLimit}.
+         */
+        LIMITS,
+        /**
+         * Options that are used for {@link io.github.vqnxiv.taquin.solver.Search.SearchTask} creation.
+         */
+        MISCELLANEOUS;
+
+        @Override
+        public String toString() {
+            return Utils.screamingSnakeToReadable(this.name());
+        }
+    }
+    
+    /**
+     * Properties that should be handled separately (i.e not dumped in the tab pane).
      * 
-     * @return Map of Properties where the keys are the properties name specified when created
+     * @return {@link Map} of {@link Property} where the keys are the properties name 
+     * ({@link Property#getName()}) specified when created.
      */
     Map<String, Property<?>> getNamedProperties();
 
     /**
-     * Properties that will be automatically placed in the tabpane
+     * Properties that will be automatically placed in the tabpane.
      * 
-     * @return Map of lists of properties where the key is the name of the tab 
-     * where the properties controls will be placed
+     * @return Map of lists of properties where the key is the {@link Category} which the 
+     * properties should go in.
      */
-    EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties();
+    EnumMap<Category, List<Property<?>>> getBatchProperties();
 }

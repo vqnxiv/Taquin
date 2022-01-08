@@ -86,7 +86,7 @@ public class SearchAppender extends AbstractFxAppender {
     public void append(LogEvent event) {
         event = event.toImmutable();
 
-        long id = Long.parseLong(event.getMarker().getName());
+        int id = Integer.parseInt(event.getMarker().getName());
         
         LogEvent finalEvent = event;
         mainController.getBuilderLogOutputFromSearchID(id).ifPresent(

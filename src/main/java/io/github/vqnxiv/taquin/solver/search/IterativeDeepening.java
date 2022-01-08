@@ -1,12 +1,12 @@
 package io.github.vqnxiv.taquin.solver.search;
 
 
-import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
+import io.github.vqnxiv.taquin.util.IBuilder;
 import javafx.beans.property.*;
-import java.util.Collections;
+
 import java.util.EnumMap;
 import java.util.List;
 
@@ -16,16 +16,30 @@ public class IterativeDeepening extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
 
-        private final BooleanProperty checkNewStatesForGoal;
-        private final IntegerProperty initialDepthLimit;
-        private final IntegerProperty limitIncrement;
+        private final BooleanProperty checkNewStatesForGoal = 
+            new SimpleBooleanProperty(this, "check new states for goal", false);
+        
+        private final IntegerProperty initialDepthLimit = 
+            new SimpleIntegerProperty(this, "initial depth limit", 1);
+        
+        private final IntegerProperty limitIncrement =
+            new SimpleIntegerProperty(this, "limit increment", 1);
 
+
+        /**
+         * Base no args constructor.
+         */
+        public Builder() {
+            super();
+        }
+
+        /**
+         * Copy constructor. Used when converting from a subclass to another.
+         *
+         * @param toCopy The builder to copy.
+         */
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
-            
-            checkNewStatesForGoal = new SimpleBooleanProperty(this, "check new states for goal", false);
-            initialDepthLimit = new SimpleIntegerProperty(this, "initial depth limit", 1);
-            limitIncrement = new SimpleIntegerProperty(this, "limit increment", 1);
         }
         
         @Override
@@ -34,11 +48,10 @@ public class IterativeDeepening extends Search {
         }
 
         @Override
-        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
-
+        public EnumMap<Category, List<Property<?>>> getBatchProperties() {
             var m = super.getBatchProperties();
             m.put(
-                BuilderController.TabPaneItem.SEARCH_EXTRA, 
+                IBuilder.Category.SEARCH_EXTRA, 
                 List.of(checkNewStatesForGoal, initialDepthLimit, limitIncrement)
             );
 
@@ -78,14 +91,13 @@ public class IterativeDeepening extends Search {
         limitIncrement = builder.limitIncrement.get();
         
         currentDepthLimit = initialDepthLimit;
-        setReady();
     }
 
 
     // ------
 
     @Override
-    protected void setProperties() { }
+    protected void setSpaceDependentParameters() { }
     
     @Override
     protected void computeHeuristic(Grid g) {
@@ -103,7 +115,7 @@ public class IterativeDeepening extends Search {
         
         if(searchSpace.getCurrent().getDepth() < currentDepthLimit) {
             log("Generating neighbors");
-            var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
+            var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkExistingNeighbors);
             
             if(heuristic != Grid.Distance.NONE) {
                 log("Computing heuristics");

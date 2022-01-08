@@ -189,7 +189,7 @@ public class MainController {
      * @return {@link Optional#of(Object)} the {@link TextArea} if a {@link Search} 
      * with such an id exists; {@link Optional#empty()} otherwise.
      */
-    public Optional<TextArea> getBuilderLogOutputFromSearchID(long id) {
+    public Optional<TextArea> getBuilderLogOutputFromSearchID(int id) {
         for(var builder : builderMap.keySet()) {
             if(builder.hasSearchWithID(id)) {
                 return Optional.of(builder.getLogOutput());

@@ -1,10 +1,10 @@
 package io.github.vqnxiv.taquin.solver.search;
 
 
-import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.solver.Search;
 
+import io.github.vqnxiv.taquin.util.IBuilder;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -17,15 +17,33 @@ public class Astar extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
         
-        private final BooleanProperty useMerge;
+        private final BooleanProperty useMerge =
+            new SimpleBooleanProperty(this, "use merge", false);
         
+        /**
+         * Base no args constructor.
+         * <p>
+         * Sets the value of {@link Search.Builder#heuristic} to {@link Grid.Distance#LINEAR_MANHATTAN}.
+         */    
+        public Builder() {
+            super();
+            
+            heuristic.set(Grid.Distance.LINEAR_MANHATTAN);
+        }
+
+        /**
+         * Copy constructor. Used when converting from a subclass to another.
+         * <p>
+         * Sets the value of {@link Search.Builder#heuristic} to {@link Grid.Distance#LINEAR_MANHATTAN}.
+         * 
+         * @param toCopy The builder to copy.
+         */
         public Builder(Search.Builder<?> toCopy) {
             super(toCopy);
             
-            useMerge = new SimpleBooleanProperty(this, "use merge", false);
-            
-            if(heuristic.get() == Grid.Distance.NONE)
+            if(heuristic.get() == Grid.Distance.NONE) {
                 heuristic.set(Grid.Distance.LINEAR_MANHATTAN);
+            }
         }
         
 
@@ -35,11 +53,11 @@ public class Astar extends Search {
         }
 
         @Override
-        public EnumMap<BuilderController.TabPaneItem, List<Property<?>>> getBatchProperties() {
+        public EnumMap<Category, List<Property<?>>> getBatchProperties() {
             
             var m = super.getBatchProperties();
             m.put(
-                BuilderController.TabPaneItem.SEARCH_EXTRA, 
+                IBuilder.Category.SEARCH_EXTRA, 
                 List.of(useMerge)
             );
             
@@ -70,16 +88,14 @@ public class Astar extends Search {
     private Astar(Builder builder) {
         super(builder);
 
-        builder.useMerge.get();
-            
-        setReady();
+        useMerge = builder.useMerge.get();
     }
 
 
     // ------
     
     @Override
-    protected void setProperties() {
+    protected void setSpaceDependentParameters() {
         useMerge = useMerge || (!searchSpace.getQueued().usesNaturalOrdering() && !searchSpace.getQueued().isSortable());
 
     }
@@ -99,7 +115,7 @@ public class Astar extends Search {
         searchSpace.getExplored().add(newCurrent);
         
         log("Generating neighbors");
-        var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkAlreadyExploredNeighbors);
+        var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkExistingNeighbors);
 
         log("Computing heuristics");
         for(Grid g : toAdd) computeHeuristic(g);
