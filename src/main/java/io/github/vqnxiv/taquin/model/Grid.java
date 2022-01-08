@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 
 /**
@@ -38,29 +39,29 @@ public class Grid implements Comparable<Grid> {
          * Left based movement, i.e decreasing by one a pair of coordinates column index.
          */
         LEFT(
-            (g -> g.zeroCol > 0),
-            (x, y) -> (new int[]{x, --y})
+            (g -> g.zero.column() > 0),
+            (c -> new Coordinates(c.row(), c.column() - 1))
         ),
         /**
          * Right based movement, i.e increasing by one a pair of coordinates column index.
          */
         RIGHT(
-            (g -> g.zeroCol < g.self[0].length - 1),
-            (x, y) -> (new int[]{x, ++y})
+            (g -> g.zero.column() < g.self[0].length - 1),
+            (c -> new Coordinates(c.row(), c.column() + 1))
         ),
         /**
          * Upward based movement, i.e decreasing by one a of pair coordinates row index.
          */
         UP(
-            (g -> g.zeroRow > 0),
-            (x, y) -> (new int[]{--x, y})
+            (g -> g.zero.row() > 0),
+            (c -> new Coordinates(c.row() - 1, c.column()))
         ),
         /**
          * Downward based movement, i.e increasing by one a pair of coordinates row index.
          */
         DOWN(
-            (g -> g.zeroRow < g.self.length - 1),
-            (x, y) -> (new int[]{++x, y})
+            (g -> g.zero.row() < g.self.length - 1),
+            (c -> new Coordinates(c.row() + 1, c.column()))
         );
 
         /**
@@ -72,14 +73,14 @@ public class Grid implements Comparable<Grid> {
          * Function which translates a pair of coordinates according 
          * to the move's definition.
          */
-        private final BiFunction<Integer, Integer, int[]> move;
+        private final UnaryOperator<Coordinates> move;
 
         /**
          * Enum constructor
          * 
          * @param c validation function
          */
-        Direction(Function<Grid, Boolean> c, BiFunction<Integer, Integer, int[]> m) {
+        Direction(Function<Grid, Boolean> c, UnaryOperator<Coordinates> m) {
             check = c;
             move = m;
         }
@@ -96,13 +97,12 @@ public class Grid implements Comparable<Grid> {
 
         /**
          * The method which is called when translating coordinates.
-         * 
-         * @param row The first element of the coordinates.
-         * @param col The second element.
-         * @return An int array of length 2 which contains the translated [row, col].
+         *
+         * @param c The coordinates to translate.
+         * @return A new {@link Coordinates} instance with the move.
          */
-        private int[] move(int row, int col) {
-            return move.apply(row, col);
+        private Coordinates move(Coordinates c) {
+            return move.apply(c);
         }
 
         /**
@@ -331,14 +331,9 @@ public class Grid implements Comparable<Grid> {
     private final EnumMap<Distance, Float> distanceMap;
 
     /**
-     * The row index of the cell with a value of zero (considered the blank tile)
+     * The coordinates of the cell with a value of zero (considered the blank tile).
      */
-    private final int zeroRow;
-
-    /**
-     * The column index of the cell with a value of zero (considered the blank tile)
-     */
-    private final int zeroCol;
+    private final Coordinates zero;
 
     
     /**
@@ -356,8 +351,7 @@ public class Grid implements Comparable<Grid> {
         
         distanceMap = new EnumMap<>(Distance.class);
         
-        int[] z = safeFindCoordinates(0, true).orElse(new int[]{-1, -1});
-        zeroRow = z[0]; zeroCol = z[1];
+        zero = findCoordinates(0).orElseThrow();
     }
 
     /**
@@ -384,11 +378,10 @@ public class Grid implements Comparable<Grid> {
         
         distanceMap = new EnumMap<>(Distance.class);
 
-        int[] newZero = d.move(from.zeroRow, from.zeroCol);
-        zeroRow = newZero[0]; zeroCol = newZero[1];
-
-        self[from.zeroRow][from.zeroCol] = self[zeroRow][zeroCol];
-        self[zeroRow][zeroCol] = 0;
+        zero = d.move(from.zero);
+        
+        self[from.zero.row()][from.zero.column()] = self[zero.row()][zero.column()];
+        self[zero.row()][zero.column()] = 0;
     }
 
     /**
@@ -488,50 +481,25 @@ public class Grid implements Comparable<Grid> {
 
         return g;
     }
-
     
-    /**
-     * Finds the coordinates of a number in {@code self}.
-     * 
-     * The method offers no protection against the absence of {@code toFind} and returns
-     * an empty array if it wasn't found.
-     * 
-     * {@see safeFindCoordinates}
-     * 
-     * @param toFind the int to find in {@code self}
-     * @return an array with a length of 2 containing the coordinates of {@code toFind}
-     * if it was found; an empty array otherwise.
-     */
-    private int[] unsafeFindCoordinates(int toFind) {
-        for (int row = 0; row < self.length; row++)
-            for (int col = 0; col < self[0].length; col++)
-                if (self[row][col] == toFind)
-                    return new int[]{row, col};
-
-        System.out.println(toFind + " not found");
-        return new int[]{};
-    }
 
     /**
-     * Finds the coordinates of a number in {@code self}.
+     * Finds the coordinates of a number in {@link #self}.
      * 
-     * @param toFind the int to find in {@code self}
-     * @param throwError whether an Exception should be thrown if {@code toFind} wasn't found
-     * @return {@code Optional} of an array of int containing the coordinates of {@code toFind}
-     * if it was found; empty {@code Optional} otherwise
-     * @throws IllegalArgumentException if {@code toFind} wasn't found 
-     * and {@code throwError} is {@code true}
+     * @param toFind the number to find.
+     * @return {@link Optional} of {@link Coordinates} of the number if it was found;
+     * {@link Optional#empty()} otherwise.
      */
-    private Optional<int[]> safeFindCoordinates(int toFind, boolean throwError) throws IllegalArgumentException {
-        for (int row = 0; row < self.length; row++)
-            for (int col = 0; col < self[0].length; col++)
-                if (self[row][col] == toFind)
-                    return Optional.of(new int[]{row, col});
-        
-        if(throwError) {
-            throw new IllegalArgumentException(toFind + " not found");
+    private Optional<Coordinates> findCoordinates(int toFind) {
+        for (int row = 0; row < self.length; row++) {
+            for (int col = 0; col < self[0].length; col++) {
+                if(self[row][col] == toFind) {
+                    return Optional.of(new Coordinates(row, col));
+                }
+            }
         }
-        else return Optional.empty();
+        
+        return Optional.empty();
     }
 
     /**
@@ -743,7 +711,7 @@ public class Grid implements Comparable<Grid> {
     /**
      * The method called to compute the distance between this object and another {@link Grid}.
      * <p>
-     * WARNING: no validation is done to ensure NPE and other errors won't happen.
+     * WARNING: no validation is done to ensure NPE and other exceptions won't happen.
      * 
      * @param g {@code Grid} target
      * @param d Which {@link Distance} to use
@@ -759,8 +727,8 @@ public class Grid implements Comparable<Grid> {
       A brief note on all the lazy distance calculations from the parent grid:
       the tile that was moved is now (in this grid) where the blank tile was
       in the parent grid.
-      I.e its coordinates in this grid are (parent.zeroRow, parent.zeroCol),
-      and its coordinates in the parent grid are (this.zeroRow, this.zeroCol).
+      I.e its coordinates in this grid are (parent.zero.row(), parent.zero.column()),
+      and its coordinates in the parent grid are (this.zero.row(), this.zero.column()).
       
       We also do not need to check whether it is the blank tile, as it can not
       be the blank tile.
@@ -776,11 +744,11 @@ public class Grid implements Comparable<Grid> {
      * <p>
      * If the parent grid posseses a value for the manhattan distance,
      * then we simply get said value which is decreased by the manhattan distance
-     * of the tile (with its coordinates in the parent grid aka {@link #zeroRow}, 
-     * {@link #zeroCol}) that was exchanged with the blank tile; then we add the 
-     * manhattan distance of the same tile but with its current coordinates (the 
-     * parent's {@link #zeroRow}, {@link #zeroCol}), unless it is now correctly placed, 
-     * in which case the decreased parent's distance is directly returned.
+     * of the tile (with its coordinates in the parent grid (i.e {@link #zero}) that was 
+     * exchanged with the blank tile; then we add the manhattan distance of the same tile 
+     * but with its current coordinates (the parent's {@link #zero}), unless it is 
+     * now correctly placed, in which case the decreased parent's distance is 
+     * directly returned.
      * <p>
      * No checking is done to ensure the distance for this grid and its parent
      * are computed against the same target grid.
@@ -790,20 +758,20 @@ public class Grid implements Comparable<Grid> {
      */
     private float manhattan(Grid g) {
         float ret = 0f;
-        int[] tmp;
+        Coordinates tmp;
         
         if(parent.distanceMap.get(Distance.MANHATTAN) != null) {
             ret = parent.distanceMap.get(Distance.MANHATTAN);
             
             // removes the manhattan distance of the moved tile
-            tmp = g.unsafeFindCoordinates(parent.self[zeroRow][zeroCol]);
-            ret -= (Math.abs(tmp[0] - zeroRow) + Math.abs(tmp[1] - zeroCol));
+            tmp = g.findCoordinates(parent.self[zero.row()][zero.column()]).orElseThrow();
+            ret -= (Math.abs(tmp.row() - zero.row()) + Math.abs(tmp.column() - zero.column()));
             
             // if it is still not correctly placed
-            if(self[parent.zeroRow][parent.zeroCol] != g.self[parent.zeroRow][parent.zeroCol]) {
+            if(self[parent.zero.row()][parent.zero.column()] != g.self[parent.zero.row()][parent.zero.column()]) {
                 // computes its new distance
-                tmp = g.unsafeFindCoordinates(self[parent.zeroRow][parent.zeroCol]);
-                ret += (Math.abs(tmp[0] - parent.zeroRow) + Math.abs(tmp[1] - parent.zeroCol));
+                tmp = g.findCoordinates(self[parent.zero.row()][parent.zero.column()]).orElseThrow();
+                ret += (Math.abs(tmp.row() - parent.zero.row()) + Math.abs(tmp.column() - parent.zero.column()));
             }
             return ret;
         }
@@ -811,8 +779,8 @@ public class Grid implements Comparable<Grid> {
         for(int row = 0; row < self.length; row++) {
             for(int col = 0; col < self[0].length; col++) {
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0) {
-                    tmp = g.unsafeFindCoordinates(self[row][col]);
-                    ret += (Math.abs(tmp[0] - row) + Math.abs(tmp[1] - col));
+                    tmp = g.findCoordinates(self[row][col]).orElseThrow();
+                    ret += (Math.abs(tmp.row() - row) + Math.abs(tmp.column() - col));
                 }
             }
         }
@@ -847,11 +815,11 @@ public class Grid implements Comparable<Grid> {
             ret = parent.distanceMap.get(Distance.HAMMING);
             
             // if the tile that was moved into the blank space is now correctly placed
-            if(self[parent.zeroRow][parent.zeroCol] == g.self[parent.zeroRow][parent.zeroCol]) {
+            if(self[parent.zero.row()][parent.zero.column()] == g.self[parent.zero.row()][parent.zero.column()]) {
                 return ret - 1;
             }
             // if it was correctly placed but moved out of it
-            else if(parent.self[zeroRow][zeroCol] == g.self[zeroRow][zeroCol]) {
+            else if(parent.self[zero.row()][zero.column()] == g.self[zero.row()][zero.column()]) {
                 return ret + 1;
             }
             // if it wasn't correctly placed and still isn't
@@ -885,23 +853,23 @@ public class Grid implements Comparable<Grid> {
      */
     private float euclidean(Grid g) {
         float ret = 0f;
-        int[] tmp;
+        Coordinates tmp;
         
         if(parent.distanceMap.get(Distance.EUCLIDEAN) != null) {
             ret = parent.distanceMap.get(Distance.EUCLIDEAN);
 
             // removes the euclidean distance of the moved tile
-            tmp = g.unsafeFindCoordinates(parent.self[zeroRow][zeroCol]);
-            ret -= (Math.abs(tmp[0] - zeroRow) + Math.abs(tmp[1] - zeroCol));
+            tmp = g.findCoordinates(parent.self[zero.row()][zero.column()]).orElseThrow();
+            ret -= (Math.abs(tmp.row() - zero.row()) + Math.abs(tmp.column() - zero.column()));
 
             // if it is still not correctly placed
-            if(self[parent.zeroRow][parent.zeroCol] != g.self[parent.zeroRow][parent.zeroCol]) {
+            if(self[parent.zero.row()][parent.zero.column()] != g.self[parent.zero.row()][parent.zero.column()]) {
                 // computes its new distance
-                tmp = g.unsafeFindCoordinates(self[parent.zeroRow][parent.zeroCol]);
+                tmp = g.findCoordinates(self[parent.zero.row()][parent.zero.column()]).orElseThrow();
                 ret += Math.floor(
                     Math.sqrt(
-                        Math.pow(Math.abs(tmp[0] - parent.zeroRow), 2) +
-                        Math.pow(Math.abs(tmp[1] - parent.zeroCol), 2)
+                        Math.pow(Math.abs(tmp.row() - parent.zero.row()), 2) +
+                        Math.pow(Math.abs(tmp.column() - parent.zero.column()), 2)
                     )
                 );
             }
@@ -911,11 +879,11 @@ public class Grid implements Comparable<Grid> {
         for(int row = 0; row < self.length; row++) {
             for(int col = 0; col < self[0].length; col++) {
                 if(self[row][col] != g.self[row][col] && self[row][col] != 0) {
-                    tmp = g.unsafeFindCoordinates(self[row][col]);
+                    tmp = g.findCoordinates(self[row][col]).orElseThrow();
                     ret += Math.floor(
                         Math.sqrt(
-                            Math.pow(Math.abs(tmp[0] - row), 2) +
-                            Math.pow(Math.abs(tmp[1] - col), 2)
+                            Math.pow(Math.abs(tmp.row() - row), 2) +
+                            Math.pow(Math.abs(tmp.column() - col), 2)
                         )
                     );
                 }
@@ -1040,7 +1008,7 @@ public class Grid implements Comparable<Grid> {
                 for(int row = 0; row < self.length; row++) {
                     for(int col = 0; col < self[0].length; col++) {
                         // we only check columns
-                        if(col == zeroCol || col == parent.zeroCol) {
+                        if(col == zero.column() || col == parent.zero.column()) {
                             var t = g.unsafeFindCoordinates(self[row][col]);
                             goalCoords[row][col] = new Coordinates(t[0], t[1]);
                         }
@@ -1051,7 +1019,7 @@ public class Grid implements Comparable<Grid> {
                 // by conflicts and coordinates objects + it uses for(var x : y) loops.
             }
             else {
-                // and here do the same but we only check if (row = zeroRow || row = parent.zeroRow)
+                // and here do the same but we only check if (row = zero.row() || row = parent.zero.row())
             }
             
             return ret;
@@ -1060,8 +1028,8 @@ public class Grid implements Comparable<Grid> {
         
         for(int row = 0; row < self.length; row++) {
             for(int col = 0; col < self[0].length; col++) {
-                var t = g.unsafeFindCoordinates(self[row][col]);
-                goalCoords[row][col] = new Coordinates(t[0], t[1]);
+                var t = g.findCoordinates(self[row][col]).orElseThrow();
+                goalCoords[row][col] = new Coordinates(t.row(), t.column());
             }
         }
         

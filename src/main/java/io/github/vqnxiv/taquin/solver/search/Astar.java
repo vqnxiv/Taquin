@@ -25,7 +25,7 @@ public class Astar extends Search {
             useMerge = new SimpleBooleanProperty(this, "use merge", false);
             
             if(heuristic.get() == Grid.Distance.NONE)
-                heuristic.set(Grid.Distance.MANHATTAN);
+                heuristic.set(Grid.Distance.LINEAR_MANHATTAN);
         }
         
 

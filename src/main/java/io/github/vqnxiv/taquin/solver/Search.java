@@ -105,7 +105,7 @@ public abstract class Search {
         private final EnumMap<SearchProperty, AtomicReference<String>> atomicReferences;
 
         {
-            atomicReferences = new EnumMap<SearchProperty, AtomicReference<String>>(SearchProperty.class);
+            atomicReferences = new EnumMap<>(SearchProperty.class);
             
             for(var k : properties.keySet()) {
                 atomicReferences.put(k, new AtomicReference<>());
@@ -581,7 +581,7 @@ public abstract class Search {
 
     @Override
     public int hashCode() {
-        return (id ^ (id >>> 32));
+        return id ^ (id >>> 32);
     }
 
     @Override
