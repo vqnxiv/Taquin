@@ -57,8 +57,8 @@ public class SearchSpace {
          * Constructor.
          */
         public Builder() {
-            start = new SimpleObjectProperty<>(this, "start", Grid.of(new int[1][1]).get());
-            end = new SimpleObjectProperty<>(this, "end", Grid.of(new int[1][1]).get());
+            start = new SimpleObjectProperty<>(this, "start", Grid.invalidOfSize(3, 3));
+            end = new SimpleObjectProperty<>(this, "end", Grid.invalidOfSize(3, 3));
         }
 
         /**

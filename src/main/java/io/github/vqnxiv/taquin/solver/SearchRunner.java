@@ -18,6 +18,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
+/**
+ * Class which manages searches.
+ * 
+ * @see Search
+ * @see io.github.vqnxiv.taquin.controller.BuilderController
+ */
 public class SearchRunner {
 
     /**
@@ -25,15 +31,35 @@ public class SearchRunner {
      */
     private static final Logger LOGGER = LogManager.getLogger(SearchRunner.class);
 
+    /**
+     * The number of concurrent searches allowed.
+     */
     private static final int MAXIMUM_CONCURRENT_SEARCHES = 1;
-    
+
+    /**
+     * {@link ExecutorService} which executes the {@link Search} async.
+     */
     private final ExecutorService executorService;
+
+    /**
+     * Last search that was running.
+     */
     private Search lastRunningSearch;
-    
-    private final StringProperty lastSearchInfo;    
+
+    /**
+     * String property which can be bound to and contains the name and state of {@link #lastRunningSearch}.
+     */
+    private final StringProperty lastSearchInfo;
+
+    /**
+     * List which contains all created searches.
+     */
     private final List<Search> searches;
-    
-    
+
+
+    /**
+     * Constructor.
+     */
     public SearchRunner() {
         LOGGER.debug("Creating search runner");
 
@@ -45,33 +71,41 @@ public class SearchRunner {
         
         searches = new ArrayList<>();
     }
-    
-    
+
+
+    /**
+     * Read only getter for {@link #lastSearchInfo}.
+     * 
+     * @return {@link ReadOnlyStringProperty} of {@link #lastSearchInfo}.
+     */
     public ReadOnlyStringProperty lastSearchInfo() {
         return lastSearchInfo;
     }
 
-    
-    public void shutdown(boolean stopSearch) {
-        if(lastRunningSearch != null && lastRunningSearch.getState() == Search.SearchState.RUNNING) {
-            if(stopSearch) {
-                stopSearch(lastRunningSearch);
-            } else {
-                pauseSearch(lastRunningSearch);
-            }
-        }
-        
-        LOGGER.info("Shutting down search runner");
-        executorService.shutdown();
-    }
-    
-    
+
+    /**
+     * Deletes a search from {@link #searches}.
+     * 
+     * @param s The search to remove.
+     * @return {@code true} if the search was successfully deleted; {@code false} otherwise.
+     */
     public boolean deleteSearch(Search s) {
         LOGGER.info("Deleting search: {}", s.getName());
 
         return searches.remove(s);
     }
-    
+
+    /**
+     * Creates a {@link Search} and a {@link SearchSpace} instances from the given
+     * {@link io.github.vqnxiv.taquin.solver.Search.Builder} and 
+     * {@link io.github.vqnxiv.taquin.model.SearchSpace.Builder}.
+     * 
+     * @param searchBuilder The builder to build a search from.
+     * @param spaceBuilder The builder to build a searchspace from.
+     * @param queuedBuilder {@link io.github.vqnxiv.taquin.model.CollectionWrapper.Builder} for {@code spaceBuilder}.
+     * @param exploredBuilder {@link io.github.vqnxiv.taquin.model.CollectionWrapper.Builder} for {@code spaceBuilder}.
+     * @return
+     */
     public Optional<Search> createSearchAndSpace(
         Search.Builder<?> searchBuilder, SearchSpace.Builder spaceBuilder,
         CollectionWrapper.Builder queuedBuilder, CollectionWrapper.Builder exploredBuilder
@@ -111,7 +145,12 @@ public class SearchRunner {
         searches.add(s);
         return Optional.of(s);
     }
-    
+
+    /**
+     * Pauses the given {@link Search} if it is running.
+     * 
+     * @param s The search to pause.
+     */
     public void pauseSearch(Search s) {
         LOGGER.info("Pausing search: {}", s.getName());
         
@@ -122,7 +161,12 @@ public class SearchRunner {
 
         s.pause();
     }
-    
+
+    /**
+     * Stops the given {@link Search} regardless of its state.
+     * 
+     * @param s The search to stop.
+     */
     public void stopSearch(Search s) {
         LOGGER.info("Stopping search: {}", s.getName());
 
@@ -133,9 +177,18 @@ public class SearchRunner {
         
         s.stop();
     }
-    
-    
-    // todo: accessible throttle + iterations from builder controller
+
+    /**
+     * Runs a {@link Search} by creating calling {@link Search#newSearchTask(int, int, boolean, boolean)}
+     * and submitting its returned {@link io.github.vqnxiv.taquin.solver.Search.SearchTask} (if present)
+     * to {@link #executorService}.
+     * 
+     * @param s The {@link Search} to create a {@link io.github.vqnxiv.taquin.solver.Search.SearchTask} for.
+     * @param iter The number of iterations for the task.
+     * @param throttle Throttle delay for the task.
+     * @param log Whether to log the task.
+     * @param mem Whether to update memory usage on every iteration.
+     */
     public void runSearch(Search s, int iter, int throttle, boolean log, boolean mem) {
         LOGGER.info("Attempting to run search: {}", s.getName());
         
@@ -160,5 +213,25 @@ public class SearchRunner {
             }
         );
     }
-    
+
+
+
+    /**
+     * Shutdowns this executor.
+     *
+     * @param stopSearch whether to call {@link Search#pause()} or {@link Search#stop()} 
+     * on any running {@link Search}.
+     */
+    public void shutdown(boolean stopSearch) {
+        if(lastRunningSearch != null && lastRunningSearch.getState() == Search.SearchState.RUNNING) {
+            if(stopSearch) {
+                stopSearch(lastRunningSearch);
+            } else {
+                pauseSearch(lastRunningSearch);
+            }
+        }
+
+        LOGGER.info("Shutting down search runner");
+        executorService.shutdown();
+    }
 }

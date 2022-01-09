@@ -129,7 +129,6 @@ public class BuilderController {
         
         var m = getNamedMap();
         
-        // todo: add search cb
         final String[] firstRow = { "name", "explored class", "queued class", "search", "heuristic" };
         final String[] secondRow = { "start", "end", "run", "pause", "stop", "steps", "steps number", "current" };
 
@@ -164,9 +163,6 @@ public class BuilderController {
     }
     
     private Control handleSpecial(String s) {
-        // todo: find a way to get the steps numbers
-        // todo: add ui validation/update as well
-        // String[] str = new String[]{ "run", "pause", "stop", "steps", "steps number" };
         return switch(s.toLowerCase()) {
             case "search" -> {
                 var cb = createClassChoiceBox(new SimpleObjectProperty<>(searchBuilder.getClass().getDeclaringClass()));
@@ -210,7 +206,6 @@ public class BuilderController {
         LOGGER.trace("Creating button for " + s);
         Button btn = new Button(s);
         btn.setOnAction(v);
-        // todo
         if(notLockedDisabled) {
             btn.disableProperty().bind(lockLevel.isNotEqualTo(Lock.MODIFICATION_LOCKED));
         }
@@ -522,14 +517,6 @@ public class BuilderController {
             p.bind(endViewer.gridProperty());
             endViewer.editableProperty().bind(lockLevel.isEqualTo(Lock.NOT_LOCKED));
         }
-        
-        /*
-        var g = new GridViewer(p.getName(), false);
-        p.bindBidirectional(g.gridProperty());
-        
-        b.setOnAction(event -> g.show());
-        g.readOnlyProperty().bind(lockLevel.isNotEqualTo(Lock.NOT_LOCKED));
-        */
         return b;
     }
 }

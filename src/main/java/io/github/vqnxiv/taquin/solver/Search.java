@@ -37,16 +37,21 @@ public abstract class Search {
      * @param <B> Subclass extending this one.
      */
     public abstract static class Builder<B extends Builder<B>> implements IBuilder {
-        
-        // todo integerProperties for limits? then put back into a map when creating
-        private final EnumMap<SearchLimit, Long> limits;
 
+        protected final StringProperty name;
         protected final ObjectProperty<Grid.Distance> heuristic;
+        
         protected final ObjectProperty<Grid.EqualPolicy> equalPolicy;
         protected final BooleanProperty filterExplored;
         protected final BooleanProperty filterQueued;
         protected final BooleanProperty linkExisting;
-        protected final StringProperty name;
+        
+        protected final IntegerProperty maxTime;
+        protected final IntegerProperty maxDepth;
+        protected final IntegerProperty maxGenerated;
+        protected final IntegerProperty maxExplored;
+        protected final IntegerProperty maxMemory;
+        
         
         protected final BooleanProperty monitorMemory;
         protected final BooleanProperty log;
@@ -56,9 +61,6 @@ public abstract class Search {
          * Base no args constructor.
          */
         protected Builder() {
-            limits = new EnumMap<>(SearchLimit.class);
-            for (var l : SearchLimit.values()) limits.put(l, 0L);
-
             equalPolicy = new SimpleObjectProperty<>(this, "equal policy", Grid.EqualPolicy.NONE);
             heuristic = new SimpleObjectProperty<>(this, "heuristic", Grid.Distance.NONE);
             filterExplored = new SimpleBooleanProperty(this, "filter explored", true);
@@ -68,6 +70,11 @@ public abstract class Search {
             monitorMemory = new SimpleBooleanProperty(this, "monitor memory", false);
             log = new SimpleBooleanProperty(this, "log search", true);
             throttle = new SimpleIntegerProperty(this, "throttle", 0);
+            maxExplored = new SimpleIntegerProperty(this, "Maximum explored", 0);
+            maxTime = new SimpleIntegerProperty(this, "Maximum time", 0);
+            maxDepth = new SimpleIntegerProperty(this, "Maximum depth", 0);
+            maxGenerated = new SimpleIntegerProperty(this, "Maximum generated", 0);
+            maxMemory = new SimpleIntegerProperty(this, "Maximum memory", 0);
         }
 
         /**
@@ -76,7 +83,6 @@ public abstract class Search {
          * @param toCopy The builder to copy.
          */
         protected Builder(Builder<?> toCopy) {
-            limits = toCopy.limits;
             heuristic = toCopy.heuristic;
             equalPolicy = toCopy.equalPolicy;
             filterExplored = toCopy.filterExplored;
@@ -86,6 +92,11 @@ public abstract class Search {
             monitorMemory = toCopy.monitorMemory;
             log = toCopy.log;
             throttle = toCopy.throttle;
+            maxExplored = toCopy.maxExplored;
+            maxTime = toCopy.maxTime;
+            maxDepth = toCopy.maxDepth;
+            maxGenerated = toCopy.maxGenerated;
+            maxMemory = toCopy.maxMemory;
         }
 
         /**
@@ -109,7 +120,6 @@ public abstract class Search {
          * <li>{@link #filterExplored}, {@link #filterQueued}, {@link #linkExisting},
          * {@link #equalPolicy}
          * </li>
-         * <li> {@link #checkForQueuedEnd} </li>
          * <li> {@link #monitorMemory} </li>
          * </ul>
          */
@@ -117,7 +127,7 @@ public abstract class Search {
         public EnumMap<Category, List<Property<?>>> getBatchProperties() {
             return new EnumMap<>(Map.of(
                 IBuilder.Category.SEARCH_MAIN, List.of(filterExplored, filterQueued, linkExisting, equalPolicy),
-                // IBuilder.Category.LIMITS, List.of(checkForQueuedEnd),
+                IBuilder.Category.LIMITS, List.of(maxTime, maxDepth, maxExplored, maxGenerated, maxMemory),
                 IBuilder.Category.MISCELLANEOUS, List.of(monitorMemory, log, throttle)
             ));
         }
@@ -162,7 +172,8 @@ public abstract class Search {
      * 
      * @param <S> {@link SearchState}
      */
-    public class SearchTask<S> extends Task<S> {
+    
+    class SearchTask<S> extends Task<S> {
 
         /**
          * {@link Map} of {@link AtomicReference} which are used to throttle updates
@@ -274,7 +285,7 @@ public abstract class Search {
          * <p>
          * For {@link #iterations} (or indefinitely if it is {@code 0}),
          * this method calls {@link #step()}, {@link #updateAll()} and {@link #throttle()}
-         * as long as {@link #checkConditions()} returns {@link true}. 
+         * as long as {@link #checkConditions()} returns {@code true}. 
          * Calls {@link #checkIfEndWasQueued()} before returning {@link #currentSearchState}.
          * 
          * @return The {@link Search}'s {@link SearchState} in {@link #currentSearchState}.
@@ -385,7 +396,7 @@ public abstract class Search {
         /**
          * Method which checks if a limit has been reached by calling {@link #function}
          * and comparing its value against the corresponding {@link Search#limitsMap}
-         * value.
+         * value (not null safe).
          * 
          * @param s The {@link Search} to check.
          * @return {@code true} if this limit has been reached, {@code false} otherwise.
@@ -700,8 +711,22 @@ public abstract class Search {
         heuristic = builder.heuristic.get();
         equalPolicy = builder.equalPolicy.get();
         
-        builder.limits.entrySet().removeIf(e -> e.getValue() == 0);
-        limitsMap = builder.limits;
+        limitsMap = new EnumMap<>(SearchLimit.class);
+        if(builder.maxMemory.get() != 0) {
+            limitsMap.put(SearchLimit.MAXIMUM_MEMORY, (long) builder.maxMemory.get());
+        }
+        if(builder.maxTime.get() != 0) {
+            limitsMap.put(SearchLimit.MAXIMUM_TIME, (long) builder.maxTime.get());
+        }
+        if(builder.maxDepth.get() != 0) {
+            limitsMap.put(SearchLimit.MAXIMUM_DEPTH, (long) builder.maxDepth.get());
+        }
+        if(builder.maxExplored.get() != 0) {
+            limitsMap.put(SearchLimit.MAXIMUM_MEMORY, (long) builder.maxExplored.get());
+        }
+        if(builder.maxGenerated.get() != 0) {
+            limitsMap.put(SearchLimit.MAXIMUM_MEMORY, (long) builder.maxGenerated.get());
+        }
         
         filterExplored = builder.filterExplored.get();
         filterQueued = builder.filterQueued.get();
@@ -844,19 +869,19 @@ public abstract class Search {
      * 
      * @return {@code true} if the search may continue; {@code false} otherwise.
      */
-    private boolean checkConditions(){
+    private boolean checkConditions() {
         log("Checking conditions");
 
         if(currentSearchState == SearchState.PAUSED || currentSearchState == SearchState.ENDED_FAILURE_USER_FORCED) {
             return false;
         }
 
-        if(searchSpace.isCurrentGoal()){
+        if(searchSpace.isCurrentGoal()) {
             currentSearchState = SearchState.ENDED_SUCCESS;
             return false;
         }
 
-        if(searchSpace.getQueued().isEmpty()){
+        if(searchSpace.getQueued().isEmpty()) {
             currentSearchState = SearchState.ENDED_FAILURE_EMPTY_SPACE;
             return false;
         }
@@ -925,8 +950,8 @@ public abstract class Search {
      * @param log Whether to log the task.
      * @param memory Whether to update the memory usage through the task, and not just when it ends.
      * @return {@link Optional#of(Object)} the created {@link SearchTask} if {@link #currentSearchState}
-     * is either {@link SearchState#READY} or {@link SearchState#PAUSED}, or if {@link #searchSpace}
-     * has not been injected yet.
+     * is either {@link SearchState#READY} or {@link SearchState#PAUSED}, and if {@link #searchSpace}
+     * has been injected. Otherwise, {@link Optional{empty()}.
      */
     public Optional<SearchTask<SearchState>> newSearchTask(
         int iterations, int throttle, boolean log, boolean memory
