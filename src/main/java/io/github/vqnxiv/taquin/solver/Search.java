@@ -951,7 +951,7 @@ public abstract class Search {
      * @param memory Whether to update the memory usage through the task, and not just when it ends.
      * @return {@link Optional#of(Object)} the created {@link SearchTask} if {@link #currentSearchState}
      * is either {@link SearchState#READY} or {@link SearchState#PAUSED}, and if {@link #searchSpace}
-     * has been injected. Otherwise, {@link Optional{empty()}.
+     * has been injected. Otherwise, {@link Optional#empty()}.
      */
     public Optional<SearchTask<SearchState>> newSearchTask(
         int iterations, int throttle, boolean log, boolean memory
