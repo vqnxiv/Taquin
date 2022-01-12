@@ -12,6 +12,8 @@ import org.apache.logging.log4j.core.config.Property;
 
 import java.io.Serializable;
 import java.util.ArrayDeque;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -50,11 +52,19 @@ public abstract class AbstractFxAppender extends AbstractAppender {
     private final AtomicBoolean throttle;
 
     /**
-     * {@link Queue} buffer to store the events until the JFX thread could add them 
-     * to their output {@link TextArea}.
+     * {@link Queue} buffer to store the events until they could be buffed into {@link #textBuffers}.
      */
     private final Queue<Pair> eventBuffer;
 
+    /**
+     * Buffers the actual event messages with {@link StringBuilder}s so several messages
+     * can be added at once.
+     * <p>
+     * Internally implemented with a {@link LinkedHashMap} so that events that came first
+     * are added first to the UI.
+     */
+    private final Map<TextArea, StringBuffer> textBuffers;
+    
     
     /**
      * Constructor.
@@ -73,6 +83,8 @@ public abstract class AbstractFxAppender extends AbstractAppender {
         
         throttle = new AtomicBoolean(true);
         eventBuffer = new ArrayDeque<>();
+        
+        textBuffers = new LinkedHashMap<>();
     }
 
     /**
@@ -107,7 +119,10 @@ public abstract class AbstractFxAppender extends AbstractAppender {
             String s = new String(getLayout().toByteArray(event));
             
             if(s.isBlank()) {
-                eventBuffer.add(new Pair(event.getMessage().getFormattedMessage() + '\n', output));
+                // formats the timestamp number
+                var strTab = event.getMessage().getFormattedMessage().split("\t", 2);
+                var str = String.format("%10d", Long.parseLong(strTab[0])) + strTab[1] + '\n';                
+                eventBuffer.add(new Pair( str, output));
             }
             else {
                 eventBuffer.add(new Pair(s, output));
@@ -119,38 +134,64 @@ public abstract class AbstractFxAppender extends AbstractAppender {
 
     /**
      * Callback method to notify this appender the GUI is done displaying
-     * the event sent through {@link #addFirstToGui()} and {@link Platform#runLater(Runnable)},
+     * the event sent through {@link #addFirstBufferToGui()} and {@link Platform#runLater(Runnable)},
      * and it can attempt to queue the next event, if {@link #eventBuffer} is not empty.
      */
-    private void notifyForNext() {
+    public void notifyForNext() {
         tryProcessEvent();
     }
 
     /**
-     * Attempts to process the next event in {@link #eventBuffer}. 
+     * Attempts to process the next event in {@link #eventBuffer} or text in {@link #textBuffers},
+     * depending on {@link #throttle}.
+     * <p>
      * Queues a GUI update through {@link Platform#runLater(Runnable)} if 
-     * {@link #eventBuffer} is not empty and {@link #throttle} is {@code true}.
+     * {@link #textBuffers} is not empty and {@link #throttle} is {@code true}.
+     * <p>
+     * Otherwise, buffers the next event message by calling {@link #bufferNextPair()}
+     * if {@link #eventBuffer} is not empty.
      */
     private void tryProcessEvent() {
-        if(eventBuffer.isEmpty()) {
-            return;
+        if(!textBuffers.isEmpty() && throttle.getAndSet(false)) {
+           addFirstBufferToGui();
         }
-
-        if(throttle.getAndSet(false)) {
-            Platform.runLater(this::addFirstToGui);
+        else if(!eventBuffer.isEmpty()) {
+            bufferNextPair();
         }
     }
 
     /**
-     * Updates the content of a {@link Pair#output} with {@link Pair#text}. 
-     * The {@link Pair} is the one which is retrieved from calling {@link Queue#poll()}
-     * on {@link #eventBuffer}.
+     * Adds the content of the first entry from {@link #textBuffers} to the UI.
      */
-    private void addFirstToGui() {
+    private void addFirstBufferToGui() {
+        var e = textBuffers.entrySet().iterator().next();
+        textBuffers.remove(e.getKey());
+        var str = e.getValue().toString();
+        
+        Platform.runLater(
+            () -> {
+                e.getKey().appendText(str);
+                e.getKey().setScrollTop(-15);
+                throttle.set(true);
+                this.notifyForNext();
+            }
+        );
+
+    }
+
+    /**
+     * Adds the next {@link Pair} from {@link #eventBuffer} to {@link #textBuffers}. 
+     * Calls {@link #tryProcessEvent()} once it's done adding it to the map.
+     */
+    private void bufferNextPair() {
         var p = eventBuffer.poll();
-        p.output().appendText(p.text());
-        p.output().setScrollTop(-15);
-        throttle.set(true);
-        this.notifyForNext();
+        if(textBuffers.containsKey(p.output)) {
+            textBuffers.get(p.output).append(p.text);
+        }
+        else {
+            textBuffers.put(p.output, new StringBuffer(p.text));
+        }
+
+        tryProcessEvent();
     }
 }

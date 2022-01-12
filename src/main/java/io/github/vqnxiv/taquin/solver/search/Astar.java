@@ -120,7 +120,7 @@ public class Astar extends Search {
         log("Computing heuristics");
         for(Grid g : toAdd) computeHeuristic(g);
         
-        log("Queuing {}" + toAdd.size() + " generated neighbors");
+        log("Queuing " + toAdd.size() + " generated neighbors");
         if(!toAdd.isEmpty()) {
             if(searchSpace.getQueued().usesNaturalOrdering()) {
                 searchSpace.getQueued().addAll(toAdd);

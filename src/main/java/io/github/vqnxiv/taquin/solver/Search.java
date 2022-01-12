@@ -908,8 +908,7 @@ public abstract class Search {
 
         LOGGER.info(
             new MarkerManager.Log4jMarker(Integer.toString(id)),
-            // Long.toString(getElapsedTime()) + '\t' +'\t' + message
-            "{} \t \t {}", getElapsedTime(), message
+            "{}\t   {}", getElapsedTime(), message
         );
     }
 
