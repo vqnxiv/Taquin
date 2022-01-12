@@ -50,11 +50,13 @@ public interface DataStructure<E> extends Collection<E> {
 
     /**
      * Finds the index of a given element in this structure.
+     * <p>
+     * Named that way to avoid clashing with {@link java.util.List#indexOf(Object)}.
      * 
      * @param e The element to find.
      * @return Positive int if the element was found, {@code -1} otherwise.
      */
-    int indexOf(E e);
+    int indexOfElt(E e);
 
     /**
      * Whether this structure accepts duplicate elements in regards to {@code equals}.
@@ -69,20 +71,4 @@ public interface DataStructure<E> extends Collection<E> {
      * @return New {@link DataStructure} with the content of this structure.
      */
     DataStructure<E> deepCopy();
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    default boolean isEmpty() {
-        return size() == 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    default boolean contains(Object o) {
-        return indexOf((E) o) > -1; 
-    }
 }

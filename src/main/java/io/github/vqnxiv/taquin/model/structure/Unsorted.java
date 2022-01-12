@@ -11,7 +11,7 @@ import java.util.Objects;
  * Interface which indicates that this structure does not impose a total ordering on its
  * elements, and as such allows for new elements to be added at specific positions or indexes.
  * <p>
- * This is the opposite of {@link Sorted}; however it is not incompatble with {@link Sortable}
+ * This is the opposite of {@link Sorted}; however it is not incompatible with {@link Sortable}
  * (e.g adding first may change whether this structure is currently sorted but not whether
  * it is sortable).
  * 
