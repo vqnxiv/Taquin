@@ -9,7 +9,7 @@
         </Property>
         
         <Property name="COMPLETE_PATTERN">
-            %d{HH:mm:ss.SSS} [%p] %t - %C: %m%n
+            %d{HH:mm:ss.SSS} [%p] %t - %c: %m%n
         </Property>
         
         <Property name="SEARCH_PATTERN">

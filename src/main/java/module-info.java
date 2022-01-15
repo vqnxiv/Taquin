@@ -6,6 +6,7 @@ module io.github.vqnxiv.taquin {
     requires java.management;
     requires jdk.management;
     requires jdk.unsupported;
+    requires jdk.attach;
     requires org.apache.logging.log4j;
     requires org.apache.logging.log4j.core;
     requires org.openjdk.jol;

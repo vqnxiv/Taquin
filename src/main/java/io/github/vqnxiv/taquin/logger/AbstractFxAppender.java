@@ -60,6 +60,13 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      * Buffers the actual event messages with {@link StringBuilder}s so several messages
      * can be added at once.
      * <p>
+     * Adding this on top of {@link #eventBuffer} allows to greatly reduce the number
+     * of {@link Platform#runLater(Runnable)} calls. E.g in the same conditions as above,
+     * (1500 states, 5 events / step = 7500 total events), we go from 7500 
+     * {@link TextArea#appendText(String)} calls passed to {@link Platform#runLater(Runnable)}
+     * to less than 25 (highest i've seen was 24, most in the 10-20 range) which allows the
+     * 7500 messages to be displayed on the screen almost instantly.
+     * <p>
      * Internally implemented with a {@link LinkedHashMap} so that events that came first
      * are added first to the UI.
      */
@@ -120,9 +127,10 @@ public abstract class AbstractFxAppender extends AbstractAppender {
             
             if(s.isBlank()) {
                 // formats the timestamp number
-                var strTab = event.getMessage().getFormattedMessage().split("\t", 2);
-                var str = String.format("%10d", Long.parseLong(strTab[0])) + strTab[1] + '\n';                
-                eventBuffer.add(new Pair( str, output));
+                //var strTab = event.getMessage().getFormattedMessage().split("\t", 2);
+                //var str = String.format("%10d", Long.parseLong(strTab[0])) + strTab[1] + '\n';                
+                //eventBuffer.add(new Pair(str, output));
+                eventBuffer.add(new Pair(event.getMessage().getFormattedMessage() + '\n', output));
             }
             else {
                 eventBuffer.add(new Pair(s, output));
@@ -159,7 +167,8 @@ public abstract class AbstractFxAppender extends AbstractAppender {
             bufferNextPair();
         }
     }
-
+    
+    
     /**
      * Adds the content of the first entry from {@link #textBuffers} to the UI.
      */
@@ -167,7 +176,6 @@ public abstract class AbstractFxAppender extends AbstractAppender {
         var e = textBuffers.entrySet().iterator().next();
         textBuffers.remove(e.getKey());
         var str = e.getValue().toString();
-        
         Platform.runLater(
             () -> {
                 e.getKey().appendText(str);
@@ -176,7 +184,6 @@ public abstract class AbstractFxAppender extends AbstractAppender {
                 this.notifyForNext();
             }
         );
-
     }
 
     /**

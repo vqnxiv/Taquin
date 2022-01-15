@@ -16,6 +16,7 @@ import org.openjdk.jol.info.GraphLayout;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.ToLongFunction;
 
 
 /**
@@ -356,7 +357,7 @@ public abstract class Search {
          * when storing explored and queued states).
          */
         MAXIMUM_MEMORY
-            (s -> (Long) SearchProperty.EXPLORED_MEMORY.calc(s) + (Long) SearchProperty.QUEUED_MEMORY.calc(s)),
+            (s -> SearchProperty.EXPLORED_MEMORY.calc(s) + SearchProperty.QUEUED_MEMORY.calc(s)),
         /**
          * The maximum depth allowed for this search.
          */
@@ -372,7 +373,7 @@ public abstract class Search {
          * (i.e the number of explored states + the number of queued states).
          */
         MAXIMUM_GENERATED_STATES
-            (s -> (Long) SearchProperty.EXPLORED_SIZE.calc(s) + (Long) SearchProperty.QUEUED_SIZE.calc(s))
+            (s -> SearchProperty.EXPLORED_SIZE.calc(s) + SearchProperty.QUEUED_SIZE.calc(s))
         ;
 
 
@@ -380,7 +381,7 @@ public abstract class Search {
          * Function which calculates the current value of a limit and is called 
          * in {@link #check(Search)}.
          */
-        private final Function<Search, Long> function;
+        private final ToLongFunction<Search> function;
 
 
         /**
@@ -388,7 +389,7 @@ public abstract class Search {
          * 
          * @param func The value for {@link #function}.
          */
-        private SearchLimit(Function<Search, Long> func) {
+        private SearchLimit(ToLongFunction<Search> func) {
             function = func;
         }
 
@@ -402,7 +403,7 @@ public abstract class Search {
          * @return {@code true} if this limit has been reached, {@code false} otherwise.
          */
         private boolean check(Search s) {
-            return function.apply(s) >= s.limitsMap.get(this);
+            return function.applyAsLong(s) >= s.limitsMap.get(this);
         }
 
         /**
@@ -417,30 +418,32 @@ public abstract class Search {
     /**
      * This enum represents the state of a search.
      */
+    // todo: add long field here so that searchProperty can be 
+    //  Funtion<Search, Long> and we don't have to do shit casts
     public enum SearchState {
         /**
          * The search is not ready to be run. Some conditions might not have been filled,
          * e.g the {@link SearchSpace} has not been injected yet.
          */
-        NOT_READY,
+        NOT_READY (0l),
         /**
          * The search can run and has yet to run.
          */
-        READY,
+        READY (1l),
         /**
          * The search is currently running, i.e an instance of {@link SearchTask} is being executed.
          */
-        RUNNING,
+        RUNNING (2l),
         /**
          * The search was running but received the instruction to pause. A new {@link SearchTask}
          * can be created and executed to resume the search where it was left off.
          */
-        PAUSED,
+        PAUSED (3l),
         /**
          * The search ended successfully (meaning the goal state was reached) and can no longer be run. 
          * No additional {@link SearchState} can be created for this instance of {@link Search}.
          */
-        ENDED_SUCCESS { 
+        ENDED_SUCCESS (4l) { 
             @Override 
             public String toString() { 
                 return "successfully ended"; 
@@ -453,7 +456,7 @@ public abstract class Search {
          * or closing down the entire app. No additional {@link SearchState} can be created 
          * for this instance of {@link Search}.
          */
-        ENDED_FAILURE_USER_FORCED { 
+        ENDED_FAILURE_USER_FORCED (5l) { 
             @Override 
             public String toString() { 
                 return "forcefully ended"; 
@@ -469,7 +472,7 @@ public abstract class Search {
          * against a search algorithm which does not filter out explored or queued states. It is on the 
          * algorithm's implementation to take that in consideration.
          */
-        ENDED_FAILURE_EMPTY_SPACE { 
+        ENDED_FAILURE_EMPTY_SPACE (6l) { 
             @Override 
             public String toString() { 
                 return "empty space search";
@@ -479,13 +482,50 @@ public abstract class Search {
          * The search ended because it reached a limit. No additional {@link SearchState} can 
          * be created for this instance of {@link Search}.
          */
-        ENDED_FAILURE_LIMIT { 
+        ENDED_FAILURE_LIMIT (7l) { 
             @Override 
             public String toString() { 
                 return "reached limit"; 
             } 
         };
 
+        
+        /**
+         * Dummy value used for {@link SearchProperty#CURRENT_STATE} 
+         * and {@link #valueOf(long)}.
+         */
+        private final long index;
+        
+        private SearchState(long l) {
+            index = l;
+        }
+
+
+        /**
+         * Getter for {@link #index}.
+         * 
+         * @return This constant's {@link #index}.
+         */
+        private long getIndex() {
+            return index;
+        }
+        
+        /**
+         * Gets a constant from this enum by its {@link #index}.
+         * 
+         * @param l The index to find a constant for.
+         * @return The constant with the specified index.
+         * @throws IllegalArgumentException if no constant is found for the given index.
+         */
+        public static SearchState valueOf(long l) {
+            for(var v : values()) {
+                if(v.index == l) {
+                    return v;
+                }
+            }
+            
+            throw new IllegalArgumentException("No constant for " + l);
+        }
         
         /**
          * {@inheritDoc}
@@ -505,7 +545,7 @@ public abstract class Search {
          * The current {@link SearchState} of the state, i.e {@link #currentSearchState}.
          */
         CURRENT_STATE
-            (x -> x.currentSearchState),
+            (x -> x.currentSearchState.getIndex()),
         /**
          * Total elapsed time while the search is running. See {@link #getElapsedTime()}.
          */
@@ -516,18 +556,19 @@ public abstract class Search {
          * {@link Grid#getKey()}.
          */
         CURRENT_KEY
-            (x -> x.searchSpace.getCurrent().getKey()),
+            (x -> (long) x.searchSpace.getCurrent().getKey()),
         /**
          * The depth of the current grid. See {@link SearchSpace#getCurrent()} and
          * {@link Grid#getDepth()}.
          */
         CURRENT_DEPTH
-            (x -> x.searchSpace.getCurrent().getDepth()),
+            (x -> (long) x.searchSpace.getCurrent().getDepth()),
         /**
          * The number of explored states, i.e the size of {@link SearchSpace#getExplored()}.
          */
         EXPLORED_SIZE
-            (x -> x.searchSpace.getExplored().size()),
+            (x -> (long) x.searchSpace.getExplored().size()),
+            // (x -> Long.valueOf(x.searchSpace.getExplored().size())),
         /**
          * The memory size of {@link SearchSpace#getExplored()}.
          */
@@ -537,7 +578,7 @@ public abstract class Search {
          * The number of queued states, i.e the size of {@link SearchSpace#getQueued()}.
          */
         QUEUED_SIZE
-            (x -> x.searchSpace.getQueued().size()),
+            (x -> (long) x.searchSpace.getQueued().size()),
         /**
          * The memory size of {@link SearchSpace#getQueued()}.
          */
@@ -549,14 +590,14 @@ public abstract class Search {
         /**
          * The function which is used to get the value of a property. 
          */
-        private final Function<Search, ?> function;
+        private final ToLongFunction<Search> function;
 
         /**
          * Constructor.
          * 
          * @param func Value for {@link #function}.
          */
-        private SearchProperty(Function<Search, ?> func) {
+        private SearchProperty(ToLongFunction<Search> func) {
             function = func;
         }
 
@@ -567,8 +608,8 @@ public abstract class Search {
          * @param <T> The return type of the function. Either an int, a long or {@link SearchState}.
          * @return
          */
-        public <T> T calc(Search s) {
-            return (T) function.apply(s);
+        public long calc(Search s) {
+            return function.applyAsLong(s);
         }
 
         /**
@@ -578,7 +619,11 @@ public abstract class Search {
          * @return {@link String} of the result of {@link #function}.
          */
         public String calcToString(Search s) {
-            return function.apply(s).toString();
+            if(this == CURRENT_STATE) {
+                return SearchState.valueOf(function.applyAsLong(s)).toString();
+            }
+            
+            return Long.toString(function.applyAsLong(s));
         }
 
         /**
@@ -722,10 +767,10 @@ public abstract class Search {
             limitsMap.put(SearchLimit.MAXIMUM_DEPTH, (long) builder.maxDepth.get());
         }
         if(builder.maxExplored.get() != 0) {
-            limitsMap.put(SearchLimit.MAXIMUM_MEMORY, (long) builder.maxExplored.get());
+            limitsMap.put(SearchLimit.MAXIMUM_EXPLORED_STATES, (long) builder.maxExplored.get());
         }
         if(builder.maxGenerated.get() != 0) {
-            limitsMap.put(SearchLimit.MAXIMUM_MEMORY, (long) builder.maxGenerated.get());
+            limitsMap.put(SearchLimit.MAXIMUM_GENERATED_STATES, (long) builder.maxGenerated.get());
         }
         
         filterExplored = builder.filterExplored.get();
@@ -754,7 +799,7 @@ public abstract class Search {
         for(var s2 : s) {
             propsMap.put(
                 s2,
-                new SimpleStringProperty(this, s2.toString(), "")
+                new SimpleStringProperty(this, s2.toString(), "0")
             );
         }
 
@@ -892,7 +937,7 @@ public abstract class Search {
                 return false;
             }
         }
-    
+        
         return true;
     }
 
