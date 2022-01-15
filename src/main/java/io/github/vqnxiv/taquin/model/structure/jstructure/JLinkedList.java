@@ -232,6 +232,8 @@ public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if the element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddFirst(E e) {
@@ -241,6 +243,8 @@ public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if the element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddLast(E e) {
@@ -250,6 +254,8 @@ public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if at least one element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddAllFirst(Collection<E> toAdd) {
@@ -258,6 +264,8 @@ public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if at least one element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddAllLast(Collection<E> toAdd) {

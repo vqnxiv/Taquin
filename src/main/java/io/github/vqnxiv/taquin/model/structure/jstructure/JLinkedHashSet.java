@@ -138,42 +138,31 @@ public class JLinkedHashSet<E> extends LinkedHashSet<E>
      */
 
     /**
-     * UNSUPPORTED
+     * {@inheritDoc}
      * <p>
-     * Unfortunately this is unsupported as we would need to abuse reflection
-     * and it might not even be possible in the end as {@code LinkedHashMap.Entry}
-     * is a nested class?
+     * @implSpec Clears the internal linkedhashmap, adds the new element
+     * and then readds all the older elements.
      * 
-     * <pre><code>
-     *   try {
-     *      var mField = (HashSet.class).getDeclaredField("map");
-     *      mField.setAccessible(true);
-     *      {@literal var m = (LinkedHashMap<E, Object>) mField.get(this);}
-     *
-     *      var hField = m.getClass().getDeclaredField("head");
-     *      hField.setAccessible(true);
-     *      {@literal var head = (LinkedHashMap.Entry<E, Object>) hField.get(m);}
-     *
-     *      var tField = m.getClass().getDeclaredField("tail");
-     *      tField.setAccessible(true);
-     *      var tail = tField.get(m);
-     *
-     *   } catch(NoSuchFieldException ex) {
-     *             
-     *   } catch(IllegalAccessException ex) {
-     *             
-     *   }
-     * </code></pre>
-     * 
-     * @throws UnsupportedOperationException Operation not supported.
+     * @return {@code true} if the element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddFirst(E e) {
-        throw new UnsupportedOperationException("Cannot add at the start of a LinkedHashSet");
+        if(e == null) {
+            return false;
+        }
+        
+        var copy = deepCopy();
+        clear();
+        add(e);
+        addAll(copy);
+        
+        return true;
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if the element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddLast(E e) {
@@ -181,17 +170,27 @@ public class JLinkedHashSet<E> extends LinkedHashSet<E>
     }
 
     /**
-     * UNSUPPORTED. See {@link #uAddFirst(Object)}.
+     * {@inheritDoc}
+     * <p>
+     * @implSpec Clears the internal linkedhashmap, adds the new element
+     * and then readds all the older elements.
      * 
-     * @throws UnsupportedOperationException Operation not supported.
+     * @return {@code true} if at least one element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddAllFirst(Collection<E> toAdd) {
-        throw new UnsupportedOperationException("Cannot add at the start of a LinkedHashSet");
+        var copy = deepCopy();
+        clear();
+        addAll(toAdd);
+        addAll(copy);
+
+        return true;
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if at least one element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddAllLast(Collection<E> toAdd) {

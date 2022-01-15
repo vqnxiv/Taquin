@@ -194,7 +194,6 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
      * 
      * @return {@code true} if this list is sorted, {@code false} otherwise.
      */
-    // maybe iterator loop is better? if(e.compareTo(itr.next() >= 0), etc
     @Override
     public boolean isSorted() {
         if(sorted) {
@@ -252,6 +251,8 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if the element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddFirst(E e) {
@@ -262,6 +263,8 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if the element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddLast(E e) {
@@ -270,6 +273,8 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if at least one element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddAllFirst(Collection<E> toAdd) {
@@ -278,6 +283,8 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if at least one element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddAllLast(Collection<E> toAdd) {

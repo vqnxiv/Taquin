@@ -3,8 +3,7 @@ package io.github.vqnxiv.taquin.model.structure.jstructure;
 import io.github.vqnxiv.taquin.model.DataStructure;
 import io.github.vqnxiv.taquin.model.structure.Unsorted;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
+import java.util.*;
 
 
 /**
@@ -135,6 +134,8 @@ public class JArrayDeque<E> extends ArrayDeque<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if the element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddFirst(E e) {
@@ -144,6 +145,8 @@ public class JArrayDeque<E> extends ArrayDeque<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if the element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddLast(E e) {
@@ -153,24 +156,29 @@ public class JArrayDeque<E> extends ArrayDeque<E>
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if at least one element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddAllFirst(Collection<E> toAdd) {
-        for(var e : toAdd) {
+        List<E> l = new ArrayList<>(toAdd);
+        Collections.reverse(l);
+        
+        for(var e : l) {
             addFirst(e);
         }
+        
         return true;
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @return {@code true} if at least one element was successfully added; {@code false} otherwise.
      */
     @Override
     public boolean uAddAllLast(Collection<E> toAdd) {
-        for(var e : toAdd) {
-            addLast(e);
-        }
-        return true;
+        return addAll(toAdd);
     }
     
     
@@ -181,12 +189,21 @@ public class JArrayDeque<E> extends ArrayDeque<E>
      */
 
     /**
-     * {@inheritDoc}
+     * Apparently {@link Queue#equals(Object)} is not defined.
      */
     @Override
     public boolean equals(Object o) {
         if(o instanceof JArrayDeque<?> jad) {
-            return super.equals(jad);
+            var itr1 = iterator();
+            var itr2 = jad.iterator();
+            
+            while(itr1.hasNext() && itr2.hasNext()) {
+                if(!itr1.next().equals(itr2.next())) {
+                    return false;
+                }
+            }
+            
+            return !(itr1.hasNext() || itr2.hasNext());
         }
 
         return false;
