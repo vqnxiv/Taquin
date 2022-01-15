@@ -30,7 +30,7 @@ public interface DataStructure<E> extends Collection<E> {
     E dsPeekFirst();
 
     /**
-     * Retrieves and remove the first element in this structure.
+     * Retrieves and removes the first element in this structure.
      *
      * @return This structure's first element.
      */
@@ -44,7 +44,7 @@ public interface DataStructure<E> extends Collection<E> {
     E dsPeekLast();
 
     /**
-     * Retrieves and remove the last element in this structure.
+     * Retrieves and removes the last element in this structure.
      *
      * @return This structure's last element.
      */

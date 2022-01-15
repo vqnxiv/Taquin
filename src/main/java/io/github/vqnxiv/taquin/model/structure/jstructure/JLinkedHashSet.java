@@ -26,7 +26,7 @@ public class JLinkedHashSet<E> extends LinkedHashSet<E>
     /**
      * Constructor with initial capacity.
      *
-     * @param capacity Useless param.
+     * @param capacity Initial capacity.
      */
     public JLinkedHashSet(int capacity) {
         super(capacity);
