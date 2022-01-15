@@ -15,7 +15,6 @@ import org.openjdk.jol.info.GraphLayout;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.function.ToLongFunction;
 
 
@@ -291,6 +290,7 @@ public abstract class Search {
          * 
          * @return The {@link Search}'s {@link SearchState} in {@link #currentSearchState}.
          */
+        @SuppressWarnings("unchecked")
         @Override
         protected S call() {
             
@@ -318,8 +318,10 @@ public abstract class Search {
                     log(Search.this.getState().toString());
                 }
                 
-                atomicReferences.putIfAbsent(SearchProperty.EXPLORED_MEMORY, new AtomicReference<>());
-                atomicReferences.putIfAbsent(SearchProperty.QUEUED_MEMORY, new AtomicReference<>());
+                // on hold until we can async this or figure out why it's so slow.
+                // for now it just blocks ui thread at the end it seems?
+                // atomicReferences.putIfAbsent(SearchProperty.EXPLORED_MEMORY, new AtomicReference<>());
+                // atomicReferences.putIfAbsent(SearchProperty.QUEUED_MEMORY, new AtomicReference<>());
                 
                 updateAll();
                 
@@ -389,7 +391,7 @@ public abstract class Search {
          * 
          * @param func The value for {@link #function}.
          */
-        private SearchLimit(ToLongFunction<Search> func) {
+        SearchLimit(ToLongFunction<Search> func) {
             function = func;
         }
 
@@ -418,32 +420,30 @@ public abstract class Search {
     /**
      * This enum represents the state of a search.
      */
-    // todo: add long field here so that searchProperty can be 
-    //  Funtion<Search, Long> and we don't have to do shit casts
     public enum SearchState {
         /**
          * The search is not ready to be run. Some conditions might not have been filled,
          * e.g the {@link SearchSpace} has not been injected yet.
          */
-        NOT_READY (0l),
+        NOT_READY (0L),
         /**
          * The search can run and has yet to run.
          */
-        READY (1l),
+        READY (1L),
         /**
          * The search is currently running, i.e an instance of {@link SearchTask} is being executed.
          */
-        RUNNING (2l),
+        RUNNING (2L),
         /**
          * The search was running but received the instruction to pause. A new {@link SearchTask}
          * can be created and executed to resume the search where it was left off.
          */
-        PAUSED (3l),
+        PAUSED (3L),
         /**
          * The search ended successfully (meaning the goal state was reached) and can no longer be run. 
          * No additional {@link SearchState} can be created for this instance of {@link Search}.
          */
-        ENDED_SUCCESS (4l) { 
+        ENDED_SUCCESS (4L) { 
             @Override 
             public String toString() { 
                 return "successfully ended"; 
@@ -456,7 +456,7 @@ public abstract class Search {
          * or closing down the entire app. No additional {@link SearchState} can be created 
          * for this instance of {@link Search}.
          */
-        ENDED_FAILURE_USER_FORCED (5l) { 
+        ENDED_FAILURE_USER_FORCED (5L) { 
             @Override 
             public String toString() { 
                 return "forcefully ended"; 
@@ -472,7 +472,7 @@ public abstract class Search {
          * against a search algorithm which does not filter out explored or queued states. It is on the 
          * algorithm's implementation to take that in consideration.
          */
-        ENDED_FAILURE_EMPTY_SPACE (6l) { 
+        ENDED_FAILURE_EMPTY_SPACE (6L) { 
             @Override 
             public String toString() { 
                 return "empty space search";
@@ -482,7 +482,7 @@ public abstract class Search {
          * The search ended because it reached a limit. No additional {@link SearchState} can 
          * be created for this instance of {@link Search}.
          */
-        ENDED_FAILURE_LIMIT (7l) { 
+        ENDED_FAILURE_LIMIT (7L) { 
             @Override 
             public String toString() { 
                 return "reached limit"; 
@@ -496,7 +496,7 @@ public abstract class Search {
          */
         private final long index;
         
-        private SearchState(long l) {
+        SearchState(long l) {
             index = l;
         }
 
@@ -568,7 +568,6 @@ public abstract class Search {
          */
         EXPLORED_SIZE
             (x -> (long) x.searchSpace.getExplored().size()),
-            // (x -> Long.valueOf(x.searchSpace.getExplored().size())),
         /**
          * The memory size of {@link SearchSpace#getExplored()}.
          */
@@ -597,7 +596,7 @@ public abstract class Search {
          * 
          * @param func Value for {@link #function}.
          */
-        private SearchProperty(ToLongFunction<Search> func) {
+        SearchProperty(ToLongFunction<Search> func) {
             function = func;
         }
 
@@ -605,8 +604,7 @@ public abstract class Search {
          * Method which calls {@link #function} on a {@link Search}.
          * 
          * @param s The {@link Search} to check.
-         * @param <T> The return type of the function. Either an int, a long or {@link SearchState}.
-         * @return
+         * @return long value of {@link #function}.
          */
         public long calc(Search s) {
             return function.applyAsLong(s);
@@ -860,7 +858,7 @@ public abstract class Search {
      * 
      * return {@link #properties}.
      */
-    public EnumMap<SearchProperty, StringProperty> getProperties() {
+    public Map<SearchProperty, StringProperty> getProperties() {
         return properties;
     }
 
