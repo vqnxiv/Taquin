@@ -8,17 +8,11 @@ import io.github.vqnxiv.taquin.model.structure.Unsorted;
 import java.util.*;
 
 
-/**
- * A {@link DataStructure} version of {@link ArrayList}.
- *
- * @param <E> The type of elements.
- */
-public class JArrayList<E extends Comparable<E>> extends ArrayList<E> 
+public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
     implements DataStructure<E>, Sortable<E>, Unsorted<E> {
 
-
     /**
-     * Last used comparator to sort this {@link ArrayList}.
+     * Last used comparator to sort this {@link LinkedList}.
      */
     private transient Comparator<? super E> comparator;
 
@@ -39,36 +33,40 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     private transient boolean ascendingComparator;
 
 
+
     /**
-     * Defaults no args constructor which calls the {@link ArrayList} no args constructor.
+     * Defaults no args constructor which calls the {@link LinkedList} no args constructor.
      */
-    public JArrayList() {
+    public JLinkedList() {
         super();
     }
 
     /**
-     * Constructor with initial capacity.
+     * Constructor with initial capacity. Although {@link LinkedList} does not have
+     * a constructor with initial capacity, this is only here to avoid checking whether
+     * the constructor exists, etc.
      *
-     * @param capacity The initial capacity for the internal {@link ArrayList}.
+     * @param capacity Useless param.
      */
-    public JArrayList(int capacity) {
-        super(capacity);
+    public JLinkedList(int capacity) {
+        super();
     }
 
     /**
      * Constructor with existing content.
      *
-     * @param content {@link Collection} that will be passed to the {@link ArrayList} constructor.
+     * @param content {@link Collection} that will be passed to the {@link LinkedList} constructor.
      */
-    public JArrayList(Collection<E> content) {
+    public JLinkedList(Collection<E> content) {
         super(content);
         sorted = isSorted();
     }
 
 
+
     /**
      * Compares two elements e1 and e2 according to this list's ordering.
-     * 
+     *
      * @param e1 The first element to compare as in {@code e1.compareTo(e2)}.
      * @param e2 The second element to compare as in {@code e1.compareTo(e2)}.
      * @return {@code true} if e1 > e2; {@code false} otherwise.
@@ -76,7 +74,6 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     private boolean compare(E e1, E e2) {
         if(lastSortWasComparator) {
             return (ascendingComparator) ?
-                // <= and >= because == respects both ascending and descending order
                 comparator.compare(e1, e2) <= 0 :
                 comparator.compare(e1, e2) >= 0;
         }
@@ -89,7 +86,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     /*
         DataStructure
      */
-    
+
     /**
      * {@inheritDoc}
      *
@@ -97,11 +94,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
      */
     @Override
     public E dsPeekFirst() {
-        if(isEmpty()) {
-            return null;
-        }
-
-        return get(0);
+        return peekFirst();
     }
 
     /**
@@ -111,13 +104,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
      */
     @Override
     public E dsPollFirst() {
-        if(isEmpty()) {
-            return null;
-        }
-
-        E e = get(0);
-        remove(0);
-        return e;
+        return pollFirst();
     }
 
     /**
@@ -127,11 +114,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
      */
     @Override
     public E dsPeekLast() {
-        if(isEmpty()) {
-            return null;
-        }
-
-        return get(size() - 1);
+        return peekLast();
     }
 
     /**
@@ -141,13 +124,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
      */
     @Override
     public E dsPollLast() {
-        if(isEmpty()) {
-            return null;
-        }
-
-        E e = get(size() - 1);
-        remove(size() - 1);
-        return e;
+        return pollLast();
     }
 
     /**
@@ -160,7 +137,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
         if(e == null) {
             return -1;
         }
-        
+
         return indexOf(e);
     }
 
@@ -177,46 +154,44 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     /**
      * {@inheritDoc}
      *
-     * @return New {@link JArrayList} with the same content as this object.
+     * @return New {@link JLinkedList} with the same content as this object.
      */
     @Override
     public DataStructure<E> deepCopy() {
-        return new JArrayList<>(this);
+        return new JLinkedList<>(this);
     }
 
     
     /*
         Sortable
      */
-    
+
     /**
      * Checks whether this list is sorted and sets {@link #sorted} value accordingly.
-     * 
+     *
      * @return {@code true} if this list is sorted, {@code false} otherwise.
      */
-    // maybe iterator loop is better? if(e.compareTo(itr.next() >= 0), etc
     @Override
     public boolean isSorted() {
         if(sorted) {
             return true;
         }
 
-        var al = new JArrayList<>(this);
+        var ll = new JLinkedList<>(this);
         if(lastSortWasComparator) {
-            al.sort(comparator);
+            ll.sort(comparator);
         }
         else {
-            al.sort(null);
+            ll.sort(null);
         }
 
-        if(equals(al)) {
+        if(equals(ll)) {
             sorted = true;
             return true;
         }
-        
+
         return false;
     }
-
 
     /**
      * Sorts this list by its elements' natural order,
@@ -259,7 +234,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     @Override
     public boolean uAddFirst(E e) {
         add(0, e);
-        
+
         return true;
     }
 
@@ -288,7 +263,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     /**
      * Non null requirement.
      * <p>
-     *     
+     *
      * {@inheritDoc}
      */
     @Override
@@ -298,32 +273,31 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     
     
     /*
-        ArrayList overrides
+        LinkedList overrides
      */
 
     /**
      * Non null requirement.
      * <p>
-     * 
+     *
      * {@inheritDoc}
      */
     @Override
     public boolean add(E e) {
         Objects.requireNonNull(e);
-
-        // we only change sorted if the element is added
-        boolean willBeSorted = sorted;
         
+        boolean willBeSorted = sorted;
+
         if(sorted && !isEmpty()) {
             willBeSorted = compare(dsPeekLast(), e);
 
         }
-        
+
         if(super.add(e)) {
             sorted = willBeSorted;
             return true;
         }
-        
+
         return false;
     }
 
@@ -336,9 +310,9 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     @Override
     public void add(int index, E e) {
         Objects.requireNonNull(e);
-        
+
         boolean willBeSorted = sorted;
-        
+
         if(sorted && !isEmpty()) {
             if(index > 0 && index < size()) {
                 willBeSorted = compare(get(index - 1), e)
@@ -349,7 +323,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
                 willBeSorted = compare(dsPeekLast(), e);
             }
         }
-        
+
         super.add(index, e);
         sorted = willBeSorted;
     }
@@ -365,10 +339,7 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
         try {
             c.removeIf(Objects::isNull);
         } catch(UnsupportedOperationException ignored) {
-            // just ignore the error as unmodifiable collections cant have null anyway?
-            // well, can't from List.of(e1, e2) etc
-            // otherwise reflection with?
-            // c instanceof ImmutableCollections.AbstractImmutableCollection<E>
+            // keep the catch
         }
         return super.addAll(c);
     }
@@ -383,10 +354,10 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     public boolean addAll(int index, Collection<? extends E> c) {
         try {
             c.removeIf(Objects::isNull);
-        } catch(UnsupportedOperationException ignored) { 
+        } catch(UnsupportedOperationException ignored) {
             // keep the catch
         }
-        
+
         return super.addAll(index, c);
     }
 
@@ -415,10 +386,10 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
      */
     @Override
     public boolean equals(Object o) {
-        if(o instanceof JArrayList<?> jal) {
-            return super.equals(jal);
+        if(o instanceof JLinkedList<?> jll) {
+            return super.equals(jll);
         }
-        
+
         return false;
     }
 

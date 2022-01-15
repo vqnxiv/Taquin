@@ -260,7 +260,7 @@ public class CollectionWrapper<E extends Comparable<E>> {
         
         while(!toAdd.isEmpty() && !tmp.isEmpty()) {
             self.add(
-                // if toAdd.peekFirst() < tmp.peekFirst()
+                // if toAdd.dsPeekFirst() < tmp.dsPeekFirst()
                 (toAdd.peek().compareTo(tmp.peekFirst()) > 0) ?
                 tmp.pollFirst() : toAdd.poll()       
             );

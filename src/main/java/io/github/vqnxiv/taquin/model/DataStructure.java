@@ -7,6 +7,9 @@ import java.util.Collection;
 /**
  * Base interface which extends {@link Collection} and is similar to {@link java.util.Deque}.
  * <p>
+ * Method names start with {@code ds*} to avoid clashing with other methods from
+ * {@link Collection} and its subinterfaces.
+ * <p>
  * {@code null} elements are not accepted.
  * 
  * @param <E> The type of elements.
@@ -18,45 +21,42 @@ import java.util.Collection;
  */
 public interface DataStructure<E> extends Collection<E> {
 
-    // https://github.com/openjdk/jdk17/tree/master/src/java.base/share/classes/java/util
     
     /**
      * Retrieves, but does not remove, the first element in this structure.
      * 
      * @return This structure's first element.
      */
-    E peekFirst();
+    E dsPeekFirst();
 
     /**
      * Retrieves and remove the first element in this structure.
      *
      * @return This structure's first element.
      */
-    E pollFirst();
+    E dsPollFirst();
 
     /**
      * Retrieves, but does not remove, the last element in this structure.
      *
      * @return This structure's last element.
      */
-    E peekLast();
+    E dsPeekLast();
 
     /**
      * Retrieves and remove the last element in this structure.
      *
      * @return This structure's last element.
      */
-    E pollLast();
+    E dsPollLast();
 
     /**
      * Finds the index of a given element in this structure.
-     * <p>
-     * Named that way to avoid clashing with {@link java.util.List#indexOf(Object)}.
      * 
      * @param e The element to find.
      * @return Positive int if the element was found, {@code -1} otherwise.
      */
-    int indexOfElt(E e);
+    int dsIndexOf(E e);
 
     /**
      * Whether this structure accepts duplicate elements in regards to {@code equals}.
