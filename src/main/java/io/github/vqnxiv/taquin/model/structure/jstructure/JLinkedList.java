@@ -8,6 +8,11 @@ import io.github.vqnxiv.taquin.model.structure.Unsorted;
 import java.util.*;
 
 
+/**
+ * A {@link DataStructure} version of {@link LinkedList}.
+ *
+ * @param <E> The type of elements.
+ */
 public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
     implements DataStructure<E>, Sortable<E>, Unsorted<E> {
 
@@ -226,33 +231,24 @@ public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
      */
 
     /**
-     * Non null requirement.
-     * <p>
-     *
      * {@inheritDoc}
      */
     @Override
     public boolean uAddFirst(E e) {
-        add(0, e);
-
+        addFirst(e);
         return true;
     }
 
     /**
-     * Non null requirement.
-     * <p>
-     *
      * {@inheritDoc}
      */
     @Override
     public boolean uAddLast(E e) {
-        return add(e);
+        addLast(e);
+        return true;
     }
 
     /**
-     * Non null requirement.
-     * <p>
-     *
      * {@inheritDoc}
      */
     @Override
@@ -261,9 +257,6 @@ public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
     }
 
     /**
-     * Non null requirement.
-     * <p>
-     *
      * {@inheritDoc}
      */
     @Override
@@ -335,6 +328,30 @@ public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
      * {@inheritDoc}
      */
     @Override
+    public void addFirst(E e) {
+        Objects.requireNonNull(e);
+        super.addFirst(e);
+    }
+
+    /**
+     * Non null requirement.
+     * <p>
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public void addLast(E e) {
+        Objects.requireNonNull(e);
+        super.addLast(e);
+    }
+
+    /**
+     * Non null requirement.
+     * <p>
+     *
+     * {@inheritDoc}
+     */
+    @Override
     public boolean addAll(Collection<? extends E> c) {
         try {
             c.removeIf(Objects::isNull);
@@ -359,6 +376,54 @@ public class JLinkedList<E extends Comparable<E>> extends LinkedList<E>
         }
 
         return super.addAll(index, c);
+    }
+    
+    /**
+     * Non null requirement.
+     * <p>
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean offer(E e) {
+        Objects.requireNonNull(e);
+        return super.offer(e);
+    }
+
+    /**
+     * Non null requirement.
+     * <p>
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean offerFirst(E e) {
+        Objects.requireNonNull(e);
+        return super.offerFirst(e);
+    }
+
+    /**
+     * Non null requirement.
+     * <p>
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean offerLast(E e) {
+        Objects.requireNonNull(e);
+        return super.offerLast(e);
+    }
+
+    /**
+     * Non null requirement.
+     * <p>
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public void push(E e) {
+        Objects.requireNonNull(e);
+        super.push(e);
     }
 
     /**

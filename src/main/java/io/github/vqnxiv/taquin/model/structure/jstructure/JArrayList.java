@@ -251,9 +251,6 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
      */
 
     /**
-     * Non null requirement.
-     * <p>
-     *
      * {@inheritDoc}
      */
     @Override
@@ -264,9 +261,6 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     }
 
     /**
-     * Non null requirement.
-     * <p>
-     *
      * {@inheritDoc}
      */
     @Override
@@ -275,9 +269,6 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     }
 
     /**
-     * Non null requirement.
-     * <p>
-     *
      * {@inheritDoc}
      */
     @Override
@@ -286,9 +277,6 @@ public class JArrayList<E extends Comparable<E>> extends ArrayList<E>
     }
 
     /**
-     * Non null requirement.
-     * <p>
-     *     
      * {@inheritDoc}
      */
     @Override
