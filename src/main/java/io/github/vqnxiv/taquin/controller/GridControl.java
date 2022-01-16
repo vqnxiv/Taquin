@@ -58,7 +58,7 @@ public class GridControl extends GridPane {
     /**
      * {@code BooleanProperty} to which all {@code TextField} {@code disableProperty} are bound
      */
-    private BooleanProperty editableProperty;
+    private final BooleanProperty editableProperty;
 
     /**
      * This object's {@code ContextMenu} which is shown on a right click event.
@@ -179,12 +179,10 @@ public class GridControl extends GridPane {
     public int[][] collectValues(int valueForNull) {
         return Arrays.stream(fields)
             .map(t -> Arrays.stream(t)
-                .mapToInt(tf -> 
-                    (int) (
-                        (tf.getTextFormatter().valueProperty().get() != null) ?
-                        tf.getTextFormatter().valueProperty().get() :
+                .mapToInt(tf ->
+                    (tf.getTextFormatter().valueProperty().get() != null) ?
+                        (int) tf.getTextFormatter().valueProperty().get() :
                         valueForNull
-                    )
                 ).toArray()
             ).toArray(int[][]::new);
     }
@@ -198,7 +196,7 @@ public class GridControl extends GridPane {
     public Integer[][] collectValues() {
         return Arrays.stream(fields)
             .map(t -> Arrays.stream(t)
-                .map(tf -> tf.getTextFormatter().valueProperty().get())
+                .map(tf -> (Integer) tf.getTextFormatter().valueProperty().get())
                 .toArray(Integer[]::new)
             ).toArray(Integer[][]::new);
     }
@@ -267,6 +265,7 @@ public class GridControl extends GridPane {
      *
      * @param newValues the new values for the {@code TextField}
      */
+    @SuppressWarnings("unchecked")
     public void setValues(Integer[][] newValues) {
         if(newValues.length != fields.length || newValues[0].length != fields[0].length) {
             resizeArray(newValues[0].length, newValues.length);

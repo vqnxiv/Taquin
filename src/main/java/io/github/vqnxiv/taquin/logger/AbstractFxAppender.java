@@ -127,10 +127,9 @@ public abstract class AbstractFxAppender extends AbstractAppender {
             
             if(s.isBlank()) {
                 // formats the timestamp number
-                //var strTab = event.getMessage().getFormattedMessage().split("\t", 2);
-                //var str = String.format("%10d", Long.parseLong(strTab[0])) + strTab[1] + '\n';                
-                //eventBuffer.add(new Pair(str, output));
-                eventBuffer.add(new Pair(event.getMessage().getFormattedMessage() + '\n', output));
+                var strTab = event.getMessage().getFormattedMessage().split("\t", 2);
+                var str = String.format("%10d", Long.parseLong(strTab[0])) + strTab[1] + '\n';                
+                eventBuffer.add(new Pair(str, output));
             }
             else {
                 eventBuffer.add(new Pair(s, output));
@@ -176,6 +175,8 @@ public abstract class AbstractFxAppender extends AbstractAppender {
         var e = textBuffers.entrySet().iterator().next();
         textBuffers.remove(e.getKey());
         var str = e.getValue().toString();
+
+        // textArea is responsible for shit performance
         Platform.runLater(
             () -> {
                 e.getKey().appendText(str);
@@ -184,12 +185,14 @@ public abstract class AbstractFxAppender extends AbstractAppender {
                 this.notifyForNext();
             }
         );
+        
     }
 
     /**
      * Adds the next {@link Pair} from {@link #eventBuffer} to {@link #textBuffers}. 
      * Calls {@link #tryProcessEvent()} once it's done adding it to the map.
      */
+    // todo: investigate potential NPEs here
     private void bufferNextPair() {
         var p = eventBuffer.poll();
         if(textBuffers.containsKey(p.output)) {
