@@ -13,6 +13,9 @@ import java.util.Optional;
  * imposes a total ordering on its elements at all times; either by their 
  * {@link Comparable} implementation, or by a given {@link java.util.Comparator}.
  * <p>
+ * Implementing classes should provide at least one constructor which takes
+ * a {@link Comparator} argument.
+ * <p>
  * See {@link Sortable#sort(Comparator)} doc about enforcing {@link Comparable} here.
  * 
  * @param <E> The type of elements.

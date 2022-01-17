@@ -2,6 +2,7 @@ package io.github.vqnxiv.taquin.solver;
 
 
 import io.github.vqnxiv.taquin.model.CollectionWrapper;
+import io.github.vqnxiv.taquin.model.DataStructure;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
 import javafx.beans.binding.Bindings;
@@ -108,7 +109,8 @@ public class SearchRunner {
      */
     public Optional<Search> createSearchAndSpace(
         Search.Builder<?> searchBuilder, SearchSpace.Builder spaceBuilder,
-        CollectionWrapper.Builder queuedBuilder, CollectionWrapper.Builder exploredBuilder
+        // CollectionWrapper.Builder queuedBuilder, CollectionWrapper.Builder exploredBuilder
+        DataStructure.Builder queuedBuilder, DataStructure.Builder exploredBuilder
     ) {
         LOGGER.info("Creating search");
         
@@ -137,8 +139,8 @@ public class SearchRunner {
         
         s.setSearchSpace(
             spaceBuilder
-                .queued(queuedBuilder.build())
-                .explored(exploredBuilder.build())
+                .queued(queuedBuilder)
+                .explored(exploredBuilder)
                 .build()
         );
         

@@ -231,7 +231,8 @@ public abstract class Search {
         private void checkIfEndWasQueued() {
             if(currentSearchState != SearchState.PAUSED && currentSearchState != SearchState.ENDED_SUCCESS) {
                 int n;
-                if((n = searchSpace.getQueued().indexOf(searchSpace.getGoal())) > -1) {
+                // if((n = searchSpace.getQueued().indexOf(searchSpace.getGoal())) > -1) {
+                if((n = searchSpace.getQueued().dsIndexOf(searchSpace.getGoal())) > -1) {
                     log("End queued at index " + n);
                 }
                 else {
