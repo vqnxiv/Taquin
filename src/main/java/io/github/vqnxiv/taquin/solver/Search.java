@@ -231,7 +231,8 @@ public abstract class Search {
         private void checkIfEndWasQueued() {
             if(currentSearchState != SearchState.PAUSED && currentSearchState != SearchState.ENDED_SUCCESS) {
                 int n;
-                if((n = searchSpace.getQueued().indexOf(searchSpace.getGoal())) > -1) {
+                // if((n = searchSpace.getQueued().indexOf(searchSpace.getGoal())) > -1) {
+                if((n = searchSpace.getQueued().dsIndexOf(searchSpace.getGoal())) > -1) {
                     log("End queued at index " + n);
                 }
                 else {
@@ -993,7 +994,7 @@ public abstract class Search {
      * @param memory Whether to update the memory usage through the task, and not just when it ends.
      * @return {@link Optional#of(Object)} the created {@link SearchTask} if {@link #currentSearchState}
      * is either {@link SearchState#READY} or {@link SearchState#PAUSED}, and if {@link #searchSpace}
-     * has been injected. Otherwise, {@link Optional{empty()}.
+     * has been injected. Otherwise, {@link Optional#empty()}.
      */
     public Optional<SearchTask<SearchState>> newSearchTask(
         int iterations, int throttle, boolean log, boolean memory

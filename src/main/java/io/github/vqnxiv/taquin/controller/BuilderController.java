@@ -1,16 +1,20 @@
 package io.github.vqnxiv.taquin.controller;
 
 
-import io.github.vqnxiv.taquin.model.CollectionWrapper;
+import io.github.vqnxiv.taquin.model.DataStructure;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
+import io.github.vqnxiv.taquin.model.structure.Sortable;
+import io.github.vqnxiv.taquin.model.structure.Sorted;
+import io.github.vqnxiv.taquin.model.structure.Unsorted;
+import io.github.vqnxiv.taquin.model.structure.jstructure.JLinkedHashSet;
+import io.github.vqnxiv.taquin.model.structure.jstructure.JPriorityQueue;
 import io.github.vqnxiv.taquin.solver.Search;
 import io.github.vqnxiv.taquin.solver.SearchRunner;
 import io.github.vqnxiv.taquin.solver.search.Astar;
 import io.github.vqnxiv.taquin.util.FxUtils;
 import io.github.vqnxiv.taquin.util.IBuilder;
 import io.github.vqnxiv.taquin.util.Utils;
-
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -59,7 +63,11 @@ public class BuilderController {
     
     @FXML
     private TextArea logOutput;
+    
+    private ChoiceBox<Grid.Distance> distanceCB;
+    private ChoiceBox<Class<?>> queuedClasses;
 
+    private Tab extraTab;
     
     // ------
     
@@ -72,8 +80,8 @@ public class BuilderController {
     
     private Search.Builder<?> searchBuilder;
     private final SearchSpace.Builder spaceBuilder;
-    private final CollectionWrapper.Builder exploredBuilder;
-    private final CollectionWrapper.Builder queuedBuilder;
+    private final DataStructure.Builder exploredBuilder;
+    private final DataStructure.Builder queuedBuilder;
     
     private final Map<String, Control> miscValues;
     
@@ -91,8 +99,8 @@ public class BuilderController {
         
         searchBuilder   = new Astar.Builder();
         spaceBuilder    = new SearchSpace.Builder();
-        exploredBuilder = new CollectionWrapper.Builder("explored", LinkedHashSet.class);
-        queuedBuilder   = new CollectionWrapper.Builder("queued", PriorityQueue.class);
+        exploredBuilder = new DataStructure.Builder("explored", JLinkedHashSet.class);
+        queuedBuilder = new DataStructure.Builder("queued", JPriorityQueue.class);
         
         this.searchRunner = searchRunner;
         
@@ -158,6 +166,9 @@ public class BuilderController {
             
             if(s.equals("steps number")) {
                 miscValues.put("steps", c);    
+            }
+            else if(s.equals("heuristic")) {
+                distanceCB = (ChoiceBox<Grid.Distance>) c;
             }
         }
     }
@@ -273,22 +284,66 @@ public class BuilderController {
             LOGGER.error("Could not create builder " + e.getMessage());
         }
 
-        /*
+        
         setSearchParams();
         setQueuedClasses();
 
         if(searchBuilder.isHeuristicRequired()) {
-            heuristicCB.getItems().remove(Grid.Distance.NONE);
+            distanceCB.getItems().remove(Grid.Distance.NONE);
         }
-        else if(!heuristicCB.getItems().contains(Grid.Distance.NONE)) {
-            heuristicCB.getItems().add(Grid.Distance.NONE);
+        else if(!distanceCB.getItems().contains(Grid.Distance.NONE)) {
+            distanceCB.getItems().add(Grid.Distance.NONE);
         }
-        */
+        
     }
     
+    private void setSearchParams() {
+        var l = getPropertyMap().get(IBuilder.Category.SEARCH_EXTRA);
+
+        var gp = createGridPane(l.size());
+
+        for(var prop : l) {
+            int i = l.indexOf(prop);
+            gp.add(new Label(prop.getName()), i, 0);
+            var c = controlFromProperty(prop);
+            gp.add(c, i, 1);
+        }
+        
+        extraTab.setContent(gp);
+    }
+    
+    private void setQueuedClasses() {
+        Reflections reflections = new Reflections("io.github.vqnxiv.taquin");
+
+        if(searchBuilder.isHeuristicRequired()) {
+            var sorted = reflections
+                .get(Scanners.SubTypes.of(Sorted.class).asClass())
+                .stream()
+                .toList();
+            
+            var sortable = reflections
+                .get(Scanners.SubTypes.of(Sortable.class).asClass())
+                .stream()
+                .toList();
+            
+            queuedClasses.getItems().clear();
+            queuedClasses.getItems().addAll(sorted);
+            queuedClasses.getItems().addAll(sortable);
+        }
+        else {
+            queuedClasses.getItems().clear();
+            queuedClasses.getItems().addAll(
+                reflections
+                    .get(Scanners.SubTypes.of(Unsorted.class).asClass())
+                    .stream()
+                    .toList()
+            );
+        }
+    }
     
     // PROGRESS
     
+    // ???
     private void setupProgressPane() {
         LOGGER.debug("Creating progress panel");
         var v = Search.SearchProperty.values();
@@ -358,6 +413,10 @@ public class BuilderController {
 
         tab.setContent(gridpane);
 
+        if(p.toString().toLowerCase().contains("extra")) {
+            extraTab = tab;
+        }
+        
         return tab;
     }
     
@@ -473,14 +532,26 @@ public class BuilderController {
         cb.setMaxWidth(110.0d);
         cb.setPrefWidth(110.0d);
 
-        // CollectionWrapper special case until reworked
         if(Collection.class.isAssignableFrom(p.getValue())) {
-            cb.setItems(FXCollections.observableArrayList(CollectionWrapper.getAcceptedSubClasses()));
+            if(p.getName().contains("queued")) {
+                queuedClasses = cb;
+                setQueuedClasses();
+            }
+            else {
+                Reflections reflections = new Reflections("io.github.vqnxiv.taquin");
+
+                cb.setItems(FXCollections.observableList(
+                    reflections
+                        .get(Scanners.SubTypes.of(Unsorted.class).asClass())
+                        .stream()
+                        .toList()
+                ));
+            }
+            
             cb.setConverter(Utils.clsStringConverter);
         }
         else {
             Reflections reflections = new Reflections("io.github.vqnxiv.taquin");
-            
             
             cb.setItems(FXCollections.observableList(
                 reflections

@@ -2,6 +2,8 @@ package io.github.vqnxiv.taquin.solver.search;
 
 
 import io.github.vqnxiv.taquin.model.Grid;
+import io.github.vqnxiv.taquin.model.structure.Sortable;
+import io.github.vqnxiv.taquin.model.structure.Sorted;
 import io.github.vqnxiv.taquin.solver.Search;
 
 import io.github.vqnxiv.taquin.util.IBuilder;
@@ -18,8 +20,8 @@ public class BestFirst extends Search {
 
     public static class Builder extends Search.Builder<Builder> {
 
-        private final BooleanProperty useMerge = 
-            new SimpleBooleanProperty(this, "use merge", false);
+        // private final BooleanProperty useMerge = 
+        //    new SimpleBooleanProperty(this, "use merge", false);
         
         /**
          * Base no args constructor.
@@ -55,13 +57,15 @@ public class BestFirst extends Search {
         @Override
         public EnumMap<Category, List<Property<?>>> getBatchProperties() {
 
-            var m = super.getBatchProperties();
-            m.put(
-                IBuilder.Category.SEARCH_EXTRA, 
-                List.of(useMerge)
-            );
+            // var m = super.getBatchProperties();
+            // m.put(
+            //     IBuilder.Category.SEARCH_EXTRA, 
+            //     List.of(useMerge)
+            // );
 
-            return m;
+            // return m;
+            
+            return super.getBatchProperties();
         }
 
         @Override
@@ -80,7 +84,7 @@ public class BestFirst extends Search {
     
     public static final String SEARCH_SHORT_NAME = "GBFS";
 
-    private boolean useMerge;
+    // private boolean useMerge;
 
     
     // ------
@@ -88,7 +92,7 @@ public class BestFirst extends Search {
     private BestFirst(Builder builder) {
         super(builder);
         
-        useMerge = builder.useMerge.get();
+        // useMerge = builder.useMerge.get();
     }
 
 
@@ -96,7 +100,7 @@ public class BestFirst extends Search {
 
     @Override
     protected void setSpaceDependentParameters() {
-        useMerge = useMerge || (!searchSpace.getQueued().usesNaturalOrdering() && !searchSpace.getQueued().isSortable());
+        // useMerge = useMerge || (!searchSpace.getQueued().usesNaturalOrdering() && !searchSpace.getQueued().isSortable());
 
     }
     
@@ -107,8 +111,9 @@ public class BestFirst extends Search {
 
     @Override
     protected void step() {
-        
-        Grid newCurrent = searchSpace.getQueued().pollFirst();
+
+        // Grid newCurrent = searchSpace.getQueued().pollFirst();
+        Grid newCurrent = searchSpace.getQueued().dsPollFirst();
         log("Exploring new current: " + newCurrent.getKey());
 
         searchSpace.setCurrent(newCurrent);
@@ -120,18 +125,20 @@ public class BestFirst extends Search {
         log("Computing heuristics");
         for(Grid g : toAdd) computeHeuristic(g);
 
-        log("Queuing " + toAdd.size() + " generated neighbors");
+        log("Queuing {}" + toAdd.size() + " generated neighbors");
         if(!toAdd.isEmpty()) {
-            if(searchSpace.getQueued().usesNaturalOrdering()) {
+            if(searchSpace.getQueued() instanceof Sorted<Grid>) {
                 searchSpace.getQueued().addAll(toAdd);
             }
-            else if(useMerge) {
-                searchSpace.getQueued().mergeWith(toAdd);
-            }
-            else {
+            // else if(useMerge) {
+            //     searchSpace.getQueued().mergeWith(toAdd);
+            // }
+            else if(searchSpace.getQueued() instanceof Sortable<Grid> s) {
                 toAdd.sort(heuristicComparator);
-                searchSpace.getQueued().addAll(toAdd);
-                searchSpace.getQueued().sort(heuristicComparator);
+                // searchSpace.getQueued().addAll(toAdd);
+                // searchSpace.getQueued().sort(heuristicComparator);
+                s.addAll(toAdd);
+                s.sort(heuristicComparator);
             }
         }
     }

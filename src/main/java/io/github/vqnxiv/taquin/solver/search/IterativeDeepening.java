@@ -106,8 +106,9 @@ public class IterativeDeepening extends Search {
 
     @Override
     protected void step(){
-        
-        Grid newCurrent = searchSpace.getQueued().pollLast();
+
+        // Grid newCurrent = searchSpace.getQueued().pollLast();
+        Grid newCurrent = searchSpace.getQueued().dsPollLast();
         log("Exploring new current: " + newCurrent.getKey());
         
         searchSpace.setCurrent(newCurrent);
@@ -119,15 +120,20 @@ public class IterativeDeepening extends Search {
             
             if(heuristic != Grid.Distance.NONE) {
                 log("Computing heuristics");
-                for(Grid g : toAdd) computeHeuristic(g);
+                for(Grid g : toAdd) {
+                    computeHeuristic(g);
+                }
                 toAdd.sort(reverseHeuristicComparator);
             }
 
             log("Checking for goal");
-            if(checkNewStatesForGoal)
-                for(Grid g : toAdd)
-                    if(searchSpace.isGoal(g))
+            if(checkNewStatesForGoal) {
+                for(Grid g : toAdd) {
+                    if(searchSpace.isGoal(g)) {
                         searchSpace.setCurrent(g);
+                    }
+                }
+            }
 
             log("Queuing " + toAdd.size() + " generated neighbors");
             searchSpace.getQueued().addAll(toAdd);
