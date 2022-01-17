@@ -1,7 +1,6 @@
 package io.github.vqnxiv.taquin.controller;
 
 
-import io.github.vqnxiv.taquin.model.CollectionWrapper;
 import io.github.vqnxiv.taquin.model.DataStructure;
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.SearchSpace;
@@ -16,7 +15,6 @@ import io.github.vqnxiv.taquin.solver.search.Astar;
 import io.github.vqnxiv.taquin.util.FxUtils;
 import io.github.vqnxiv.taquin.util.IBuilder;
 import io.github.vqnxiv.taquin.util.Utils;
-
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -82,8 +80,6 @@ public class BuilderController {
     
     private Search.Builder<?> searchBuilder;
     private final SearchSpace.Builder spaceBuilder;
-    // private final CollectionWrapper.Builder exploredBuilder;
-    // private final CollectionWrapper.Builder queuedBuilder;
     private final DataStructure.Builder exploredBuilder;
     private final DataStructure.Builder queuedBuilder;
     
@@ -103,8 +99,6 @@ public class BuilderController {
         
         searchBuilder   = new Astar.Builder();
         spaceBuilder    = new SearchSpace.Builder();
-        // exploredBuilder = new CollectionWrapper.Builder("explored", LinkedHashSet.class);
-        // queuedBuilder   = new CollectionWrapper.Builder("queued", PriorityQueue.class);
         exploredBuilder = new DataStructure.Builder("explored", JLinkedHashSet.class);
         queuedBuilder = new DataStructure.Builder("queued", JPriorityQueue.class);
         
@@ -538,22 +532,7 @@ public class BuilderController {
         cb.setMaxWidth(110.0d);
         cb.setPrefWidth(110.0d);
 
-        // CollectionWrapper special case until reworked
-        // TODO: setQueuedClasses
-        // todo: setExploredClasses
         if(Collection.class.isAssignableFrom(p.getValue())) {
-            // cb.setItems(FXCollections.observableArrayList(CollectionWrapper.getAcceptedSubClasses()));
-            // cb.setConverter(Utils.clsStringConverter);
-            /*
-            Reflections reflections = new Reflections("io.github.vqnxiv.taquin");
-
-            cb.setItems(FXCollections.observableList(
-                reflections
-                    .get(Scanners.SubTypes.of(DataStructure.class).asClass())
-                    .stream()
-                    .toList()
-            ));
-            */
             if(p.getName().contains("queued")) {
                 queuedClasses = cb;
                 setQueuedClasses();

@@ -16,7 +16,7 @@ import java.util.Map;
  * 
  * @see io.github.vqnxiv.taquin.solver.Search.Builder
  * @see io.github.vqnxiv.taquin.model.SearchSpace.Builder
- * @see io.github.vqnxiv.taquin.model.CollectionWrapper.Builder
+ * @see io.github.vqnxiv.taquin.model.DataStructure.Builder
  */
 public interface IBuilder {
 
@@ -26,7 +26,7 @@ public interface IBuilder {
      */
     enum Category {
         /**
-         * Options for {@link io.github.vqnxiv.taquin.model.CollectionWrapper} creation.
+         * Options for {@link io.github.vqnxiv.taquin.model.DataStructure.Builder} creation.
          */
         COLLECTION,
         /**
@@ -45,7 +45,8 @@ public interface IBuilder {
          */
         LIMITS,
         /**
-         * Options that are used for {@link io.github.vqnxiv.taquin.solver.Search.SearchTask} creation.
+         * Options that are used for {@link io.github.vqnxiv.taquin.solver.Search#newSearchTask(int, int, boolean, boolean)} 
+         * creation.
          */
         MISCELLANEOUS;
 

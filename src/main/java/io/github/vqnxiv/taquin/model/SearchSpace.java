@@ -25,7 +25,6 @@ import java.util.*;
  * @see Grid
  * @see io.github.vqnxiv.taquin.solver.Search
  */
-// public class SearchSpace<U extends DataStructure<Grid>, V extends DataStructure<Grid>> {
 public class SearchSpace {
 
     /**
@@ -33,20 +32,14 @@ public class SearchSpace {
      */
     public static class Builder implements IBuilder {
 
-        /* *
-         * {@link CollectionWrapper} for {@link SearchSpace#explored}.
+        /**
+         * {@link DataStructure.Builder} for {@link SearchSpace#explored}.
          */
-        // private CollectionWrapper<?> explored;
-
-        /* *
-         * {@link CollectionWrapper} for {@link SearchSpace#queued}.
-         */
-        // private CollectionWrapper<?> queued;
-
-        
-        // private Class<? extends DataStructure<?>> explored;
-        // private Class<? extends DataStructure<?>> queued;
         private DataStructure.Builder explored;
+
+        /**
+         * {@link DataStructure.Builder} for {@link SearchSpace#queued}
+         */
         private DataStructure.Builder queued;
         
         /**
@@ -67,32 +60,22 @@ public class SearchSpace {
             start = new SimpleObjectProperty<>(this, "start", Grid.invalidOfSize(3, 3));
             end = new SimpleObjectProperty<>(this, "end", Grid.invalidOfSize(3, 3));
         }
-
-        /* *
+        
+        /**
          * Setter for {@link #explored}.
-         * @param cw The new value for {@link #explored}.
+         * @param e The new value for {@link #explored}.
          * @return this object.
          */
-        // public Builder explored(CollectionWrapper<?> cw) {
-        //     explored = cw;
-        //     return this;
-        // }
-
-        /* *
-         * Setter for {@link #queued}.
-         * @param cw The new value for {@link #queued}.
-         * @return this object.
-         */
-        // public Builder queued(CollectionWrapper<?> cw) {
-        //     queued = cw;
-        //     return this;
-        // }
-
         public Builder explored(DataStructure.Builder e) {
             explored = e;
             return this;
         }
 
+        /**
+         * Setter for {@link #queued}.
+         * @param q The new value for {@link #queued}.
+         * @return this object.
+         */
         public Builder queued(DataStructure.Builder q) {
             queued = q;
             return this;
@@ -151,18 +134,14 @@ public class SearchSpace {
      */
     private Grid currentGrid;
 
-    /* *
-     * {@link CollectionWrapper} which contains explored grids.
+    /**
+     * {@link DataStructure} which contains explored grids.
      */
-    // private final C²ollectionWrapper<Grid> explored;
-
-    /* *
-     * {@link CollectionWrapper} which contains queued grids.
-     */
-    // private final CollectionWrapper<Grid> queued;
-
     private final DataStructure<Grid> explored;
-    
+
+    /**
+     * {@link DataStructure} which contains queued grids.
+     */
     private final DataStructure<Grid> queued;
 
     /**
@@ -181,11 +160,10 @@ public class SearchSpace {
      * 
      * @param start The start grid.
      * @param end The goal grid.
-     * @ param explored The {@link CollectionWrapper} data structure to use to store the explored grids.
-     * @ param queued The {@link CollectionWrapper} data structure to use to store the queued grids.
+     * @ param explored The {@link DataStructure} to use to store the explored grids.
+     * @ param queued The {@link DataStructure} data structure to use to store the queued grids.
      */
     @SuppressWarnings("unchecked")
-    // private SearchSpace(Grid start, Grid end, CollectionWrapper<?> explored, CollectionWrapper<?> queued) {
     private SearchSpace(Grid start, Grid end, DataStructure.Builder exploredBuilder, DataStructure.Builder queuedBuilder) {
 
         startGrid = start;
@@ -194,12 +172,8 @@ public class SearchSpace {
         startGrid.setKey(0);
         goalGrid.setKey(-1);
 
-        // this.explored = (CollectionWrapper<Grid>) explored;
-        // this.queued = (CollectionWrapper<Grid>) queued;
-        
         explored = (DataStructure<Grid>) exploredBuilder.build();
         queued = (DataStructure<Grid>) queuedBuilder.build();
-        
         
         this.queued.add(startGrid);
         currentGrid = startGrid;
@@ -253,28 +227,20 @@ public class SearchSpace {
         return currentGridProperty;
     }
 
-    /* *
+    /**
      * Getter for {@link #explored}.
      *
      * @return {@link #explored}.
      */
-    // public CollectionWrapper<Grid> getExplored() { 
-    //     return explored; 
-    // }
+    public DataStructure<Grid> getExplored() {
+        return explored;
+    }
 
-    /* *
+    /**
      * Getter for {@link #queued}.
      *
      * @return {@link #queued}.
      */
-    // public CollectionWrapper<Grid> getQueued() {
-    //     return queued;
-    // }
-
-    public DataStructure<Grid> getExplored() {
-        return explored;
-    }
-    
     public DataStructure<Grid> getQueued() {
         return queued;
     }
@@ -389,8 +355,8 @@ public class SearchSpace {
     private void linkExisting(Grid g) {
         boolean wasFound = false;
 
-        /*
-        for(Grid g2 : explored.asCollection()) {
+        
+        for(Grid g2 : explored) {
             if(g.equals(g2)) {
                 g = g2;
                 wasFound = true;
@@ -398,14 +364,14 @@ public class SearchSpace {
         }
 
         if(!wasFound) {
-            for(Grid g2 : queued.asCollection()) {
+            for(Grid g2 : queued) {
                 if(g.equals(g2)) {
                     g = g2;
                     wasFound = true;
                 }
             }
         }
-        */
+        
         
         if(wasFound) currentGrid.addNeighbor(g, false);
     }
