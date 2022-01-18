@@ -11,11 +11,11 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.fxmisc.richtext.InlineCssTextArea;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -101,10 +101,10 @@ public class MainController {
     private static final Logger LOGGER = LogManager.getLogger(MainController.class);
 
     /**
-     * {@link TextArea} in which app log events are displayed. {@link MainAppender}
+     * {@link InlineCssTextArea} in which app log events are displayed. {@link MainAppender}
      */
     @FXML 
-    private TextArea logOutput;
+    private InlineCssTextArea logOutput;
 
     /**
      * {@link VBox} which contains all {@link BuilderController} created.
@@ -174,22 +174,22 @@ public class MainController {
     /**
      * Getter for {@link #logOutput}.
      * 
-     * @return a {@link TextArea} in which logs are displayed.
+     * @return a {@link InlineCssTextArea} in which logs are displayed.
      */
-    public TextArea getMainLogOutput() {
+    public InlineCssTextArea getMainLogOutput() {
         return logOutput;
     }
 
     /**
-     * Retrieves the corresponding {@link BuilderController} {@link TextArea} 
+     * Retrieves the corresponding {@link BuilderController} {@link InlineCssTextArea} 
      * for search logs ({@link io.github.vqnxiv.taquin.logger.SearchAppender})
      * from a {@link Search#getID()}.
      * 
      * @param id The id of the {@link Search}.
-     * @return {@link Optional#of(Object)} the {@link TextArea} if a {@link Search} 
+     * @return {@link Optional#of(Object)} the {@link InlineCssTextArea} if a {@link Search} 
      * with such an id exists; {@link Optional#empty()} otherwise.
      */
-    public Optional<TextArea> getBuilderLogOutputFromSearchID(int id) {
+    public Optional<InlineCssTextArea> getBuilderLogOutputFromSearchID(int id) {
         for(var builder : builderMap.keySet()) {
             if(builder.hasSearchWithID(id)) {
                 return Optional.of(builder.getLogOutput());
@@ -219,8 +219,7 @@ public class MainController {
             builderVBox.getChildren().add(vb);
             builderMap.put(loader.getController(), vb);
         } catch(IOException e) {
-            LOGGER.error("Could not find FXML file '/fxml/primary/builder.fxml'");
-            e.printStackTrace();
+            LOGGER.error(e.getMessage());
         }
     }
     

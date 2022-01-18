@@ -49,12 +49,19 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-api:2.16.0'
     implementation 'org.apache.logging.log4j:log4j-core:2.16.0'
     implementation 'com.lmax:disruptor:3.4.4'
+    // implementation 'org.fxmisc.flowless:flowless:0.6.7'
+    implementation 'org.fxmisc.richtext:richtextfx:0.10.7'
+    //implementation 'org.fxmisc.flowless:flowless:0.6.7'
+    //implementation 'org.reactfx:reactfx:2.0-M5'
 }
 
 extraJavaModuleInfo {
+    automaticModule("reactfx-2.0-M5.jar", "reactfx")
+    automaticModule("flowless-0.6.7.jar", "flowless")
+    automaticModule("wellbehavedfx-0.3.3.jar", "wellbehavedfx")
+
     //automaticModule("jol-core-0.16.jar", "")
     automaticModule("reflections-0.10.2.jar", "")
-    
 
     // keep if both JOL and reflections
     automaticModule("javassist-3.28.0-GA.jar", "javassist")

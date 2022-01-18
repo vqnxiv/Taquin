@@ -3,12 +3,12 @@ package io.github.vqnxiv.taquin.logger;
 
 import io.github.vqnxiv.taquin.controller.MainController;
 import javafx.application.Platform;
-import javafx.scene.control.TextArea;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
+import org.fxmisc.richtext.InlineCssTextArea;
 
 import java.io.Serializable;
 import java.util.ArrayDeque;
@@ -29,9 +29,9 @@ public abstract class AbstractFxAppender extends AbstractAppender {
 
     /**
      * {@link Record} which is used to keep a {@link LogEvent} message
-     * with the {@link TextArea} it should be displayed in.
+     * with the {@link InlineCssTextArea} it should be displayed in.
      */
-    private record Pair(String text, TextArea output) {}
+    private record Pair(String text, InlineCssTextArea output) {}
 
     
     /**
@@ -63,14 +63,15 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      * Adding this on top of {@link #eventBuffer} allows to greatly reduce the number
      * of {@link Platform#runLater(Runnable)} calls. E.g in the same conditions as above,
      * (1500 states, 5 events / step = 7500 total events), we go from 7500 
-     * {@link TextArea#appendText(String)} calls passed to {@link Platform#runLater(Runnable)}
-     * to less than 25 (highest i've seen was 24, most in the 10-20 range) which allows the
-     * 7500 messages to be displayed on the screen almost instantly.
+     * {@link InlineCssTextArea#appendText(String)} calls passed to 
+     * {@link Platform#runLater(Runnable)} to less than 25 (highest i've seen was 24, 
+     * most in the 10-20 range) which allows the 7500 messages to be displayed on the screen 
+     * almost instantly.
      * <p>
      * Internally implemented with a {@link LinkedHashMap} so that events that came first
      * are added first to the UI.
      */
-    private final Map<TextArea, StringBuffer> textBuffers;
+    private final Map<InlineCssTextArea, StringBuilder> textBuffers;
     
     
     /**
@@ -111,7 +112,7 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      * @param event The event to display.
      * @param output Where it should be displayed.
      */
-    protected void enqueueForGui(LogEvent event, TextArea output) {
+    protected void enqueueForGui(LogEvent event, InlineCssTextArea output) {
         
         if(event == null || output == null) {
             return;
@@ -128,7 +129,7 @@ public abstract class AbstractFxAppender extends AbstractAppender {
             if(s.isBlank()) {
                 // formats the timestamp number
                 var strTab = event.getMessage().getFormattedMessage().split("\t", 2);
-                var str = String.format("%10d", Long.parseLong(strTab[0])) + strTab[1] + '\n';                
+                var str = String.format("%15d", Long.parseLong(strTab[0])) + strTab[1] + '\n';
                 eventBuffer.add(new Pair(str, output));
             }
             else {
@@ -160,7 +161,7 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      */
     private void tryProcessEvent() {
         if(!textBuffers.isEmpty() && throttle.getAndSet(false)) {
-           addFirstBufferToGui();
+            addFirstBufferToGui();
         }
         else if(!eventBuffer.isEmpty()) {
             bufferNextPair();
@@ -173,14 +174,17 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      */
     private void addFirstBufferToGui() {
         var e = textBuffers.entrySet().iterator().next();
-        textBuffers.remove(e.getKey());
+        var out = e.getKey();
         var str = e.getValue().toString();
+        
+        textBuffers.remove(out);
+        var down = out.getTotalHeightEstimate();
 
-        // textArea is responsible for shit performance
         Platform.runLater(
             () -> {
-                e.getKey().appendText(str);
-                e.getKey().setScrollTop(-15);
+                out.appendText(str);
+                out.scrollYBy(down);
+                
                 throttle.set(true);
                 this.notifyForNext();
             }
@@ -192,14 +196,14 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      * Adds the next {@link Pair} from {@link #eventBuffer} to {@link #textBuffers}. 
      * Calls {@link #tryProcessEvent()} once it's done adding it to the map.
      */
-    // todo: investigate potential NPEs here
     private void bufferNextPair() {
+        
         var p = eventBuffer.poll();
         if(textBuffers.containsKey(p.output)) {
             textBuffers.get(p.output).append(p.text);
         }
         else {
-            textBuffers.put(p.output, new StringBuffer(p.text));
+            textBuffers.put(p.output, new StringBuilder(p.text));
         }
 
         tryProcessEvent();

@@ -29,6 +29,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.fxmisc.richtext.InlineCssTextArea;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 
@@ -62,7 +63,7 @@ public class BuilderController {
     private GridPane progressPane;
     
     @FXML
-    private TextArea logOutput;
+    private InlineCssTextArea logOutput;
     
     private ChoiceBox<Grid.Distance> distanceCB;
     private ChoiceBox<Class<?>> queuedClasses;
@@ -120,7 +121,7 @@ public class BuilderController {
     }
     
     
-    public TextArea getLogOutput() {
+    public InlineCssTextArea getLogOutput() {
         return logOutput;
     }
     

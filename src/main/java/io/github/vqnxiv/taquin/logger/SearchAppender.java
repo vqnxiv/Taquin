@@ -71,8 +71,8 @@ public class SearchAppender extends AbstractFxAppender {
                              boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
     }
-
-
+    
+    
     /**
      * Appends a log event from a search log to the {@link BuilderController#getLogOutput()} 
      * from the corresponding {@link io.github.vqnxiv.taquin.solver.Search}.
@@ -91,6 +91,7 @@ public class SearchAppender extends AbstractFxAppender {
         LogEvent finalEvent = event;
         mainController.getBuilderLogOutputFromSearchID(id).ifPresent(
             output -> enqueueForGui(finalEvent, output)
+           // output -> t()
         );
     }
 }

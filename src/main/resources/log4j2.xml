@@ -5,7 +5,7 @@
 
     <Properties>
         <Property name="LIGHT_PATTERN">
-            %d{HH:mm} %m%n
+            %d{HH:mm}  %m%n
         </Property>
         
         <Property name="COMPLETE_PATTERN">

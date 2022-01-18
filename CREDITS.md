@@ -12,4 +12,6 @@
 
 [Java Extra Module Info](https://github.com/jjohannes/extra-java-module-info)
 
+[RichTextFX](https://github.com/FXMisc/RichTextFX)
+
 And their respective dependencies

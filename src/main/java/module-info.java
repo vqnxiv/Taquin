@@ -12,6 +12,7 @@ module io.github.vqnxiv.taquin {
     requires org.openjdk.jol;
     requires org.reflections;
     requires org.jfxtras.styles.jmetro;
+    requires org.fxmisc.richtext;
     
 
     opens io.github.vqnxiv.taquin.controller;
