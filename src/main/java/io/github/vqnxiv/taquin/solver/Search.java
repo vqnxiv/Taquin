@@ -144,8 +144,6 @@ public abstract class Search {
         /**
          * Abstract method used to chain setters calls. Concrete extending classes
          * should override this by doing {@code return this;}.
-         * <p>
-         * Maybe useless since we use properties?
          *
          * @return This {@link Builder} instance.
          */
@@ -231,7 +229,6 @@ public abstract class Search {
         private void checkIfEndWasQueued() {
             if(currentSearchState != SearchState.PAUSED && currentSearchState != SearchState.ENDED_SUCCESS) {
                 int n;
-                // if((n = searchSpace.getQueued().indexOf(searchSpace.getGoal())) > -1) {
                 if((n = searchSpace.getQueued().dsIndexOf(searchSpace.getGoal())) > -1) {
                     log("End queued at index " + n);
                 }

@@ -6,22 +6,17 @@ import io.github.vqnxiv.taquin.model.structure.Sortable;
 import io.github.vqnxiv.taquin.model.structure.Sorted;
 import io.github.vqnxiv.taquin.solver.Search;
 
-import io.github.vqnxiv.taquin.util.IBuilder;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.Property;
-import javafx.beans.property.SimpleBooleanProperty;
 
-import java.util.EnumMap;
-import java.util.List;
-
-
+/**
+ * This class represents a search using the Greedy Best First Search algorithm, 
+ * which is an informed search and thus requires an heuristic.
+ */
 public class BestFirst extends Search {
-
-
+    
+    /**
+     * Builder.
+     */
     public static class Builder extends Search.Builder<Builder> {
-
-        // private final BooleanProperty useMerge = 
-        //    new SimpleBooleanProperty(this, "use merge", false);
         
         /**
          * Base no args constructor.
@@ -48,71 +43,89 @@ public class BestFirst extends Search {
                 heuristic.set(Grid.Distance.LINEAR_MANHATTAN);
             }
         }
-        
+
+        /**
+         * Whether this search requires an heuristic.
+         *
+         * @return {@code true}.
+         */
         @Override
         public boolean isHeuristicRequired() {
             return true;
         }
 
-        @Override
-        public EnumMap<Category, List<Property<?>>> getBatchProperties() {
-
-            // var m = super.getBatchProperties();
-            // m.put(
-            //     IBuilder.Category.SEARCH_EXTRA, 
-            //     List.of(useMerge)
-            // );
-
-            // return m;
-            
-            return super.getBatchProperties();
-        }
-
+        /**
+         * Method used to chain setters calls.
+         *
+         * @return This instance of {@link Builder}.
+         */
         @Override
         protected Builder self() {
             return this;
         }
 
+        /**
+         * Build method.
+         *
+         * @return A new instance of {@link BestFirst}.
+         */
         @Override
         protected BestFirst build() {
             return new BestFirst(this);
         }
     }
-    
-    
-    // ------
-    
+
+
+    /**
+     * This search's shortname, which will be displayed on the GUI.
+     */
     public static final String SEARCH_SHORT_NAME = "GBFS";
 
-    // private boolean useMerge;
 
-    
-    // ------
-
+    /**
+     * Constructor.
+     *
+     * @param builder {@link Builder}.
+     */
     private BestFirst(Builder builder) {
         super(builder);
-        
-        // useMerge = builder.useMerge.get();
     }
 
 
-    // ------
-
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is empty as there is no extra parameters to set.
+     */
     @Override
     protected void setSpaceDependentParameters() {
-        // useMerge = useMerge || (!searchSpace.getQueued().usesNaturalOrdering() && !searchSpace.getQueued().isSortable());
-
+        // no additional parameters to set
     }
-    
+
+    /**
+     * Computes the heuristic value for the given {@link Grid}, 
+     * as per the Greedy Best First algorithm.
+     * <p>
+     * The value is defined as the result {@link #heuristic} for the given {@link Grid}.
+     *
+     * @param g The {@link Grid} to compute the heuristic value for.
+     */
     @Override
     protected void computeHeuristic(Grid g) {
         g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic));
     }
 
+    /**
+     * Represents a step from the Greedy Best First algorithm.
+     * <p>
+     * Explores the most promising state as per its heuristic value,
+     * generates its neighbors and, for each neighbor that hasn't
+     * been queued or explored yet, compute their heuristic values
+     * then adds them to the queue.
+     */
     @Override
     protected void step() {
 
-        // Grid newCurrent = searchSpace.getQueued().pollFirst();
         Grid newCurrent = searchSpace.getQueued().dsPollFirst();
         log("Exploring new current: " + newCurrent.getKey());
 
@@ -130,13 +143,8 @@ public class BestFirst extends Search {
             if(searchSpace.getQueued() instanceof Sorted<Grid>) {
                 searchSpace.getQueued().addAll(toAdd);
             }
-            // else if(useMerge) {
-            //     searchSpace.getQueued().mergeWith(toAdd);
-            // }
             else if(searchSpace.getQueued() instanceof Sortable<Grid> s) {
                 toAdd.sort(heuristicComparator);
-                // searchSpace.getQueued().addAll(toAdd);
-                // searchSpace.getQueued().sort(heuristicComparator);
                 s.addAll(toAdd);
                 s.sort(heuristicComparator);
             }
