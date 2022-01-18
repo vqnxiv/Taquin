@@ -14,8 +14,10 @@ import java.util.function.UnaryOperator;
  * Non instantiable general utility class which only contains static final methods.
  */
 public final class Utils {
-    
-    
+
+    /**
+     * Can't be instantiated.
+     */
     private Utils() {}
 
 

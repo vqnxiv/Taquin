@@ -362,6 +362,8 @@ public class GridViewer {
 
     /**
      * Sets the values of {@code copyPasteBuffer} to this object's {@code gridControl}
+     * 
+     * @param resize Whether to resize the grid.
      */
     private void pasteFromBuffer(boolean resize) {
         if(copyPasteBuffer == null) {

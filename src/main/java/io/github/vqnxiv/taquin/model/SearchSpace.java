@@ -15,8 +15,8 @@ import java.util.*;
  * <ul>
  *     <li>A starting point: {@link #startGrid}</li>
  *     <li>An end point: {@link #goalGrid}</li>
- *     <li>A set of explored points: {@link # explored}</li>
- *     <li>A set of queued points: {@link # queued}</li>
+ *     <li>A set of explored points: {@link #explored}</li>
+ *     <li>A set of queued points: {@link #queued}</li>
  * </ul>
  * <p>
  * This class is a simple model class and does nothing on its own. A {@link io.github.vqnxiv.taquin.solver.Search}
@@ -160,8 +160,8 @@ public class SearchSpace {
      * 
      * @param start The start grid.
      * @param end The goal grid.
-     * @ param explored The {@link DataStructure} to use to store the explored grids.
-     * @ param queued The {@link DataStructure} data structure to use to store the queued grids.
+     * @param exploredBuilder The {@link DataStructure.Builder} to use to store the explored grids.
+     * @param queuedBuilder The {@link DataStructure.Builder} to use to store the queued grids.
      */
     @SuppressWarnings("unchecked")
     private SearchSpace(Grid start, Grid end, DataStructure.Builder exploredBuilder, DataStructure.Builder queuedBuilder) {

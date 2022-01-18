@@ -140,7 +140,7 @@ public class JLinkedHashSet<E> extends LinkedHashSet<E>
     /**
      * {@inheritDoc}
      * <p>
-     * @implSpec Clears the internal linkedhashmap, adds the new element
+     * Clears the internal linkedhashmap, adds the new element
      * and then readds all the older elements.
      * 
      * @return {@code true} if the element was successfully added; {@code false} otherwise.
@@ -172,7 +172,7 @@ public class JLinkedHashSet<E> extends LinkedHashSet<E>
     /**
      * {@inheritDoc}
      * <p>
-     * @implSpec Clears the internal linkedhashmap, adds the new element
+     * Clears the internal linkedhashmap, adds the new element
      * and then readds all the older elements.
      * 
      * @return {@code true} if at least one element was successfully added; {@code false} otherwise.

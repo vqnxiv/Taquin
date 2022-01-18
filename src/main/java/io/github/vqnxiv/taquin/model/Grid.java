@@ -78,7 +78,8 @@ public class Grid implements Comparable<Grid> {
         /**
          * Enum constructor
          * 
-         * @param c validation function
+         * @param c validation function.
+         * @param m The operator for {@link #move}.
          */
         Direction(Function<Grid, Boolean> c, UnaryOperator<Coordinates> m) {
             check = c;
@@ -588,6 +589,12 @@ public class Grid implements Comparable<Grid> {
         return heuristicValue; 
     }
 
+    /**
+     * Getter for a specific heuristic value.
+     * 
+     * @param d Distance for which to get the value.
+     * @return The value for this distance.
+     */
     public float getHeuristicValue(Distance d) {
         return distanceMap.get(d);
     }

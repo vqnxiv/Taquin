@@ -3,6 +3,7 @@ plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.10'
     id("de.jjohannes.extra-java-module-info") version "0.6"
+    id "org.beryx.jlink" version "2.24.4"
 }
 
 group 'io.github.vqnxiv'
@@ -38,8 +39,23 @@ javafx {
     modules = ['javafx.controls', 'javafx.fxml']
 }
 
-dependencies {
+jlink {
+    // options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    launcher {
+        name = 'taquin'
+        jvmArgs = ['--enable-preview']
+    }
+    
+    // workarounds
+    
+    // https://github.com/beryx/badass-jlink-plugin/issues/61#issuecomment-504640018
+    addExtraDependencies("javafx")
+    
+    // https://github.com/beryx/badass-jlink-plugin/issues/14#issuecomment-447351574
+    forceMerge('log4j-api')
+}
 
+dependencies {
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.8.2')
     testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.8.2')
     
@@ -49,10 +65,7 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-api:2.16.0'
     implementation 'org.apache.logging.log4j:log4j-core:2.16.0'
     implementation 'com.lmax:disruptor:3.4.4'
-    // implementation 'org.fxmisc.flowless:flowless:0.6.7'
     implementation 'org.fxmisc.richtext:richtextfx:0.10.7'
-    //implementation 'org.fxmisc.flowless:flowless:0.6.7'
-    //implementation 'org.reactfx:reactfx:2.0-M5'
 }
 
 extraJavaModuleInfo {

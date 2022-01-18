@@ -18,7 +18,9 @@ import java.util.Optional;
  */
 public final class FxUtils {
 
-    
+    /**
+     * Can't be instantiated.
+     */
     private FxUtils() {}
 
     /**

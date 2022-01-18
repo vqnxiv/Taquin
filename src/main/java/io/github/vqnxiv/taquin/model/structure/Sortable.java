@@ -58,6 +58,8 @@ public interface Sortable<E extends Comparable<E>> extends DataStructure<E> {
      * {@code <T> boolean sort(Comparator<? super T> c);}, or moved into its own interface, e.g
      * {@code ComparatorSortable<E>}, with this one renamed to 
      * {@code ComparableSortable<E extends Comparable<E>>}.
+     * 
+     * @param c {@link Comparator} to use to sort this structure.
      */
     void sort(Comparator<? super E> c);
 

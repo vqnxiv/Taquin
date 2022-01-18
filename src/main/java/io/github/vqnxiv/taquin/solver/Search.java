@@ -493,7 +493,12 @@ public abstract class Search {
          * and {@link #valueOf(long)}.
          */
         private final long index;
-        
+
+        /**
+         * Constructor.
+         * 
+         * @param l The index for this constant value.
+         */
         SearchState(long l) {
             index = l;
         }

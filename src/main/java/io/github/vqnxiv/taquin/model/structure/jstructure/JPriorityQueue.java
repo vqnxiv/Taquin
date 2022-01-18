@@ -7,6 +7,11 @@ import io.github.vqnxiv.taquin.model.structure.Sorted;
 import java.util.*;
 
 
+/**
+ * A {@link DataStructure} version of {@link PriorityQueue}.
+ * 
+ * @param <E> The type of elements.
+ */
 public class JPriorityQueue<E extends Comparable<E>> extends PriorityQueue<E> 
     implements DataStructure<E>, Sorted<E> {
 
