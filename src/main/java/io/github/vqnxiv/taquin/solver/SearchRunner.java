@@ -80,7 +80,29 @@ public class SearchRunner {
         return lastSearchInfo;
     }
 
+    /**
+     * Getter for the properties of a {@link Search}'s {@link SearchSpace}.
+     *
+     * @param searchId The id for the {@link Search}.
+     * @return {@link Optional#of(Object)} the {@link SearchSpace} if it exists; {@link Optional#empty()} otherwise.
+     */
+    public Optional<SearchSpace> getSearchSpace(int searchId) {
+        var s = searches.get(searchId);
 
+        if(s == null) {
+            LOGGER.info("No search with id {}", searchId);
+            return Optional.empty();
+        }
+
+        return Optional.of(s.getSearchSpace());
+    }
+    
+    /**
+     * Getter for the properties of a {@link Search}.
+     * 
+     * @param searchId The id for the {@link Search}.
+     * @return {@link Optional#of(Object)} the map of properties if it exists; {@link Optional#empty()} otherwise.
+     */
     public Optional<Map<Search.SearchProperty, StringProperty>> getSearchProgressProperties(int searchId) {
         var s = searches.get(searchId);
 

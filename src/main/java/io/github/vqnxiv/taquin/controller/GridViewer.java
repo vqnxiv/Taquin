@@ -245,7 +245,7 @@ public class GridViewer {
      */
     public GridViewer(String name, boolean editable) {
         stage = new Stage();
-        gridProperty = new SimpleObjectProperty<>(Grid.invalidOfSize(3, 3));
+        gridProperty = new SimpleObjectProperty<>(Grid.invalidOfSize(3, 3), name);
         gridControl = new GridControl(name, editable, 3, 3);
         editableProperty = new SimpleBooleanProperty(editable);
         contextMenu = new ContextMenu();

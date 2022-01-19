@@ -191,7 +191,7 @@ public class MainController {
      */
     public Optional<InlineCssTextArea> getBuilderLogOutputFromSearchID(int id) {
         for(var builder : builderMap.keySet()) {
-            if(builder.hasSearchWithID(id)) {
+            if(builder.getSearchId() == id) {
                 return Optional.of(builder.getLogOutput());
             }
         }

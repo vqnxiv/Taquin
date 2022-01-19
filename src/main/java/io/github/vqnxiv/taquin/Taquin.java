@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public class Taquin extends Application {
 
-    /**
+    /*
      * Async loggers.
      */
     static {

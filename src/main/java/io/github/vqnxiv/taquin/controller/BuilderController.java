@@ -37,10 +37,27 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 
+/**
+ * Class which represents the UI element where the user inputs the details for a {@link Search}.
+ */
 public class BuilderController {
 
+    /**
+     * The different levels of lock for a {@link BuilderController}.
+     */
     private enum Lock {
-        NOT_LOCKED, MODIFICATION_LOCKED, FULLY_LOCKED
+        /**
+         * Not locked at all, the {@link IBuilder} can still be modified.
+         */
+        NOT_LOCKED,
+        /**
+         * The {@link IBuilder} can no longer be modified, i.e the {@link Search} has been created.
+         */
+        MODIFICATION_LOCKED,
+        /**
+         * Completely locked, i.e the {@link Search} has completed its full run.
+         */
+        FULLY_LOCKED
     }
 
 
@@ -48,49 +65,115 @@ public class BuilderController {
      * Root logger.
      */
     private static final Logger LOGGER = LogManager.getLogger(BuilderController.class);
-
-
+    
+    /**
+     * 1st part of the main bar.
+     */
     @FXML
     private HBox hbox1;
-    
+
+    /**
+     * 2nd part of the main bar.
+     */
     @FXML
     private HBox hbox2;
-    
+
+    /**
+     * TabPane which will contain all that is related to the {@link IBuilder} that doesn't go in
+     * {@link #hbox1} and {@link #hbox2}.
+     */
     @FXML
     private TabPane parameterTabPane;
 
+    /**
+     * GridPane in which {@link io.github.vqnxiv.taquin.solver.Search.SearchProperty} will be displayed.
+     */
     @FXML
     private GridPane progressPane;
-    
+
+    /**
+     * {@link InlineCssTextArea} in which log messages will be displayed.
+     */
     @FXML
     private InlineCssTextArea logOutput;
-    
+
+    /**
+     * ChoiceBox with the classes for the heuristic property of {@link #searchBuilder}.
+     */
     private ChoiceBox<Grid.Distance> distanceCB;
+
+    /**
+     * ChoiceBox with the classes for {@link #queuedBuilder}.
+     */
     private ChoiceBox<Class<?>> queuedClasses;
 
+    /**
+     * Tab which will contain extra search paramaters.
+     */
     private Tab extraTab;
-    
-    // ------
-    
+
+
+    /**
+     * Describes the {@link Lock} state of this {@link BuilderController}.
+     */
     private final ObjectProperty<Lock> lockLevel;
-    
-    
+
+    /**
+     * {@link SearchRunner} injected from {@link MainController}.
+     */
     private final SearchRunner searchRunner;
+
+    /**
+     * The id of the search created from {@link #searchBuilder}.
+     */
     private int searchId;
-    
+
+    /**
+     * {@link Search.Builder} which will be sent to {@link #searchRunner}.
+     */
     private Search.Builder<?> searchBuilder;
+
+    /**
+     * {@link SearchSpace.Builder} for the {@link Search} from {@link #searchBuilder}.
+     */
     private final SearchSpace.Builder spaceBuilder;
+
+    /**
+     * {@link DataStructure.Builder} for {@link #spaceBuilder}'s explored property.
+     */
     private final DataStructure.Builder exploredBuilder;
+
+    /**
+     * {@link DataStructure.Builder} for {@link #spaceBuilder}'s queued property.
+     */
     private final DataStructure.Builder queuedBuilder;
-    
+
+    /**
+     * Contains misc values used when calling {@link #submitRun(boolean)}.
+     */
     private final Map<String, Control> miscValues;
+
+    /**
+     * {@link GridViewer} for the start grid of {@link #spaceBuilder}.
+     */
+    private final GridViewer startViewer;
     
-    // todo: map/local?
-    private final GridViewer startViewer, endViewer; //, currentViewer;
-    
-    
-    // ------
-    
+    /**
+     * {@link GridViewer} for the end grid of {@link #spaceBuilder}.
+     */
+    private final GridViewer endViewer;
+
+    /**
+     * {@link GridViewer} for the current grid of the {@link SearchSpace} from {@link #spaceBuilder}.
+     */
+    private final GridViewer currentViewer;
+
+
+    /**
+     * Constructor.
+     * 
+     * @param searchRunner {@link SearchRunner} injected from {@link MainController}.
+     */
     public BuilderController(SearchRunner searchRunner) {
         LOGGER.debug("Creating builder controller");
         
@@ -106,32 +189,52 @@ public class BuilderController {
         
         startViewer = new GridViewer("Start", true);
         endViewer = new GridViewer("End", true);
-        //currentViewer = new GridViewer("Current", true);
+        currentViewer = new GridViewer("Current", false);
         
         miscValues = new HashMap<>();
     }
 
-    @FXML public void initialize() {
+    /**
+     * JFX method.
+     */
+    @FXML 
+    public void initialize() {
         LOGGER.debug("Initializing builder controller");
         
         setupBase();
-        setupProgressPane();
         setupTabPane();
+        
+        var cMenu = new ContextMenu();
+        var mItem = new MenuItem("Clear");
+        mItem.setOnAction(e -> logOutput.clear());
+        cMenu.getItems().add(mItem);
+        
+        logOutput.setContextMenu(cMenu);
     }
-    
-    
-    public InlineCssTextArea getLogOutput() {
+
+
+    /**
+     * Getter for {@link #logOutput}.
+     * 
+     * @return {@link #logOutput}.
+     */
+    InlineCssTextArea getLogOutput() {
         return logOutput;
     }
-    
-    public boolean hasSearchWithID(int id) {
-        return searchId == id;
+
+    /**
+     * Getter for {@link #searchId}.
+     * 
+     * @return {@link #searchId}.
+     */
+    int getSearchId() {
+        return searchId;
     }
-    
-    
-    // BASE
-    
-    // todo: hbox1 & hbox2 local here
+
+
+    /**
+     * Sets up {@link #hbox1} and {@link #hbox2}.
+     */
     private void setupBase() {
         LOGGER.debug("Creating base panel");
         
@@ -145,7 +248,12 @@ public class BuilderController {
         LOGGER.debug("Creating second row");
         setHbox(hbox2, secondRow, m);
     }
-    
+
+    /**
+     * Aggregates all the {@link IBuilder#getNamedProperties()} maps from all the {@link IBuilder}.
+     * 
+     * @return The created {@link Map}.
+     */
     private Map<String, Property<?>> getNamedMap() {
         LOGGER.debug("Fetching named properties from builders");
 
@@ -158,6 +266,14 @@ public class BuilderController {
         return map;
     }
 
+    /**
+     * Fills the content of {@link #hbox1} and {@link #hbox2}.
+     * 
+     * @param hbox Which {@link HBox} to fill.
+     * @param ctrls The {@link Control} to create.
+     * @param props The {@link Property} to which the controls will be bound.
+     */
+    @SuppressWarnings("unchecked")
     private void setHbox(HBox hbox, String[] ctrls, Map<String, Property<?>> props) {
         for(String s : ctrls) {
             var c = (props.get(s) != null) ?
@@ -172,7 +288,13 @@ public class BuilderController {
             }
         }
     }
-    
+
+    /**
+     * Creates controls for everything that isn't from the {@link IBuilder} properties. 
+     * 
+     * @param s Which control to build.
+     * @return The created {@link Control}.
+     */
     private Control handleSpecial(String s) {
         return switch(s.toLowerCase()) {
             case "search" -> {
@@ -209,10 +331,20 @@ public class BuilderController {
                 tf.setTextFormatter(new TextFormatter<>(Utils.intStringConverter, 1, Utils.integerFilter));
                 yield tf;
             }
+            case "current" -> createGridButton(currentViewer.gridProperty());
             default -> new Label(s);
         };
     }
-    
+
+    /**
+     * Creates a {@link Button} which will call {@link #searchRunner}.
+     * 
+     * @param s The text for the button.
+     * @param notLockedDisabled Whether it should be disabled when this {@link BuilderController}
+     * is locked for modification ({@link #lockLevel}).
+     * @param v The event handler for when the button gets activated.
+     * @return The created {@link Button}.
+     */
     private Button createRunnerButton(String s, boolean notLockedDisabled, EventHandler<ActionEvent> v) {
         LOGGER.trace("Creating button for " + s);
         Button btn = new Button(s);
@@ -226,7 +358,14 @@ public class BuilderController {
         
         return btn;
     }
-    
+
+    /**
+     * Checks whether the search run can be submitted to {@link #searchRunner},
+     * i.e whether {@link #searchId} is a valid id; and if not, whether a valid
+     * {@link Search} can be created for {@link #searchBuilder}.
+     * 
+     * @return {@code true} if the run can be submitted; {@code false} otherwise.
+     */
     private boolean canAttemptRun() {
         LOGGER.debug("Checking if search can run");
         if(lockLevel.get() == Lock.MODIFICATION_LOCKED) {
@@ -238,19 +377,26 @@ public class BuilderController {
             searchBuilder, spaceBuilder, queuedBuilder, exploredBuilder
         );
         
-        
-        if(opt.isPresent()) {
-            searchId = opt.getAsInt();;
-            LOGGER.debug("Locking controller for modifications");
-            lockLevel.set(Lock.MODIFICATION_LOCKED);
-            bindProgressPane();
-            return true;
+        if(opt.isEmpty()) {
+            LOGGER.error("Cannot run search: search could not be created");
+            return false;
         }
-        
-        LOGGER.error("Cannot run search: search could not be created");
-        return false;
+            
+        searchId = opt.getAsInt();;
+        LOGGER.debug("Locking controller for modifications");
+        lockLevel.set(Lock.MODIFICATION_LOCKED);
+        currentViewer.gridProperty().bind(
+            searchRunner.getSearchSpace(searchId).get().currentGridProperty()
+        );
+        bindProgressPane();
+        return true;
     }
-    
+
+    /**
+     * Submits a search run to {@link #searchRunner}.
+     * 
+     * @param isSteps Whether to submit as a 'steps' or a full run of the search.
+     */
     private void submitRun(boolean isSteps) {
         int iter = 0;
         int throttle = 0;
@@ -272,9 +418,14 @@ public class BuilderController {
         searchRunner.runSearch(searchId, iter, throttle, log, memory);
     }
 
+    /**
+     * Changes {@link #searchBuilder} to a builder from the corresponding class
+     * and calls {@link #setSearchParams()} and {@link #setQueuedClasses()}.
+     * 
+     * @param cb The {@link ChoiceBox} which contains the classes for {@link #searchBuilder}.
+     */
     private void onSearchAlgActivated(ChoiceBox<Class<?>> cb) {
 
-        // converts the builder eg BreadthFirst.Builder -> DepthFirst.Builder
         var c = cb.getValue().getDeclaredClasses()[0];
 
         try {
@@ -282,7 +433,6 @@ public class BuilderController {
         } catch (InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             LOGGER.error("Could not create builder " + e.getMessage());
         }
-
         
         setSearchParams();
         setQueuedClasses();
@@ -295,7 +445,10 @@ public class BuilderController {
         }
         
     }
-    
+
+    /**
+     * Sets the additional parameters from {@link Search.Builder} subclasses.
+     */
     private void setSearchParams() {
         var l = getPropertyMap().get(IBuilder.Category.SEARCH_EXTRA);
 
@@ -310,7 +463,10 @@ public class BuilderController {
         
         extraTab.setContent(gp);
     }
-    
+
+    /**
+     * Sets the possible {@link DataStructure} implementations for {@link #queuedBuilder}.
+     */
     private void setQueuedClasses() {
         Reflections reflections = new Reflections("io.github.vqnxiv.taquin");
 
@@ -339,15 +495,11 @@ public class BuilderController {
             );
         }
     }
-    
-    // PROGRESS
-    
-    // ???
-    private void setupProgressPane() {
-        LOGGER.debug("Creating progress panel");
-        var v = Search.SearchProperty.values();
-    }
-    
+
+    /**
+     * Binds the content of {@link #progressPane} to the properties of the {@link Search}
+     * which was built from {@link #searchBuilder}.
+     */
     private void bindProgressPane() {
         LOGGER.debug("Binding progress panel to search");
         
@@ -366,9 +518,10 @@ public class BuilderController {
             progressPane.add(l, i , 1);
         }
     }
-    
-    // PARAMETERS
 
+    /**
+     * Fills the content of {@link #parameterTabPane}. 
+     */
     private void setupTabPane() {
         LOGGER.debug("Creating parameter panem");
 
@@ -379,7 +532,12 @@ public class BuilderController {
             parameterTabPane.getTabs().add(tab);
         }
     }
-    
+
+    /**
+     * Aggregates and returns the batch maps returned from all the {@link IBuilder}.
+     * 
+     * @return The created {@link Map}.
+     */
     private EnumMap<IBuilder.Category, List<Property<?>>> getPropertyMap() {
         LOGGER.debug("Fetching batch properties");
 
@@ -398,6 +556,14 @@ public class BuilderController {
         return map;
     }
 
+    /**
+     * Creates a {@link Tab} for {@link #parameterTabPane}.
+     * 
+     * @param p The {@link IBuilder.Category} for this {@link Tab} (i.e its name).
+     * @param items The {@link Property} from which {@link Control} will be created
+     * and placed inside this {@link Tab}.
+     * @return The created {@link Tab}.
+     */
     private Tab createTab(IBuilder.Category p, List<Property<?>> items) {
         LOGGER.debug("Creating parameter tab: " + p.toString());
 
@@ -425,7 +591,14 @@ public class BuilderController {
         
         return tab;
     }
-    
+
+    /**
+     * Creates a {@link GridPane} for the parameter tabpane {@link #parameterTabPane}.
+     * 
+     * @param colNumber The number of columns ({@link javafx.scene.layout.ColumnConstraints})
+     * for this {@link GridPane}.
+     * @return The created {@link GridPane}.
+     */
     private GridPane createGridPane(int colNumber) {
         LOGGER.trace("Creating gridPane");
         var gridp = new GridPane();
@@ -443,10 +616,13 @@ public class BuilderController {
         
         return gridp;
     }
-    
-    
-    // CONTROLS
-    
+
+    /**
+     * Creates a {@link Control} based on the given property.
+     * 
+     * @param prop {@link Property} to which the control's value will be bound.
+     * @return The created {@link Control}.
+     */
     @SuppressWarnings("unchecked")
     private Control controlFromProperty(Property<?> prop) {
         return switch(prop) {
@@ -456,13 +632,19 @@ public class BuilderController {
             default -> switch(prop.getValue()) {
                 // cannot be safely cast if case Property<Enum> in main switch
                 case Enum ignored -> createEnumChoiceBox((Property<Enum>) prop);
-                case Class c -> createClassChoiceBox((Property<Class<?>>) prop);
-                case Grid g -> createGridButton((Property<Grid>) prop);
+                case Class unused -> createClassChoiceBox((Property<Class<?>>) prop);
+                case Grid useless -> createGridButton((Property<Grid>) prop);
                 default -> throw new IllegalStateException("Unexpected property type: " + prop.getValue().getClass());
             };
         };
     }
-    
+
+    /**
+     * Creates a {@link CheckBox}.
+     * 
+     * @param b The {@link BooleanProperty} to which this {@link CheckBox} is bound.
+     * @return The created {@link CheckBox}.
+     */
     private CheckBox createCheckBox(BooleanProperty b) {
         LOGGER.trace("Creating chekbox for " + b.getName());
         
@@ -475,6 +657,12 @@ public class BuilderController {
         return cb;
     }
 
+    /**
+     * Creates a {@link TextField} which only accepts numerical input.
+     * 
+     * @param i {@link IntegerProperty} to which this textfield's {@link TextFormatter} is bound.
+     * @return The created {@link TextField}.
+     */
     @SuppressWarnings("unchecked")
     private TextField createIntTF(IntegerProperty i) {
         LOGGER.trace("Creating textfield for " + i.getName());
@@ -492,6 +680,12 @@ public class BuilderController {
         return tf;
     }
 
+    /**
+     * Creates a generic {@link TextField} which is bound to a {@link StringProperty}.
+     * 
+     * @param s The property to which is bound the value of this textfield.
+     * @return The created {@link TextField}.
+     */
     private TextField createStringTF(StringProperty s) {
         LOGGER.trace("Creating textfield for " + s.getName());
 
@@ -508,6 +702,13 @@ public class BuilderController {
         return tf;
     }
 
+    /**
+     * Creates a {@link ChoiceBox} which displays all the values from an {@link Enum}.
+     * 
+     * @param p The property to which is bound the value of this choicebox.
+     * @param <T> The enum type.
+     * @return The created {@link ChoiceBox}.
+     */
     private <T extends Enum<T>> ChoiceBox<T> createEnumChoiceBox(Property<T> p) {
         LOGGER.trace("Creating choicebox for " + p.getName());
 
@@ -528,9 +729,13 @@ public class BuilderController {
         
         return cb;
     }
-    
-    // remove?
-    //@SuppressWarnings("unchecked")
+
+    /**
+     * Creates a {@link ChoiceBox} which displays Class objects.
+     * 
+     * @param p The property to which is bound the value of this choicebox.
+     * @return The created {@link ChoiceBox}.
+     */
     private ChoiceBox<Class<?>> createClassChoiceBox(Property<Class<?>> p) {
         LOGGER.trace("Creating choicebox for " + p.getName());
 
@@ -556,7 +761,7 @@ public class BuilderController {
             
             cb.setConverter(Utils.clsStringConverter);
         }
-        else {
+        else if(Search.class.isAssignableFrom(p.getValue())) {
             Reflections reflections = new Reflections("io.github.vqnxiv.taquin");
             
             cb.setItems(FXCollections.observableList(
@@ -565,9 +770,7 @@ public class BuilderController {
                     .stream()
                     .toList()
             ));
-            //cb.setConverter(Utils.clsStringConverter);
             cb.setConverter(Utils.srchClsConv);
-            
         }
         
         cb.valueProperty().bindBidirectional(p);
@@ -578,7 +781,13 @@ public class BuilderController {
         );
         return cb;
     }
-    
+
+    /**
+     * Creates a button which opens a {@link GridViewer}.
+     * 
+     * @param p The Grid Property to bind to that of the {@link GridViewer}.
+     * @return {@link Button} which opens the {@link GridViewer}.
+     */
     private Button createGridButton(Property<Grid> p) {
         LOGGER.trace("Creating button for " + p.getName());
 
@@ -589,11 +798,16 @@ public class BuilderController {
             p.bind(startViewer.gridProperty());
             startViewer.editableProperty().bind(lockLevel.isEqualTo(Lock.NOT_LOCKED));
         }
-        else if (p.getName().equalsIgnoreCase("end")){
+        else if(p.getName().equalsIgnoreCase("end")) {
             b.setOnAction(e -> endViewer.setShowing(true));
             p.bind(endViewer.gridProperty());
             endViewer.editableProperty().bind(lockLevel.isEqualTo(Lock.NOT_LOCKED));
         }
+        else if(p.getName().equalsIgnoreCase("current")) {
+            b.setOnAction(e -> currentViewer.setShowing(true));
+            b.disableProperty().bind(lockLevel.isEqualTo(Lock.NOT_LOCKED));
+        }
+        
         return b;
     }
 }
