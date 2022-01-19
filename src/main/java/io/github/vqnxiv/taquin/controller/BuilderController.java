@@ -76,8 +76,7 @@ public class BuilderController {
     
     
     private final SearchRunner searchRunner;
-    private Search search;
-    private SearchSpace space;
+    private int searchId;
     
     private Search.Builder<?> searchBuilder;
     private final SearchSpace.Builder spaceBuilder;
@@ -126,7 +125,7 @@ public class BuilderController {
     }
     
     public boolean hasSearchWithID(int id) {
-        return search != null && search.getID() == id;
+        return searchId == id;
     }
     
     
@@ -189,13 +188,13 @@ public class BuilderController {
                 );
             case "pause" ->
                 createRunnerButton(s, true, 
-                    event -> searchRunner.pauseSearch(search)
+                    event -> searchRunner.pauseSearch(searchId)
                 );
             case "stop" ->
                 createRunnerButton(s, true, 
                     event -> {
                         lockLevel.set(Lock.FULLY_LOCKED);
-                        searchRunner.stopSearch(search);
+                        searchRunner.stopSearch(searchId);
                     }
                 );
             case "steps" ->
@@ -207,7 +206,7 @@ public class BuilderController {
             case "steps number" -> {
                 var tf = new TextField();
                 tf.setMaxWidth(85.0);
-                tf.setTextFormatter(new TextFormatter<>(Utils.intStringConverter, 0, Utils.integerFilter));
+                tf.setTextFormatter(new TextFormatter<>(Utils.intStringConverter, 1, Utils.integerFilter));
                 yield tf;
             }
             default -> new Label(s);
@@ -241,8 +240,7 @@ public class BuilderController {
         
         
         if(opt.isPresent()) {
-            search = opt.get();
-            space = search.getSearchSpace();
+            searchId = opt.getAsInt();;
             LOGGER.debug("Locking controller for modifications");
             lockLevel.set(Lock.MODIFICATION_LOCKED);
             bindProgressPane();
@@ -271,7 +269,7 @@ public class BuilderController {
             throttle = i;
         }
         
-        searchRunner.runSearch(search, iter, throttle, log, memory);
+        searchRunner.runSearch(searchId, iter, throttle, log, memory);
     }
 
     private void onSearchAlgActivated(ChoiceBox<Class<?>> cb) {
@@ -352,7 +350,14 @@ public class BuilderController {
     
     private void bindProgressPane() {
         LOGGER.debug("Binding progress panel to search");
-        var props = search.getProperties();
+        
+        var opt = searchRunner.getSearchProgressProperties(searchId);
+        if(opt.isEmpty()) {
+            LOGGER.error("Could not bind progress panel");
+            return;
+        }
+        
+        var props = opt.get();
         var values = Search.SearchProperty.values();
         
         for(int i = 0; i < values.length; i++) {

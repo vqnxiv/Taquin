@@ -543,6 +543,11 @@ public class Grid implements Comparable<Grid> {
             }
         }
         
+        if(fromAll.contains(-1) || toAll.contains(-1)) {
+            LOGGER.error("Invalid cells");
+            return false;
+        }
+        
         var tmp = new HashSet<>(fromAll);
         
         fromAll.removeAll(toAll);

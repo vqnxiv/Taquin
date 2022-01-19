@@ -198,14 +198,15 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      */
     private void bufferNextPair() {
         
-        var p = eventBuffer.poll();
-        if(textBuffers.containsKey(p.output)) {
-            textBuffers.get(p.output).append(p.text);
-        }
-        else {
-            textBuffers.put(p.output, new StringBuilder(p.text));
-        }
+        synchronized(textBuffers) {
+            var p = eventBuffer.poll();
+            if(textBuffers.containsKey(p.output)) {
+                textBuffers.get(p.output).append(p.text);
+            } else {
+                textBuffers.put(p.output, new StringBuilder(p.text));
+            }
 
+        }
         tryProcessEvent();
     }
 }

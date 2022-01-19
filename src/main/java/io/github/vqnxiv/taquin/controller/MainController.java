@@ -183,7 +183,7 @@ public class MainController {
     /**
      * Retrieves the corresponding {@link BuilderController} {@link InlineCssTextArea} 
      * for search logs ({@link io.github.vqnxiv.taquin.logger.SearchAppender})
-     * from a {@link Search#getID()}.
+     * from a {@link Search#getId()}.
      * 
      * @param id The id of the {@link Search}.
      * @return {@link Optional#of(Object)} the {@link InlineCssTextArea} if a {@link Search} 

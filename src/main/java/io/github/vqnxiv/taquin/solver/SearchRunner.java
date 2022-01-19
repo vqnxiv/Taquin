@@ -11,9 +11,7 @@ import javafx.beans.property.StringProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,7 +33,7 @@ public class SearchRunner {
      * The number of concurrent searches allowed.
      */
     private static final int MAXIMUM_CONCURRENT_SEARCHES = 1;
-
+    
     /**
      * {@link ExecutorService} which executes the {@link Search} async.
      */
@@ -52,9 +50,9 @@ public class SearchRunner {
     private final StringProperty lastSearchInfo;
 
     /**
-     * List which contains all created searches.
+     * Maps which contains all created searches, where the keys are the searches id.
      */
-    private final List<Search> searches;
+    private final Map<Integer, Search> searches;
 
 
     /**
@@ -69,7 +67,7 @@ public class SearchRunner {
         );
         lastSearchInfo = new SimpleStringProperty("");
         
-        searches = new ArrayList<>();
+        searches = new HashMap<>();
     }
 
 
@@ -83,16 +81,31 @@ public class SearchRunner {
     }
 
 
+    public Optional<Map<Search.SearchProperty, StringProperty>> getSearchProgressProperties(int searchId) {
+        var s = searches.get(searchId);
+
+        if(s == null) {
+            LOGGER.info("No search with id {}", searchId);
+            return Optional.empty();
+        }
+        
+        return Optional.of(s.getProperties());
+    }
+    
     /**
      * Deletes a search from {@link #searches}.
      * 
-     * @param s The search to remove.
-     * @return {@code true} if the search was successfully deleted; {@code false} otherwise.
+     * @param searchId The id of the search to remove.
      */
-    public boolean deleteSearch(Search s) {
-        LOGGER.info("Deleting search: {}", s.getName());
-
-        return searches.remove(s);
+    public void deleteSearch(int searchId) {
+        Search s;
+        
+        if((s = searches.remove(searchId)) != null) {
+            LOGGER.info("Deleted search {}", s.getName());
+        }
+        else {
+            LOGGER.info("No search with id {}", searchId);
+        }
     }
 
     /**
@@ -104,9 +117,9 @@ public class SearchRunner {
      * @param spaceBuilder The builder to build a searchspace from.
      * @param queuedBuilder {@link DataStructure.Builder} for {@code spaceBuilder}.
      * @param exploredBuilder {{@link DataStructure.Builder} for {@code spaceBuilder}.
-     * @return
+     * @return {@link OptionalInt#of} the id of the created search if it was successfully created. 
      */
-    public Optional<Search> createSearchAndSpace(
+    public OptionalInt createSearchAndSpace(
         Search.Builder<?> searchBuilder, SearchSpace.Builder spaceBuilder,
         DataStructure.Builder queuedBuilder, DataStructure.Builder exploredBuilder
     ) {
@@ -116,17 +129,17 @@ public class SearchRunner {
         var m = spaceBuilder.getNamedProperties();
         if(m.get("start").getValue() == null) {
             LOGGER.error("Start grid is null");
-            return Optional.empty();
+            return OptionalInt.empty();
         }
         else if(m.get("end").getValue() == null) {
             LOGGER.error("End grid is null");
-            return Optional.empty();
+            return OptionalInt.empty();
         }
 
         LOGGER.debug("Checking grids content");
+
         if(!((Grid) m.get("start").getValue()).checkCompatibility((Grid) m.get("end").getValue())) {
-            LOGGER.error("Grids do not share the same alphabet");
-            return Optional.empty();
+            return OptionalInt.empty();
         }
         
         var s = searchBuilder.build();
@@ -142,39 +155,46 @@ public class SearchRunner {
                 .build()
         );
         
-        searches.add(s);
-        return Optional.of(s);
+        searches.put(s.getId(), s);
+        return OptionalInt.of(s.getId());
     }
 
     /**
      * Pauses the given {@link Search} if it is running.
      * 
-     * @param s The search to pause.
+     * @param searchId The id of the search to pause.
      */
-    public void pauseSearch(Search s) {
-        LOGGER.info("Pausing search: {}", s.getName());
+    public void pauseSearch(int searchId) {
+        var s = searches.get(searchId);
         
-        if(!s.equals(lastRunningSearch)) {
+        if(s == null) {
+            LOGGER.info("No search with id {}", searchId);
+            return;
+        }
+        
+        if(s.getState() != Search.SearchState.RUNNING) {
             LOGGER.error("Search is not currently running: {}", s.getName());
             return;
         }
-
+        
+        LOGGER.info("Pausing search: {}", s.getName());
         s.pause();
     }
 
     /**
      * Stops the given {@link Search} regardless of its state.
      * 
-     * @param s The search to stop.
+     * @param searchId The id of the search to stop.
      */
-    public void stopSearch(Search s) {
-        LOGGER.info("Stopping search: {}", s.getName());
+    public void stopSearch(int searchId) {
+        var s = searches.get(searchId);
 
-        if(!s.equals(lastRunningSearch)) {
-            LOGGER.error("Search is not currently running: {}", s.getName());
+        if(s == null) {
+            LOGGER.info("No search with id {}", searchId);
             return;
         }
-        
+
+        LOGGER.info("Stopping search: {}", s.getName());
         s.stop();
     }
 
@@ -183,13 +203,21 @@ public class SearchRunner {
      * and submitting its returned {@link io.github.vqnxiv.taquin.solver.Search.SearchTask} (if present)
      * to {@link #executorService}.
      * 
-     * @param s The {@link Search} to create a {@link io.github.vqnxiv.taquin.solver.Search.SearchTask} for.
+     * @param searchId The if of the {@link Search} to create a 
+     * {@link io.github.vqnxiv.taquin.solver.Search.SearchTask} for.
      * @param iter The number of iterations for the task.
      * @param throttle Throttle delay for the task.
      * @param log Whether to log the task.
      * @param mem Whether to update memory usage on every iteration.
      */
-    public void runSearch(Search s, int iter, int throttle, boolean log, boolean mem) {
+    public void runSearch(int searchId, int iter, int throttle, boolean log, boolean mem) {
+        var s = searches.get(searchId);
+
+        if(s == null) {
+            LOGGER.info("No search with id {}", searchId);
+            return;
+        }
+        
         LOGGER.info("Attempting to run search: {}", s.getName());
         
         if(lastRunningSearch == null || lastRunningSearch.getState() != Search.SearchState.RUNNING) {
@@ -213,8 +241,7 @@ public class SearchRunner {
             }
         );
     }
-
-
+    
 
     /**
      * Shutdowns this executor.
@@ -225,9 +252,9 @@ public class SearchRunner {
     public void shutdown(boolean stopSearch) {
         if(lastRunningSearch != null && lastRunningSearch.getState() == Search.SearchState.RUNNING) {
             if(stopSearch) {
-                stopSearch(lastRunningSearch);
+                stopSearch(lastRunningSearch.getId());
             } else {
-                pauseSearch(lastRunningSearch);
+                pauseSearch(lastRunningSearch.getId());
             }
         }
 

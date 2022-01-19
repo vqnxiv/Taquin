@@ -161,8 +161,8 @@ public class GridViewer {
         private static List<ContextMenuItem> getAll(boolean editor, boolean readOnly) {
             return Arrays.stream(values())
                 .filter(i ->
-                    (editor && i.editor == editor) ||
-                    (readOnly && i.readOnly == readOnly)
+                    (editor && i.editor) ||
+                    (readOnly && i.readOnly)
                 )
                 .toList();
         }

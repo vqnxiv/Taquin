@@ -520,7 +520,7 @@ public abstract class Search {
          * @return The constant with the specified index.
          * @throws IllegalArgumentException if no constant is found for the given index.
          */
-        public static SearchState valueOf(long l) {
+        static SearchState valueOf(long l) {
             for(var v : values()) {
                 if(v.index == l) {
                     return v;
@@ -609,7 +609,7 @@ public abstract class Search {
          * @param s The {@link Search} to check.
          * @return long value of {@link #function}.
          */
-        public long calc(Search s) {
+        long calc(Search s) {
             return function.applyAsLong(s);
         }
 
@@ -619,7 +619,7 @@ public abstract class Search {
          * @param s The {@link Search} to check.
          * @return {@link String} of the result of {@link #function}.
          */
-        public String calcToString(Search s) {
+        String calcToString(Search s) {
             if(this == CURRENT_STATE) {
                 return SearchState.valueOf(function.applyAsLong(s)).toString();
             }
@@ -814,7 +814,7 @@ public abstract class Search {
      * 
      * @param space The value for {@link #searchSpace}.
      */
-    public void setSearchSpace(SearchSpace space) {
+    void setSearchSpace(SearchSpace space) {
         searchSpace = space;
         setSpaceDependentParameters();
         setReady();
@@ -825,7 +825,7 @@ public abstract class Search {
      * 
      * @return {@link #searchSpace}.
      */
-    public SearchSpace getSearchSpace() {
+    SearchSpace getSearchSpace() {
         return searchSpace;
     }
 
@@ -843,7 +843,7 @@ public abstract class Search {
      * 
      * @return {@link #id}.
      */
-    public int getID() {
+    public int getId() {
         return id;
     }
 
@@ -852,7 +852,7 @@ public abstract class Search {
      * 
      * @return {@link #heuristicComparator}.
      */
-    public Comparator<Grid> getHeuristicComparator() {
+    Comparator<Grid> getHeuristicComparator() {
         return heuristicComparator;
     }
 
@@ -861,7 +861,7 @@ public abstract class Search {
      * 
      * return {@link #properties}.
      */
-    public Map<SearchProperty, StringProperty> getProperties() {
+    Map<SearchProperty, StringProperty> getProperties() {
         return properties;
     }
 
@@ -870,7 +870,7 @@ public abstract class Search {
      * 
      * @return The property for {@link SearchProperty#CURRENT_STATE} in {@link #properties}.
      */
-    public final ReadOnlyStringProperty getCurrentStateProperty() {
+    final ReadOnlyStringProperty getCurrentStateProperty() {
         return properties.get(SearchProperty.CURRENT_STATE);
     }
 
@@ -998,7 +998,7 @@ public abstract class Search {
      * is either {@link SearchState#READY} or {@link SearchState#PAUSED}, and if {@link #searchSpace}
      * has been injected. Otherwise, {@link Optional#empty()}.
      */
-    public Optional<SearchTask<SearchState>> newSearchTask(
+    Optional<SearchTask<SearchState>> newSearchTask(
         int iterations, int throttle, boolean log, boolean memory
     ) {
         if((currentSearchState != SearchState.READY && currentSearchState != SearchState.PAUSED)
