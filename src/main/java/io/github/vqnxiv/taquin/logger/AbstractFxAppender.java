@@ -11,10 +11,8 @@ import org.apache.logging.log4j.core.config.Property;
 import org.fxmisc.richtext.InlineCssTextArea;
 
 import java.io.Serializable;
-import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -28,14 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class AbstractFxAppender extends AbstractAppender {
 
     /**
-     * {@link Record} which is used to keep a {@link LogEvent} message
-     * with the {@link InlineCssTextArea} it should be displayed in.
-     */
-    private record Pair(String text, InlineCssTextArea output) {}
-
-    
-    /**
-     * {@link MainController} from which the {@link Pair#output} are retrieved.
+     * {@link MainController} from which the {@link InlineCssTextArea} outputs are retrieved.
      */
     protected static MainController mainController;
 
@@ -51,16 +42,12 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      */
     private final AtomicBoolean throttle;
 
-    /**
-     * {@link Queue} buffer to store the events until they could be buffed into {@link #textBuffers}.
-     */
-    private final Queue<Pair> eventBuffer;
 
     /**
      * Buffers the actual event messages with {@link StringBuilder}s so several messages
      * can be added at once.
      * <p>
-     * Adding this on top of {@link #eventBuffer} allows to greatly reduce the number
+     * Buffering the messages before appending them allows to greatly reduce the number
      * of {@link Platform#runLater(Runnable)} calls. E.g in the same conditions as above,
      * (1500 states, 5 events / step = 7500 total events), we go from 7500 
      * {@link InlineCssTextArea#appendText(String)} calls passed to 
@@ -71,7 +58,7 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      * Internally implemented with a {@link LinkedHashMap} so that events that came first
      * are added first to the UI.
      */
-    private final Map<InlineCssTextArea, StringBuilder> textBuffers;
+    private final Map<InlineCssTextArea, StringBuilder> buffer;
     
     
     /**
@@ -90,9 +77,7 @@ public abstract class AbstractFxAppender extends AbstractAppender {
         super(name, filter, layout, ignoreExceptions, properties);
         
         throttle = new AtomicBoolean(true);
-        eventBuffer = new ArrayDeque<>();
-        
-        textBuffers = new LinkedHashMap<>();
+        buffer = new LinkedHashMap<>();
     }
 
     /**
@@ -109,32 +94,22 @@ public abstract class AbstractFxAppender extends AbstractAppender {
      * Method which is called to add an event to the GUI. Extending classes
      * should call this in {@link #append(LogEvent)}.
      * 
-     * @param event The event to display.
+     * @param message The event message to display.
      * @param output Where it should be displayed.
      */
-    protected void enqueueForGui(LogEvent event, InlineCssTextArea output) {
+    protected void enqueueForGui(String message, InlineCssTextArea output) {
         
-        if(event == null || output == null) {
+        if(message.isBlank() || output == null) {
             return;
         }
-        
-        synchronized(eventBuffer) {
-            /*
-            getLayout().toByteArray() returns an empty string when logging from search
-            and .getMessage().getFormattedMessage() removes parts of the pattern
-            so we keep the layout way for the root logger
-            */
-            String s = new String(getLayout().toByteArray(event));
-            
-            if(s.isBlank()) {
-                // formats the timestamp number
-                var strTab = event.getMessage().getFormattedMessage().split("\t", 2);
-                var str = String.format("%15d", Long.parseLong(strTab[0])) + strTab[1] + '\n';
-                eventBuffer.add(new Pair(str, output));
+
+        synchronized(buffer) {
+            if(buffer.containsKey(output)) {
+                buffer.get(output).append(message);
+            } else {
+                buffer.put(output, new StringBuilder(message));
             }
-            else {
-                eventBuffer.add(new Pair(s, output));
-            }
+
         }
 
         tryProcessEvent();
@@ -142,42 +117,36 @@ public abstract class AbstractFxAppender extends AbstractAppender {
 
     /**
      * Callback method to notify this appender the GUI is done displaying
-     * the event sent through {@link #addFirstBufferToGui()} and {@link Platform#runLater(Runnable)},
-     * and it can attempt to queue the next event, if {@link #eventBuffer} is not empty.
+     * the event sent through {@link #addFirstMessageToGui()} and {@link Platform#runLater(Runnable)},
+     * and it can attempt to queue the next event, if {@link #buffer} is not empty.
      */
     public void notifyForNext() {
         tryProcessEvent();
     }
 
     /**
-     * Attempts to process the next event in {@link #eventBuffer} or text in {@link #textBuffers},
+     * Attempts to process the next message in {@link #buffer},
      * depending on {@link #throttle}.
      * <p>
      * Queues a GUI update through {@link Platform#runLater(Runnable)} if 
-     * {@link #textBuffers} is not empty and {@link #throttle} is {@code true}.
-     * <p>
-     * Otherwise, buffers the next event message by calling {@link #bufferNextPair()}
-     * if {@link #eventBuffer} is not empty.
+     * {@link #buffer} is not empty and {@link #throttle} is {@code true}.
      */
     private void tryProcessEvent() {
-        if(!textBuffers.isEmpty() && throttle.getAndSet(false)) {
-            addFirstBufferToGui();
-        }
-        else if(!eventBuffer.isEmpty()) {
-            bufferNextPair();
+        if(!buffer.isEmpty() && throttle.getAndSet(false)) {
+            addFirstMessageToGui();
         }
     }
     
     
     /**
-     * Adds the content of the first entry from {@link #textBuffers} to the UI.
+     * Adds the content of the first entry from {@link #buffer} to the UI.
      */
-    private void addFirstBufferToGui() {
-        var e = textBuffers.entrySet().iterator().next();
+    private void addFirstMessageToGui() {
+        var e = buffer.entrySet().iterator().next();
         var out = e.getKey();
         var str = e.getValue().toString();
         
-        textBuffers.remove(out);
+        buffer.remove(out);
         var down = out.getTotalHeightEstimate();
 
         Platform.runLater(
@@ -190,23 +159,5 @@ public abstract class AbstractFxAppender extends AbstractAppender {
             }
         );
         
-    }
-
-    /**
-     * Adds the next {@link Pair} from {@link #eventBuffer} to {@link #textBuffers}. 
-     * Calls {@link #tryProcessEvent()} once it's done adding it to the map.
-     */
-    private void bufferNextPair() {
-        
-        synchronized(textBuffers) {
-            var p = eventBuffer.poll();
-            if(textBuffers.containsKey(p.output)) {
-                textBuffers.get(p.output).append(p.text);
-            } else {
-                textBuffers.put(p.output, new StringBuilder(p.text));
-            }
-
-        }
-        tryProcessEvent();
     }
 }

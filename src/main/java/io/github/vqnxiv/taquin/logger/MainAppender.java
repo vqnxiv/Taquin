@@ -93,7 +93,11 @@ public class MainAppender extends AbstractFxAppender {
         }
         
         while(!events.isEmpty()) {
-            enqueueForGui(events.poll(), mainController.getMainLogOutput());
+            var e = events.poll();
+            enqueueForGui(
+                new String(getLayout().toByteArray(e)), 
+                mainController.getMainLogOutput()
+            );
         }
     }
 }

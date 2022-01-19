@@ -90,8 +90,11 @@ public class SearchAppender extends AbstractFxAppender {
         
         LogEvent finalEvent = event;
         mainController.getBuilderLogOutputFromSearchID(id).ifPresent(
-            output -> enqueueForGui(finalEvent, output)
-           // output -> t()
+            output -> {
+                var strTab = finalEvent.getMessage().getFormattedMessage().split("\t", 2);
+                var str = String.format("%15d", Long.parseLong(strTab[0])) + strTab[1] + '\n';
+                enqueueForGui(str, output);
+            }
         );
     }
 }

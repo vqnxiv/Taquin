@@ -227,7 +227,9 @@ public abstract class Search {
          * is not equal to {@link SearchState#PAUSED} or {@link SearchState#ENDED_SUCCESS}.
          */
         private void checkIfEndWasQueued() {
-            if(currentSearchState != SearchState.PAUSED && currentSearchState != SearchState.ENDED_SUCCESS) {
+            if(currentSearchState != SearchState.PAUSED 
+                && currentSearchState != SearchState.ENDED_SUCCESS
+                && currentSearchState != SearchState.ENDED_FAILURE_EMPTY_SPACE) {
                 int n;
                 if((n = searchSpace.getQueued().dsIndexOf(searchSpace.getGoal())) > -1) {
                     log("End queued at index " + n);
