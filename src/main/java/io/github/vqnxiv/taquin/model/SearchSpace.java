@@ -19,11 +19,11 @@ import java.util.*;
  *     <li>A set of queued points: {@link #queued}</li>
  * </ul>
  * <p>
- * This class is a simple model class and does nothing on its own. A {@link io.github.vqnxiv.taquin.solver.Search}
+ * This class is a simple model class and does nothing on its own. A {@link Search}
  * object should be injected an instance of {@link SearchSpace} to perform an actual search.
  * 
  * @see Grid
- * @see io.github.vqnxiv.taquin.solver.Search
+ * @see Search
  */
 public class SearchSpace {
 
@@ -120,17 +120,17 @@ public class SearchSpace {
     }
 
     /**
-     * The starting point from which a {@link io.github.vqnxiv.taquin.solver.Search} can be performed.
+     * The starting point from which a {@link Search} can be performed.
      */
     private final Grid startGrid;
 
     /**
-     * The goal point of a {@link io.github.vqnxiv.taquin.solver.Search}.
+     * The goal point of a {@link Search}.
      */
     private final Grid goalGrid;
 
     /**
-     * The current point of a {@link io.github.vqnxiv.taquin.solver.Search}.
+     * The current point of a {@link Search}.
      */
     private Grid currentGrid;
 

@@ -9,9 +9,9 @@ import io.github.vqnxiv.taquin.model.structure.Sorted;
 import io.github.vqnxiv.taquin.model.structure.Unsorted;
 import io.github.vqnxiv.taquin.model.structure.jstructure.JLinkedHashSet;
 import io.github.vqnxiv.taquin.model.structure.jstructure.JPriorityQueue;
-import io.github.vqnxiv.taquin.solver.Search;
-import io.github.vqnxiv.taquin.solver.SearchRunner;
-import io.github.vqnxiv.taquin.solver.search.Astar;
+import io.github.vqnxiv.taquin.model.Search;
+import io.github.vqnxiv.taquin.model.SearchRunner;
+import io.github.vqnxiv.taquin.model.search.Astar;
 import io.github.vqnxiv.taquin.util.FxUtils;
 import io.github.vqnxiv.taquin.util.IBuilder;
 import io.github.vqnxiv.taquin.util.Utils;
@@ -86,7 +86,7 @@ public class BuilderController {
     private TabPane parameterTabPane;
 
     /**
-     * GridPane in which {@link io.github.vqnxiv.taquin.solver.Search.SearchProperty} will be displayed.
+     * GridPane in which {@link Search.SearchProperty} will be displayed.
      */
     @FXML
     private GridPane progressPane;
@@ -328,7 +328,7 @@ public class BuilderController {
             case "steps number" -> {
                 var tf = new TextField();
                 tf.setMaxWidth(85.0);
-                tf.setTextFormatter(new TextFormatter<>(Utils.intStringConverter, 1, Utils.integerFilter));
+                tf.setTextFormatter(new TextFormatter<>(FxUtils.intStringConverter, 1, FxUtils.integerFilter));
                 yield tf;
             }
             case "current" -> createGridButton(currentViewer.gridProperty());
@@ -670,7 +670,7 @@ public class BuilderController {
         TextField tf = new TextField();
         tf.setMaxWidth(85.0d);
     
-        tf.setTextFormatter(new TextFormatter<>(Utils.intStringConverter, 0, Utils.integerFilter));
+        tf.setTextFormatter(new TextFormatter<>(FxUtils.intStringConverter, 0, FxUtils.integerFilter));
         ((Property<Number>) tf.getTextFormatter().valueProperty()).bindBidirectional(i);
 
         tf.disableProperty().bind(lockLevel.isNotEqualTo(Lock.NOT_LOCKED));
@@ -759,7 +759,7 @@ public class BuilderController {
                 ));
             }
             
-            cb.setConverter(Utils.clsStringConverter);
+            cb.setConverter(FxUtils.clsStringConverter);
         }
         else if(Search.class.isAssignableFrom(p.getValue())) {
             Reflections reflections = new Reflections("io.github.vqnxiv.taquin");
@@ -770,7 +770,7 @@ public class BuilderController {
                     .stream()
                     .toList()
             ));
-            cb.setConverter(Utils.srchClsConv);
+            cb.setConverter(FxUtils.srchClsConv);
         }
         
         cb.valueProperty().bindBidirectional(p);

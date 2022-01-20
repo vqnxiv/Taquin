@@ -1,17 +1,17 @@
-package io.github.vqnxiv.taquin.solver.search;
+package io.github.vqnxiv.taquin.model.search;
 
 
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.structure.Sortable;
 import io.github.vqnxiv.taquin.model.structure.Sorted;
-import io.github.vqnxiv.taquin.solver.Search;
+import io.github.vqnxiv.taquin.model.Search;
 
 
 /**
- * This class represents a search using the Greedy Best First Search algorithm, 
+ * This class represents a search using the A* algorithm, 
  * which is an informed search and thus requires an heuristic.
  */
-public class BestFirst extends Search {
+public class Astar extends Search {
     
     /**
      * Builder.
@@ -22,10 +22,10 @@ public class BestFirst extends Search {
          * Base no args constructor.
          * <p>
          * Sets the value of {@link Search.Builder#heuristic} to {@link Grid.Distance#LINEAR_MANHATTAN}.
-         */
+         */    
         public Builder() {
             super();
-
+            
             heuristic.set(Grid.Distance.LINEAR_MANHATTAN);
         }
 
@@ -33,7 +33,7 @@ public class BestFirst extends Search {
          * Copy constructor. Used when converting from a subclass to another.
          * <p>
          * Sets the value of {@link Search.Builder#heuristic} to {@link Grid.Distance#LINEAR_MANHATTAN}.
-         *
+         * 
          * @param toCopy The builder to copy.
          */
         public Builder(Search.Builder<?> toCopy) {
@@ -46,7 +46,7 @@ public class BestFirst extends Search {
 
         /**
          * Whether this search requires an heuristic.
-         *
+         * 
          * @return {@code true}.
          */
         @Override
@@ -56,7 +56,7 @@ public class BestFirst extends Search {
 
         /**
          * Method used to chain setters calls.
-         *
+         * 
          * @return This instance of {@link Builder}.
          */
         @Override
@@ -66,12 +66,12 @@ public class BestFirst extends Search {
 
         /**
          * Build method.
-         *
-         * @return A new instance of {@link BestFirst}.
+         * 
+         * @return A new instance of {@link Astar}.
          */
         @Override
-        protected BestFirst build() {
-            return new BestFirst(this);
+        protected Astar build() {
+            return new Astar(this);
         }
     }
 
@@ -79,15 +79,15 @@ public class BestFirst extends Search {
     /**
      * This search's shortname, which will be displayed on the GUI.
      */
-    public static final String SEARCH_SHORT_NAME = "GBFS";
+    public static final String SEARCH_SHORT_NAME = "A*";
 
 
     /**
      * Constructor.
-     *
+     * 
      * @param builder {@link Builder}.
      */
-    private BestFirst(Builder builder) {
+    private Astar(Builder builder) {
         super(builder);
     }
 
@@ -104,19 +104,19 @@ public class BestFirst extends Search {
 
     /**
      * Computes the heuristic value for the given {@link Grid}, 
-     * as per the Greedy Best First algorithm.
+     * as per the A* algorithm.
      * <p>
-     * The value is defined as the result {@link #heuristic} for the given {@link Grid}.
-     *
+     * The value is defined as {@link #heuristic} {@code +} the depth of the {@link Grid}.
+     * 
      * @param g The {@link Grid} to compute the heuristic value for.
      */
     @Override
     protected void computeHeuristic(Grid g) {
-        g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic));
+        g.setHeuristicValue(g.distanceTo(searchSpace.getGoal(), heuristic) + g.getDepth());
     }
 
     /**
-     * Represents a step from the Greedy Best First algorithm.
+     * Represents a step from the A* algorithm.
      * <p>
      * Explores the most promising state as per its heuristic value,
      * generates its neighbors and, for each neighbor that hasn't
@@ -128,17 +128,17 @@ public class BestFirst extends Search {
 
         Grid newCurrent = searchSpace.getQueued().dsPollFirst();
         log("Exploring new current: " + newCurrent.getKey());
-
+        
         searchSpace.setCurrent(newCurrent);
         searchSpace.getExplored().add(newCurrent);
-
+        
         log("Generating neighbors");
         var toAdd = searchSpace.getNewNeighbors(filterExplored, filterQueued, linkExistingNeighbors);
 
         log("Computing heuristics");
         for(Grid g : toAdd) computeHeuristic(g);
-
-        log("Queuing {}" + toAdd.size() + " generated neighbors");
+        
+        log("Queuing " + toAdd.size() + " generated neighbors");
         if(!toAdd.isEmpty()) {
             if(searchSpace.getQueued() instanceof Sorted<Grid>) {
                 searchSpace.getQueued().addAll(toAdd);
@@ -150,5 +150,5 @@ public class BestFirst extends Search {
             }
         }
     }
-    
+  
 }

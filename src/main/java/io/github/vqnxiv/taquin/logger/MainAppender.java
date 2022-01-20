@@ -13,6 +13,7 @@ import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 
 
@@ -95,7 +96,7 @@ public class MainAppender extends AbstractFxAppender {
         while(!events.isEmpty()) {
             var e = events.poll();
             enqueueForGui(
-                new String(getLayout().toByteArray(e)), 
+                new String(getLayout().toByteArray(e), StandardCharsets.UTF_8), 
                 mainController.getMainLogOutput()
             );
         }

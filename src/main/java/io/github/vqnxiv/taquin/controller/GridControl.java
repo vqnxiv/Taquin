@@ -2,7 +2,6 @@ package io.github.vqnxiv.taquin.controller;
 
 
 import io.github.vqnxiv.taquin.util.FxUtils;
-import io.github.vqnxiv.taquin.util.Utils;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -143,7 +142,7 @@ public class GridControl extends GridPane {
         var tf = new TextField();
         tf.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         tf.setAlignment(Pos.CENTER);
-        tf.setTextFormatter(new TextFormatter<>(intStringConverter, null, Utils.integerFilter));
+        tf.setTextFormatter(new TextFormatter<>(intStringConverter, null, FxUtils.integerFilter));
         tf.disableProperty().bind(editableProperty.not());
         tf.setContextMenu(contextMenu);
         

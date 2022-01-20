@@ -2,6 +2,7 @@ package io.github.vqnxiv.taquin.logger;
 
 
 import io.github.vqnxiv.taquin.controller.BuilderController;
+import io.github.vqnxiv.taquin.model.Search;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
@@ -20,7 +21,7 @@ import java.io.Serializable;
  * Log appender for search log.
  *
  * @see AbstractFxAppender
- * @see io.github.vqnxiv.taquin.solver.Search
+ * @see Search
  */
 @Plugin(
     name = "SearchAppender",
@@ -75,9 +76,9 @@ public class SearchAppender extends AbstractFxAppender {
     
     /**
      * Appends a log event from a search log to the {@link BuilderController#getLogOutput()} 
-     * from the corresponding {@link io.github.vqnxiv.taquin.solver.Search}.
+     * from the corresponding {@link Search}.
      * <p>
-     * The {@link io.github.vqnxiv.taquin.solver.Search} from which the event was fired is retrieved
+     * The {@link Search} from which the event was fired is retrieved
      * from the event's {@link Marker} ({@link Marker#getName()}).
      *
      * @param event {@link LogEvent} to be appended.

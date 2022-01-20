@@ -1,9 +1,6 @@
-package io.github.vqnxiv.taquin.solver;
+package io.github.vqnxiv.taquin.model;
 
 
-import io.github.vqnxiv.taquin.model.DataStructure;
-import io.github.vqnxiv.taquin.model.Grid;
-import io.github.vqnxiv.taquin.model.SearchSpace;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -132,7 +129,7 @@ public class SearchRunner {
 
     /**
      * Creates a {@link Search} and a {@link SearchSpace} instances from the given
-     * {@link io.github.vqnxiv.taquin.solver.Search.Builder} and 
+     * {@link Search.Builder} and 
      * {@link io.github.vqnxiv.taquin.model.SearchSpace.Builder}.
      * 
      * @param searchBuilder The builder to build a search from.
@@ -222,11 +219,11 @@ public class SearchRunner {
 
     /**
      * Runs a {@link Search} by creating calling {@link Search#newSearchTask(int, int, boolean, boolean)}
-     * and submitting its returned {@link io.github.vqnxiv.taquin.solver.Search.SearchTask} (if present)
+     * and submitting its returned {@link Search.SearchTask} (if present)
      * to {@link #executorService}.
      * 
      * @param searchId The if of the {@link Search} to create a 
-     * {@link io.github.vqnxiv.taquin.solver.Search.SearchTask} for.
+     * {@link Search.SearchTask} for.
      * @param iter The number of iterations for the task.
      * @param throttle Throttle delay for the task.
      * @param log Whether to log the task.

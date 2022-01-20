@@ -2,6 +2,7 @@ package io.github.vqnxiv.taquin.util;
 
 
 import io.github.vqnxiv.taquin.controller.BuilderController;
+import io.github.vqnxiv.taquin.model.Search;
 import javafx.beans.property.Property;
 
 import java.util.EnumMap;
@@ -14,7 +15,7 @@ import java.util.Map;
  * <p>
  * Builders which are to be used in {@link BuilderController} should implement this interface.
  * 
- * @see io.github.vqnxiv.taquin.solver.Search.Builder
+ * @see Search.Builder
  * @see io.github.vqnxiv.taquin.model.SearchSpace.Builder
  * @see io.github.vqnxiv.taquin.model.DataStructure.Builder
  */
@@ -30,23 +31,22 @@ public interface IBuilder {
          */
         COLLECTION,
         /**
-         * Main options for {@link io.github.vqnxiv.taquin.solver.Search} creation.
-         * This is mainly for the properties in {@link io.github.vqnxiv.taquin.solver.Search.Builder}.
+         * Main options for {@link Search} creation.
+         * This is mainly for the properties in {@link Search.Builder}.
          */
         SEARCH_MAIN,
         /**
-         * Extra options for {@link io.github.vqnxiv.taquin.solver.Search} creation.
+         * Extra options for {@link Search} creation.
          * This is mainly for the properties in the builder class of 
-         * {@link io.github.vqnxiv.taquin.solver.Search} subclasses.
+         * {@link Search} subclasses.
          */
         SEARCH_EXTRA,
         /**
-         * Options for {@link io.github.vqnxiv.taquin.solver.Search.SearchLimit}.
+         * Options for {@link Search.SearchLimit}.
          */
         LIMITS,
         /**
-         * Options that are used for {@link io.github.vqnxiv.taquin.solver.Search#newSearchTask(int, int, boolean, boolean)} 
-         * creation.
+         * Options that are used for Search task creation.
          */
         MISCELLANEOUS;
 

@@ -1,13 +1,10 @@
 package io.github.vqnxiv.taquin.util;
 
 
-import javafx.scene.control.TextFormatter;
-import javafx.util.StringConverter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.UnaryOperator;
 
 
 /**
@@ -19,75 +16,6 @@ public final class Utils {
      * Can't be instantiated.
      */
     private Utils() {}
-
-
-    /**
-     * {@link StringConverter} which converts between {@link String} and {@link Integer}
-     */
-    public static final StringConverter<Integer> intStringConverter = new StringConverter<>() {
-        @Override
-        public String toString(Integer n) {
-            return (n != null) ? Integer.toString(n) : "0";
-        }
-
-        @Override
-        public Integer fromString(String string) {
-            return (!string.equals("")) ? Integer.parseInt(string) : 0;
-        }
-    };
-
-    /**
-     * {@link StringConverter} which converts returns {@link Class#getSimpleName()} from a {@code .class} object
-     * and {@link Class#forName(String)} from a {@link String}, or {@code null} if {@link ClassNotFoundException}
-     */
-    public static final StringConverter<Class<?>> clsStringConverter = new StringConverter<>() {
-        @Override
-        public String toString(Class clazz) {
-            return (clazz != null) ? clazz.getSimpleName() : "";
-        }
-
-        @Override
-        public Class<?> fromString(String string) {
-            try {
-                return Class.forName(string);
-            } catch(ClassNotFoundException e) {
-                return null;
-            }
-        }
-    };
-
-    /**
-     * {@link StringConverter} which converts returns {@code Search#name} from a {@code .class} object from
-     * {@link io.github.vqnxiv.taquin.solver.Search} or one of its subclasses,
-     * and {@link Class#forName(String)} from a {@link String}, or {@code null} if {@link ClassNotFoundException}
-     */
-    public static final StringConverter<Class<?>> srchClsConv = new StringConverter<>() {
-        @Override
-        public String toString(Class<?> srchCls) {
-            return (String) Utils.staticFieldGet(srchCls, "SEARCH_SHORT_NAME").orElse("");
-        }
-
-        @Override
-        public Class<?> fromString(String string) {
-            try {
-                return Class.forName(string);
-            } catch(ClassNotFoundException e) {
-                return null;
-            }
-        }
-    };
-
-    /**
-     * {@link UnaryOperator} which filters out non digit characters from a {@link String}
-     */
-    public static final UnaryOperator<TextFormatter.Change> integerFilter = change -> {
-        String input = change.getText();
-        if (input.matches("[0-9]*")) {
-            return change;
-        }
-        return null;
-    };
-
 
     /**
      * Utility method which converts a {@link String} from SCREAMING_SNAKE_CASE to normal case

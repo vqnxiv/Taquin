@@ -16,7 +16,7 @@ import java.util.function.UnaryOperator;
  * This class models the game's grids with an 2d int array.
  * 
  * @see SearchSpace
- * @see io.github.vqnxiv.taquin.solver.Search
+ * @see Search
  */
 public class Grid implements Comparable<Grid> {
 
@@ -265,7 +265,7 @@ public class Grid implements Comparable<Grid> {
      * The 2d array which represents the grid.
      * <p>
      * {@code 0} is used as the 'blank' value for the blank tile which is moved
-     * when a {@link io.github.vqnxiv.taquin.solver.Search} is run.
+     * when a {@link Search} is run.
      * <p>
      * Numbers must be positive and unique for the grid to be valid.
      */
@@ -321,7 +321,7 @@ public class Grid implements Comparable<Grid> {
     private List<Grid> existingNeighbors;
 
     /**
-     * The heuristic value for this object, as calculated by a {@link io.github.vqnxiv.taquin.solver.Search}'s
+     * The heuristic value for this object, as calculated by a {@link Search}'s
      * {@link Distance}.
      */
     private float heuristicValue = Float.MAX_VALUE;

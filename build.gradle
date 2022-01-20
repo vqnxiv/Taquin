@@ -4,6 +4,7 @@ plugins {
     id 'org.openjfx.javafxplugin' version '0.0.10'
     id("de.jjohannes.extra-java-module-info") version "0.6"
     id "org.beryx.jlink" version "2.24.4"
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
 group 'io.github.vqnxiv'
@@ -37,6 +38,12 @@ application {
 javafx {
     version = '17-ea+11'
     modules = ['javafx.controls', 'javafx.fxml']
+}
+
+shadowJar {
+    manifest {
+        attributes 'Main-Class': 'io.github.vqnxiv.taquin.Taquin.java'
+    }
 }
 
 jlink {
