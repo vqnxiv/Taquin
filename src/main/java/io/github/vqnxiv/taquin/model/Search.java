@@ -1,7 +1,6 @@
 package io.github.vqnxiv.taquin.model;
 
 
-import io.github.vqnxiv.taquin.util.IBuilder;
 import io.github.vqnxiv.taquin.util.Utils;
 import javafx.application.Platform;
 import javafx.beans.property.*;

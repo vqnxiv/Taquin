@@ -13,7 +13,7 @@ import io.github.vqnxiv.taquin.model.Search;
 import io.github.vqnxiv.taquin.model.SearchRunner;
 import io.github.vqnxiv.taquin.model.search.Astar;
 import io.github.vqnxiv.taquin.util.FxUtils;
-import io.github.vqnxiv.taquin.util.IBuilder;
+import io.github.vqnxiv.taquin.model.IBuilder;
 import io.github.vqnxiv.taquin.util.Utils;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;

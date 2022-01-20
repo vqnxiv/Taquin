@@ -1,7 +1,6 @@
 package io.github.vqnxiv.taquin.model;
 
 
-import io.github.vqnxiv.taquin.util.IBuilder;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -87,7 +86,7 @@ public class SearchSpace {
          * @return a {@link SearchSpace} with the contents of {@link #explored}, {@link #queued},
          * {@link #start} and {@link #end}.
          */
-        public SearchSpace build() {
+        SearchSpace build() {
             if(start.get() == null || end.get() == null || explored == null || queued == null) {
                 throw new NullPointerException();
             }

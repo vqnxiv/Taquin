@@ -3,7 +3,6 @@ package io.github.vqnxiv.taquin.model;
 
 import io.github.vqnxiv.taquin.model.structure.Sorted;
 import io.github.vqnxiv.taquin.model.structure.Unsorted;
-import io.github.vqnxiv.taquin.util.IBuilder;
 import javafx.beans.property.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -73,8 +72,8 @@ public interface DataStructure<E> extends Collection<E> {
                 List.of(initialCapacity, userInitialCapacity)
             ));
         }
-
-        public DataStructure<?> build() {
+        
+        DataStructure<?> build() {
             var c = klass.getValue();
             
             if(!(Sorted.class).isAssignableFrom(c) && !(Unsorted.class).isAssignableFrom(c)) {

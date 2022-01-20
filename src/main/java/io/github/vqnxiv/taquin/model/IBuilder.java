@@ -1,8 +1,9 @@
-package io.github.vqnxiv.taquin.util;
+package io.github.vqnxiv.taquin.model;
 
 
 import io.github.vqnxiv.taquin.controller.BuilderController;
 import io.github.vqnxiv.taquin.model.Search;
+import io.github.vqnxiv.taquin.util.Utils;
 import javafx.beans.property.Property;
 
 import java.util.EnumMap;

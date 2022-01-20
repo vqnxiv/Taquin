@@ -3,7 +3,7 @@ package io.github.vqnxiv.taquin.model.search;
 
 import io.github.vqnxiv.taquin.model.Grid;
 import io.github.vqnxiv.taquin.model.Search;
-import io.github.vqnxiv.taquin.util.IBuilder;
+import io.github.vqnxiv.taquin.model.IBuilder;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
